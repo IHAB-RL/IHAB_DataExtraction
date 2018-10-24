@@ -1,0 +1,19 @@
+function ms = stringToTimeMs(timeString)
+
+    year = str2double(timeString(1:4));
+    month = str2double(timeString(6:7));
+    day = str2double(timeString(9:10));
+    hour = str2double(timeString(12:13));
+    minute = str2double(timeString(15:16));
+    second = str2double(timeString(18:19));
+    millisecond = str2double(timeString(21:23));
+    
+    ms = millisecond +...
+        second*1000+...
+        minute*60*1000+...
+        hour*60*60*1000+...
+        day*24*60*60*1000+...
+        month*30*24*60*60*1000+...
+        year*365*30*24*60*60*1000;
+
+end
