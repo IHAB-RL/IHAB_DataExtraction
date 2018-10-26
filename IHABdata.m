@@ -580,9 +580,11 @@ classdef IHABdata < handle
             cPathName = split(sFolder, '\');
             sInfo = cPathName{end};
             
+%             cSubjectData = split(sInfo, '_');
+            
             cSubjectData = regexp(sInfo, ...
                 '(\w){8}_(\w){6}_(\w){2}', 'tokens');
-            cSubjectData = cSubjectData{1};
+            cSubjectData = cSubjectData{1}';
             
             if (length(cSubjectData) == 3)
                 obj.stSubject.Name = cSubjectData{1};
