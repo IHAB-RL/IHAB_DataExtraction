@@ -484,14 +484,25 @@ classdef IHABdata < handle
         
         function [] = createNewSubject(obj, ~, ~)
             
-            sSubjectFolder = [obj.hEditSubject.Value, '_',...
-                obj.hEditDate.Value, '_', obj.hEditExperimenter.Value];
+            sBaseFolder = uigetdir();
+            
+            sSubjectFolder = [sBaseFolder, filesep, ...
+                obj.hEditSubject.Value, '_', obj.hEditDate.Value, ...
+                '_', obj.hEditExperimenter.Value];
+            
             if isempty(obj.hEditSubject.Value) ||...
                     isempty(obj.hEditDate.Value) ||...
                     isempty(obj.hEditExperimenter.Value)
                 warndlg('Please enter all subject data.');
             elseif exist(sSubjectFolder, 'dir') == 7
-                obj.cListQuestionnaire{end+1} = ['[  ] Folder already exists: "', sSubjectFolder, '"'];
+                
+                cNewEntry = splitStringForTextBox(...
+                    ['[  ] Subject folder already exists: "', ...
+                    obj.stSubject.Folder, '"']);
+                
+                for iLine = 1:length(cNewEntry)
+                    obj.cListQuestionnaire{end+1} = cNewEntry{iLine};
+                end
                 obj.hListBox.Value = obj.cListQuestionnaire;
                 
                 obj.hEditSubject.Enable = 'On';
@@ -502,11 +513,18 @@ classdef IHABdata < handle
                 obj.stSubject.Name = obj.hEditSubject.Value;
                 obj.stSubject.Date = obj.hEditDate.Value;
                 obj.stSubject.Experimenter = obj.hEditExperimenter.Value;
-                obj.stSubject.Folder = [obj.sFolderMain, filesep, sSubjectFolder];
-                system(['mkdir ', obj.stSubject.Folder]);
+                obj.stSubject.Folder = sSubjectFolder;
+                system(['mkdir ', '"', obj.stSubject.Folder, '"']);
                 obj.bNewFolder = 1;
                 
-                obj.cListQuestionnaire{end+1} = ['[x] New subject folder created: "', obj.stSubject.Folder, '"'];
+                
+                cNewEntry = splitStringForTextBox(...
+                    ['[x] New subject folder created: "', ...
+                    obj.stSubject.Folder, '"']);
+                
+                for iLine = 1:length(cNewEntry)
+                    obj.cListQuestionnaire{end+1} = cNewEntry{iLine};
+                end  
                 obj.hListBox.Value = obj.cListQuestionnaire;
                 
                 obj.hEditSubject.Enable = 'Off';
