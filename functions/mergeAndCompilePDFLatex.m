@@ -145,6 +145,7 @@ sFingerprints = strrep(sFingerprints, '$width$', sWidth);
 % Replace Subject's name
 sProfile = strrep(sProfile, '$subject$', obj.stSubject.Name);
 sProfile = strrep(sProfile, '$latexfolder$', strrep(obj.sFolder_Latex, '\', '/'));
+sProfile = strrep(sProfile, '$appendix$', strrep(obj.stSubject.Appendix, '_', ' '));
 
 % Replace Part Page variables
 sPart_Diagrams = strrep(sPart_Diagrams, '$numberofquestionnaires$', ...

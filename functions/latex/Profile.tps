@@ -17,8 +17,8 @@ Class=LaTeXView
 Document=Profile.tex
 
 [Frame0_View0,0]
-TopLine=78
-Cursor=2415
+TopLine=27
+Cursor=1173
 
 [Frame1]
 Flags=0
@@ -94,5 +94,5 @@ Cursor=24
 
 [SessionInfo]
 FrameCount=5
-ActiveFrame=3
+ActiveFrame=0
 

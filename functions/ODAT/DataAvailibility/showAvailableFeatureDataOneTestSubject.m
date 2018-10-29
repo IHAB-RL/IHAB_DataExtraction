@@ -1,24 +1,25 @@
 
-function [dateVecAll,UniqueDays] = showAvailableFeatureDataOneTestSubject(szBaseDir,szProbandName,szFeatData)
+function [dateVecAll,UniqueDays] = showAvailableFeatureDataOneTestSubject(obj, sFeatureName)
 
-% first step, find the name of the directory for the given test subject (Proband)
-% necessary to overcome the diversity of the naming convention
-szProbandDirList = dir(szBaseDir);
-szProbandNameDir = [];
-for kk = 1:length(szProbandDirList)
-    if szProbandDirList(kk).isdir == 1
-        if ~isempty(strfind(szProbandDirList(kk).name,szProbandName))
-            szProbandNameDir = szProbandDirList(kk).name;
-        end
-    end
-end
-%end
+% % first step, find the name of the directory for the given test subject (Proband)
+% % necessary to overcome the diversity of the naming convention
+% szProbandDirList = dir(szBaseDir);
+% szProbandNameDir = [];
+% for kk = 1:length(szProbandDirList)
+%     if szProbandDirList(kk).isdir == 1
+%         if ~isempty(strfind(szProbandDirList(kk).name,szProbandName))
+%             szProbandNameDir = szProbandDirList(kk).name;
+%         end
+%     end
+% end
+% %end
+
 
 % build the full directory
-szDir = [szBaseDir filesep szProbandNameDir filesep szProbandName '_AkuData' ];
+% szDir = [szBaseDir filesep szProbandNameDir filesep szProbandName '_AkuData' ];
 
 % List all feat files
-AllFeatFiles = listFiles(szDir,'*.feat');
+AllFeatFiles = listFiles([obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData'], '*.feat');
 AllFeatFiles = {AllFeatFiles.name}';
 
 % Get names wo. path
@@ -28,7 +29,7 @@ AllFeatFiles = {AllFeatFiles.name}';
 AllFeatFiles = strcat(AllFeatFiles,'.feat');
 
 % Load txt file with corrupt file names
-corruptTxtFile = fullfile(szBaseDir, szProbandNameDir,'corrupt_files.txt');
+corruptTxtFile = fullfile(obj.stSubject.Folder,'corrupt_files.txt');
 if ~exist(corruptTxtFile,'file')
     CheckDataIntegrety(stSubject.SubjectID);
 end
@@ -44,7 +45,7 @@ corruptFiles = corruptFiles{:};
 
 
 % isFeatFile filters for the wanted feature dates, such as all of 'RMS'
-[dateVecAll,~] = Filename2date(featFilesWithoutCorrupt,szFeatData);
+[dateVecAll,~] = Filename2date(featFilesWithoutCorrupt, sFeatureName);
 
 if exist('dateVecAll','var')
     % Get unique days only
@@ -67,7 +68,7 @@ if nargout == 0
         if (isempty(idx2))
             plot([dateVecAll(idx(1))-UniqueDays(kk) dateVecAll(idx(end))-UniqueDays(kk)],[kk kk],'r-X');
         else
-            display('At least two parts during this day')
+%             display('At least two parts during this day')
             % first part
             h = plot([dateVecAll(idx(1))-UniqueDays(kk) dateVecAll(idx(idx2(1)))-UniqueDays(kk)],[kk kk],'r-s');
             set(h,'LineWidth',2);

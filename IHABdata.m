@@ -179,10 +179,11 @@ classdef IHABdata < handle
             set(0,'Units','Pixels') ;
             obj.vScreenSize = get(0,'screensize');
             
-            obj.stSubject = struct('Name', [],...
-                'Date', [],...
-                'Experimenter', [],...
-                'Folder', []);
+            obj.stSubject = struct('Name', [], ...
+                'Date', [], ...
+                'Experimenter', [], ...
+                'Folder', [], ...
+                'Appendix', '-');
             
             obj.stEditText = struct('EditSubject', [],...
                 'EditDate', [],...
@@ -577,16 +578,23 @@ classdef IHABdata < handle
             
             obj.clearEntries();
             
+            % Automatically extract subject info from folder name
+            
             cPathName = split(sFolder, '\');
             sInfo = cPathName{end};
             
-%             cSubjectData = split(sInfo, '_');
-            
             cSubjectData = regexp(sInfo, ...
-                '(\w){8}_(\w){6}_(\w){2}', 'tokens');
-            cSubjectData = cSubjectData{1}';
+                '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
             
-            if (length(cSubjectData) == 3)
+            if isempty(cSubjectData{1}{5})
+                cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
+            else
+                obj.stSubject.Appendix = cSubjectData{1}{6}; 
+                cSubjectData = {cSubjectData{1}{2:4}};
+            end
+            
+            if isValidSubjectData(cSubjectData)
+                
                 obj.stSubject.Name = cSubjectData{1};
                 obj.stSubject.Date = cSubjectData{2};
                 obj.stSubject.Experimenter = cSubjectData{3};
@@ -682,10 +690,11 @@ classdef IHABdata < handle
             obj.bQuest = 0;
             obj.bFeatures = 0;
             
-            obj.stSubject = struct('Name', '',...
-                'Date', '',...
-                'Experimenter', '',...
-                'Folder', '');
+            obj.stSubject = struct('Name', [],...
+                'Date', [],...
+                'Experimenter', [],...
+                'Folder', [], ...
+                'Appendix', '-');
             obj.bNewFolder = 0;
             
             obj.hEditSubject.Enable = 'On';
@@ -1335,6 +1344,15 @@ classdef IHABdata < handle
         
         function [] = analyseData(obj, ~, ~)
             
+            if exist([obj.sFolderMain, filesep, 'cache', filesep, ...
+                    obj.stSubject.Name, '.mat'], 'file') == 2
+                sErase_tmp = questdlg('Would you like to erase pre-cached data', ...
+                    'Erase pre-cached data?', 'yes', 'no', 'no');
+                if strcmp(sErase_tmp, 'yes')
+                    deletePreCacheData(obj);
+                end
+            end
+            
             tic;
             
             obj.hProgress = BlindProgress(obj);
@@ -1352,7 +1370,8 @@ classdef IHABdata < handle
             end
 
             % OUTPUT INFO
-            obj.cListQuestionnaire{end+1} = sprintf('[  ] Analysing subject: %s', obj.stSubject.Name);
+            obj.cListQuestionnaire{end+1} = ...
+                sprintf('[  ] Analysing subject: %s', obj.stSubject.Name);
             obj.hListBox.Value = obj.cListQuestionnaire;
 
             % Check Data and compute Overview

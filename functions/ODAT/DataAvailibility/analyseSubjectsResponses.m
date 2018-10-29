@@ -35,7 +35,7 @@ if ~exist(szGraphicsDir, 'dir')
 end
 
 if hasSubjectiveData
-    load ([obj.stSubject.Folder filesep 'Questionnaires_' subjectID '.mat'])
+    load ([obj.stSubject.Folder filesep 'Questionnaires_', obj.stSubject.Name, '.mat'])
     TableOneSubject = QuestionnairesTable;
 end
 
@@ -105,23 +105,23 @@ else
 end
 
 % Feature Data PSD
-[dateVecAllFeatPSD,UniqueDaysFeatPSD] = showAvailableFeatureDataOneTestSubject(szBaseDir,szSubjectName,'PSD');
+[dateVecAllFeatPSD,UniqueDaysFeatPSD] = showAvailableFeatureDataOneTestSubject(obj, 'PSD');
 
 if isempty(dateVecAllFeatPSD)
     return;
 end
 
-dateVecDayOnlyFeatPSD= dateVecAllFeatPSD-timeofday(dateVecAllFeatPSD);
+dateVecDayOnlyFeatPSD = dateVecAllFeatPSD-timeofday(dateVecAllFeatPSD);
 AllDates = getdatesonesubject(obj);
 AllDates = AllDates.(szSubjectName)(:);
 
 if ~printMode
     % Feature Data RMS
-    [dateVecAllFeatRMS,UniqueDaysFeatRMS] = showAvailableFeatureDataOneTestSubject(szBaseDir,szSubjectName,'RMS');
+    [dateVecAllFeatRMS,UniqueDaysFeatRMS] = showAvailableFeatureDataOneTestSubject(obj, 'RMS');
     dateVecDayOnlyFeatRMS= dateVecAllFeatRMS-timeofday(dateVecAllFeatRMS);
     
     % Feature Data ZCR
-    [dateVecAllFeatZCR,UniqueDaysFeatZCR] = showAvailableFeatureDataOneTestSubject(szBaseDir,szSubjectName,'ZCR');
+    [dateVecAllFeatZCR,UniqueDaysFeatZCR] = showAvailableFeatureDataOneTestSubject(obj, 'ZCR');
     dateVecDayOnlyFeatZCR= dateVecAllFeatZCR-timeofday(dateVecAllFeatZCR);
 end
 
