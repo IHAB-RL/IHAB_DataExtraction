@@ -1,4 +1,3 @@
-﻿
 function [] = deletePreCacheData(obj)
 
 sFolder_Cache = [obj.stSubject.Folder, filesep, 'cache'];
