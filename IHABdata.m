@@ -483,7 +483,35 @@ classdef IHABdata < handle
             end
         end
         
+        function bEntriesConform = checkEntryConformity(obj)
+           
+            bEntriesConform = 1;
+            
+            if length(obj.stEditText.EditSubject) ~= 8
+                warndlg('Subject name must be 8 characters', 'Invalid entry');
+                bEntriesConform = 0;
+                return;
+            end
+            
+            if length(obj.stEditText.EditDate) ~= 6
+                warndlg('Date must be [yymmdd]', 'Invalid entry');
+                bEntriesConform = 0;
+                return;
+            end
+            
+            if length(obj.stEditText.EditExperimenter) ~= 2
+                warndlg('Experimenter code must be 2 characters', 'Invalid entry');
+                bEntriesConform = 0;
+                return;
+            end
+          
+        end
+        
         function [] = createNewSubject(obj, ~, ~)
+            
+            if ~obj.checkEntryConformity()
+               return; 
+            end
             
             sBaseFolder = uigetdir();
             
@@ -676,8 +704,11 @@ classdef IHABdata < handle
             end
             
             obj.hEditSubject.Value = '';
+            obj.hLabelSubject.FontColor = [0,0,0];
             obj.hEditDate.Value = '';
+            obj.hLabelDate.FontColor = [0,0,0];
             obj.hEditExperimenter.Value = '';
+            obj.hLabelExperimenter.FontColor = [0,0,0];
             
             obj.cListQuestionnaire = {''};
             obj.hListBox.Value = obj.cListQuestionnaire;
@@ -711,11 +742,32 @@ classdef IHABdata < handle
         function [] = callbackEditField(obj, source, event)
             
             if (strcmp(source.Tag, 'EditSubject'))
+                
                 obj.stEditText.EditSubject = event.Value;
+                if length(obj.stEditText.EditSubject) > 8
+                    obj.hLabelSubject.FontColor = [1,0,0];
+                else
+                    obj.hLabelSubject.FontColor = [0,0,0];
+                end
+                
             elseif (strcmp(source.Tag, 'EditDate'))
+                
                 obj.stEditText.EditDate = event.Value;
+                if length(obj.stEditText.EditDate) > 6
+                    obj.hLabelDate.FontColor = [1,0,0];
+                else
+                    obj.hLabelDate.FontColor = [0,0,0];
+                end
+                
             elseif (strcmp(source.Tag, 'EditExperimenter'))
+                
                 obj.stEditText.EditExperimenter = event.Value;
+                if length(obj.stEditText.EditExperimenter) > 2
+                    obj.hLabelExperimenter.FontColor = [1,0,0];
+                else
+                    obj.hLabelExperimenter.FontColor = [0,0,0];
+                end
+                
             end
             
             if obj.allEntries()
@@ -1380,23 +1432,6 @@ classdef IHABdata < handle
             if ~bSuccess
                return; 
             end
-            
-%             % OUTPUT INFO
-%             obj.cListQuestionnaire{end} = sprintf('\t.copying files -');
-%             obj.hListBox.Value = obj.cListQuestionnaire;
-%             obj.hProgress.startTimer();
-% 
-%             % Filename 0f Overview
-%             sResult_PDF_Overview = [obj.stSubject.Folder, filesep,...
-%                 'graphics', filesep, '17_', obj.stSubject.Name, '.pdf'];
-%             % Copy Overview
-%             copyfile(sResult_PDF_Overview, sDataFolder_Output, 'f');
-%             % Rename Overview
-%             movefile([sDataFolder_Output, filesep,...
-%                 '17_', obj.stSubject.Name, '.pdf'], [sDataFolder_Output, filesep,...
-%                 obj.stSubject.Name, '_Overview.pdf']);
-% 
-%             hProgress.stopTimer();
             
             obj.cListQuestionnaire{end} = sprintf('\t.generating pdf files -');
             obj.hListBox.Value = obj.cListQuestionnaire;
