@@ -1176,7 +1176,9 @@ classdef IHABdata < handle
             
             vTimeBluetooth = vTimeBluetooth - nMinTime;
             vTimeBluetooth(end+1) = nTimeMax;
-            vBluetooth(end+1) = vBluetooth(end);
+            if ~isempty(vBluetooth)
+                vBluetooth(end+1) = vBluetooth(end);
+            end
             
             vTimeDisplay = vTimeDisplay - nMinTime;
             vTimeDisplay(end+1) = nTimeMax;
