@@ -17,25 +17,6 @@ function generate_profile(szSubjectID, isObjective, obj)
     % sk180529: parameter to ignore objective data, minor fixes
     %           sort file according to running number
     
-
-    
-    % THIS IS NOT QUITE COOL!
-    FolderPath = dir([obj.sFolderMain filesep 'IHAB_Rohdaten_EMA2018' filesep szSubjectID '*']);
-    
-    % for subjects with multiple days 
-    if length(FolderPath) > 1
-        fn = {FolderPath.name};
-        [subjectIdx, tf] = listdlg('PromptString','Select a directory:',...
-            'SelectionMode','single',...
-            'ListString', fn);
-        if tf ~= 0
-            FolderPath = FolderPath(subjectIdx);
-        else 
-            return
-        end
-    else
-        subjectIdx = 1;
-    end
     
     % prevent figures from appearing
     set(groot, 'defaultFigureVisible', 'Off')
@@ -46,22 +27,7 @@ function generate_profile(szSubjectID, isObjective, obj)
         PersonalProfile(obj);
         
         if isObjective        
-            
-            %% Validate data
-            
-            %%% These parameters are for the validation check
-            % CHANGE PARAMETERS IF NECESSARY
-            configStruct.lowerBinCohe = 1100;
-            configStruct.upperBinCohe = 3000;
-            configStruct.upperThresholdCohe = 0.9;
-            configStruct.upperThresholdRMS = -6; % -6 dB
-            configStruct.lowerThresholdRMS = -70; % -70 dB
-            configStruct.errorTolerance = 0.05; % 5 percent
-            
-            %% Overview Figures:
-%             validatesubject(stSubject.FolderName, configStruct); %UK
-%             AnalyseSubjectsResponses(szSubjectID, 1, 1);
-
+           
             szFeature = 'RMS';
             tableDates = getdatesonesubject(obj);
             numDates = length(tableDates.(obj.stSubject.Name));

@@ -18,6 +18,7 @@ if ~isempty(stSubject)
                 
         obj.cListQuestionnaire{end+1} = sprintf('\t.importing questionnaires -');
         obj.hListBox.Value = obj.cListQuestionnaire;
+        drawnow;
         
         obj.hProgress.startTimer();
         import_EMA2018(obj);
@@ -29,6 +30,7 @@ if ~isempty(stSubject)
         
         obj.cListQuestionnaire{end} = sprintf('\t.checking data integrity -');
         obj.hListBox.Value = obj.cListQuestionnaire;
+        drawnow;
         
         % First: Check for broken data
         obj.hProgress.startTimer();
@@ -46,6 +48,7 @@ if ~isempty(stSubject)
         
         obj.cListQuestionnaire{end} = sprintf('\t.validating subject -');
         obj.hListBox.Value = obj.cListQuestionnaire;
+        drawnow;
         
         obj.hProgress.startTimer();
         validatesubject(obj, configStruct);

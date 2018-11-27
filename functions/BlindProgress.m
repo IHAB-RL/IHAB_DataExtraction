@@ -65,6 +65,7 @@ classdef BlindProgress < handle
             
             obj.targetObj.cListQuestionnaire{end} = tmp;
             obj.targetObj.hListBox.Value = obj.targetObj.cListQuestionnaire;
+            drawnow;
             
         end
         

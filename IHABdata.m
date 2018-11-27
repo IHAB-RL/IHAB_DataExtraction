@@ -10,6 +10,7 @@ classdef IHABdata < handle
         sLogFile = 'log2.txt';
         stPreferences;
         stAnalysis;
+        stComparison;
 
         sTitleFig1 = 'IHAB data';
         sTitleFig2 = 'Legend';
@@ -21,6 +22,16 @@ classdef IHABdata < handle
         sLabelFeatureData = 'Feature data:'
         sLabelQuestionnaires = 'Questionnaires:';
         sLabelMinPartLength = 'Min. part length:';
+        
+        sLabel_Button_Compare = 'Compare';
+        sLabel_Button_Open = 'Open';
+        sLabel_Button_Clear = 'Clear';
+        sLabel_Button_Load = 'Load Data';
+        sLabel_Button_Kill = 'Kill App';
+        sLabel_Button_Reboot = 'Reboot';
+        sLabel_Button_Erase = 'Erase Data';
+        sLabel_Button_Create = 'Create';
+        sLabel_Button_Analyse = 'Analyse';
    
         sLabelTab1 = 'Statistics';
         sLabelTab2 = 'User data';
@@ -98,6 +109,7 @@ classdef IHABdata < handle
         hButton_Create;
         hButton_Analyse;
         hButton_MinPartLength;
+        hButton_Compare;
         
         % Tab 3
         hButton_Load;
@@ -197,6 +209,9 @@ classdef IHABdata < handle
                 'TimePerDay', [], ...
                 'NumberOfParts', [], ...
                 'NumberOfQuestionnaires', []);
+            
+            obj.stComparison = struct('EMA01', [], ...
+                'EMA02', []);
             
             obj.mColors = getColors();
             
@@ -298,7 +313,7 @@ classdef IHABdata < handle
                 4*obj.nDivision_Vertical + 7*obj.nButtonHeight + 44,...
                 obj.nButtonWidth,...
                 obj.nButtonHeight];
-            obj.hButton_Open.Text = 'Open';
+            obj.hButton_Open.Text = obj.sLabel_Button_Open;
             obj.hButton_Open.ButtonPushedFcn = @obj.callbackOpen;
             
             % Button "Clear"
@@ -307,7 +322,7 @@ classdef IHABdata < handle
                 4*obj.nDivision_Vertical + 7*obj.nButtonHeight + 44,...
                 obj.nButtonWidth,...
                 obj.nButtonHeight];
-            obj.hButton_Clear.Text = 'Clear';
+            obj.hButton_Clear.Text = obj.sLabel_Button_Clear;
             obj.hButton_Clear.ButtonPushedFcn = @obj.clearEntries;
             
             % Text field "Subject"
@@ -367,7 +382,7 @@ classdef IHABdata < handle
                 obj.nDivision_Vertical + 44+4, ...
                 obj.nButtonWidth,...
                 obj.nButtonHeight];
-            obj.hButton_Create.Text = 'Create';
+            obj.hButton_Create.Text = obj.sLabel_Button_Create;
             obj.hButton_Create.Enable = 'Off';
             obj.hButton_Create.ButtonPushedFcn = @obj.createNewSubject;
             
@@ -376,17 +391,28 @@ classdef IHABdata < handle
             obj.hButton_Analyse.Position = [2*obj.nDivision_Horizontal + obj.nButtonWidth,...
                 obj.nDivision_Vertical + 44+4,...
                 obj.nButtonWidth, obj.nButtonHeight];
-            obj.hButton_Analyse.Text = 'Analyse';
+            obj.hButton_Analyse.Text = obj.sLabel_Button_Analyse;
             obj.hButton_Analyse.Enable = 'Off';
             obj.hButton_Analyse.ButtonPushedFcn = @obj.callbackAnalyseData;
             
             % Text Min Part Length
             obj.hLabel_MinPartLength = uilabel(obj.hTab2);
-            obj.hLabel_MinPartLength.Position = [obj.nDivision_Horizontal + 20,...
-                obj.nDivision_Vertical - 4,...
+            obj.hLabel_MinPartLength.Position = [2*obj.nDivision_Horizontal + obj.nButtonWidth,...
+                obj.nDivision_Vertical*1.5,...
                 obj.nButtonWidth+20,...
                 obj.nButtonHeight];
-            obj.hLabel_MinPartLength.Text = obj.sLabelMinPartLength;
+            obj.hLabel_MinPartLength.Text = 'MPL:';
+%             obj.hLabel_MinPartLength.Tooltip = 'Minimum Part Length';
+            
+            % Button "Compare"
+            obj.hButton_Compare = uibutton(obj.hTab2);
+            obj.hButton_Compare.Position = [obj.nDivision_Horizontal,...
+                obj.nDivision_Vertical + 4, ...
+                obj.nButtonWidth,...
+                obj.nButtonHeight];
+            obj.hButton_Compare.Text = obj.sLabel_Button_Compare;
+            obj.hButton_Compare.Enable = 'On';
+            obj.hButton_Compare.ButtonPushedFcn = @obj.callbachCompareEMA;
             
             % Text "Min Part Length"
             obj.hButton_MinPartLength = uibutton(obj.hTab2);
@@ -1314,7 +1340,7 @@ classdef IHABdata < handle
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hButton_PartLength_Enter.Text = obj.sLabel_MinPartLength_Enter;
-            obj.hButton_PartLength_Enter.ButtonPushedFcn = @obj.CallbackEnterPartLength;
+            obj.hButton_PartLength_Enter.ButtonPushedFcn = @obj.callbackEnterPartLength;
             
             % Edit Text "Part Length"
             obj.hEditText_PartLength = uieditfield(obj.hFig3, 'numeric');
@@ -1328,7 +1354,7 @@ classdef IHABdata < handle
            
         end
         
-        function [] = CallbackEnterPartLength(obj, ~, ~)
+        function [] = callbackEnterPartLength(obj, ~, ~)
             
             obj.stPreferences.MinPartLength = obj.hEditText_PartLength.Value;
             obj.writePreferencesToFile;
@@ -1342,6 +1368,38 @@ classdef IHABdata < handle
             
         end
         
+        function [] = callbachCompareEMA(obj, ~, ~)
+           obj.compareEMA(); 
+        end
+        
+        function [] = compareEMA(obj, ~, ~)
+           
+            obj.stComparison.EMA01 = uigetdir(pwd, 'Please specify directory of EMA #1');
+            obj.stComparison.EMA02 = uigetdir(pwd, 'Please specify directory of EMA #2');
+            
+            if isempty([obj.stComparison.EMA01, filesep, 'cache']) || ...
+                ~exist([obj.stComparison.EMA01, filesep, 'cache'], 'dir') ~= 7
+                
+                disp('No cache found for EMA 1');
+            
+            end
+            
+            if ~isempty([obj.stComparison.EMA02, filesep, 'cache']) && ...
+                exist([obj.stComparison.EMA02, filesep, 'cache'], 'dir') ~= 7
+                
+                disp('No cache found for EMA 2');
+            
+            else
+                disp('Cache found for EMA 2');
+            end
+            
+            
+            
+            
+            
+            
+        end
+       
         function [] = analyseData(obj, ~, ~)
             
             if exist([obj.sFolderMain, filesep, 'cache', filesep, ...
@@ -1373,6 +1431,7 @@ classdef IHABdata < handle
             obj.cListQuestionnaire{end+1} = ...
                 sprintf('[  ] Analysing subject: %s', obj.stSubject.Name);
             obj.hListBox.Value = obj.cListQuestionnaire;
+            drawnow;
 
             % Check Data and compute Overview
             bSuccess = main(obj.stSubject.Name, obj);
@@ -1380,23 +1439,6 @@ classdef IHABdata < handle
             if ~bSuccess
                return; 
             end
-            
-%             % OUTPUT INFO
-%             obj.cListQuestionnaire{end} = sprintf('\t.copying files -');
-%             obj.hListBox.Value = obj.cListQuestionnaire;
-%             obj.hProgress.startTimer();
-% 
-%             % Filename 0f Overview
-%             sResult_PDF_Overview = [obj.stSubject.Folder, filesep,...
-%                 'graphics', filesep, '17_', obj.stSubject.Name, '.pdf'];
-%             % Copy Overview
-%             copyfile(sResult_PDF_Overview, sDataFolder_Output, 'f');
-%             % Rename Overview
-%             movefile([sDataFolder_Output, filesep,...
-%                 '17_', obj.stSubject.Name, '.pdf'], [sDataFolder_Output, filesep,...
-%                 obj.stSubject.Name, '_Overview.pdf']);
-% 
-%             hProgress.stopTimer();
             
             obj.cListQuestionnaire{end} = sprintf('\t.generating pdf files -');
             obj.hListBox.Value = obj.cListQuestionnaire;
