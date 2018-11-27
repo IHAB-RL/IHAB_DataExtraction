@@ -1,7 +1,7 @@
 
 classdef IHABdata < handle
     
-    properties 
+    properties
         
         stSubject;
         sFolderMain = pwd;
@@ -11,7 +11,7 @@ classdef IHABdata < handle
         stPreferences;
         stAnalysis;
         stComparison;
-
+        
         sTitleFig1 = 'IHAB data';
         sTitleFig2 = 'Legend';
         sTitleFig3 = 'Change Minimum Part Length';
@@ -32,7 +32,7 @@ classdef IHABdata < handle
         sLabel_Button_Erase = 'Erase Data';
         sLabel_Button_Create = 'Create';
         sLabel_Button_Analyse = 'Analyse';
-   
+        
         sLabelTab1 = 'Statistics';
         sLabelTab2 = 'User data';
         sLabelTab3 = 'Phone actions';
@@ -73,7 +73,7 @@ classdef IHABdata < handle
         
         hProgress;
         
-        vProportions = zeros(6,1); 
+        vProportions = zeros(6,1);
         vProportions_Sorted;
         vStateNum = 1:6;
         vStateNumSorted;
@@ -162,9 +162,9 @@ classdef IHABdata < handle
         nWidthLegend = 300;
         nHeight_PartLength;
         nWidth_PartLength;
-       
+        
         stEditText;
- 
+        
         bNewFolder = 0;
         bLog = 0;
         bFeatures = 0;
@@ -179,7 +179,7 @@ classdef IHABdata < handle
             
             obj.nHeight_PartLength = 3*obj.nDivision_Vertical + 2*obj.nButtonHeight;
             obj.nWidth_PartLength = 3*obj.nDivision_Horizontal + 2*obj.nButtonWidth;
-
+            
             addpath(genpath('functions'));
             
             if ismac
@@ -210,8 +210,10 @@ classdef IHABdata < handle
                 'NumberOfParts', [], ...
                 'NumberOfQuestionnaires', []);
             
-            obj.stComparison = struct('EMA01', [], ...
-                'EMA02', []);
+            obj.stComparison = struct('Folder01', [], ...
+                'Analysis01' , [], ...
+                'Folder02', [], ...
+                'Analysis02', []);
             
             obj.mColors = getColors();
             
@@ -402,7 +404,7 @@ classdef IHABdata < handle
                 obj.nButtonWidth+20,...
                 obj.nButtonHeight];
             obj.hLabel_MinPartLength.Text = 'MPL:';
-%             obj.hLabel_MinPartLength.Tooltip = 'Minimum Part Length';
+            %             obj.hLabel_MinPartLength.Tooltip = 'Minimum Part Length';
             
             % Button "Compare"
             obj.hButton_Compare = uibutton(obj.hTab2);
@@ -412,7 +414,7 @@ classdef IHABdata < handle
                 obj.nButtonHeight];
             obj.hButton_Compare.Text = obj.sLabel_Button_Compare;
             obj.hButton_Compare.Enable = 'On';
-            obj.hButton_Compare.ButtonPushedFcn = @obj.callbachCompareEMA;
+            obj.hButton_Compare.ButtonPushedFcn = @obj.callbackCompareEMA;
             
             % Text "Min Part Length"
             obj.hButton_MinPartLength = uibutton(obj.hTab2);
@@ -510,7 +512,7 @@ classdef IHABdata < handle
         end
         
         function bEntriesConform = checkEntryConformity(obj)
-           
+            
             bEntriesConform = 1;
             
             if length(obj.stEditText.EditSubject) ~= 8
@@ -530,13 +532,13 @@ classdef IHABdata < handle
                 bEntriesConform = 0;
                 return;
             end
-          
+            
         end
         
         function [] = createNewSubject(obj, ~, ~)
             
             if ~obj.checkEntryConformity()
-               return; 
+                return;
             end
             
             sBaseFolder = uigetdir();
@@ -579,7 +581,7 @@ classdef IHABdata < handle
                 
                 for iLine = 1:length(cNewEntry)
                     obj.cListQuestionnaire{end+1} = cNewEntry{iLine};
-                end  
+                end
                 obj.hListBox.Value = obj.cListQuestionnaire;
                 
                 obj.hEditSubject.Enable = 'Off';
@@ -643,7 +645,7 @@ classdef IHABdata < handle
             if isempty(cSubjectData{1}{5})
                 cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
             else
-                obj.stSubject.Appendix = cSubjectData{1}{6}; 
+                obj.stSubject.Appendix = cSubjectData{1}{6};
                 cSubjectData = {cSubjectData{1}{2:4}};
             end
             
@@ -721,7 +723,7 @@ classdef IHABdata < handle
         end
         
         function [] = clearEntries(obj, ~, ~)
-                       
+            
             if ~obj.bClear
                 delete(obj.hAxes.Children);
                 delete(obj.hAxes);
@@ -762,7 +764,7 @@ classdef IHABdata < handle
             obj.hEditExperimenter.Editable = 'On';
             
             obj.hButton_Create.Enable = 'Off';
-          
+            
         end
         
         function [] = callbackEditField(obj, source, event)
@@ -840,7 +842,7 @@ classdef IHABdata < handle
         function [] = killApp(obj, ~, ~)
             
             if obj.checkForDevice()
-%                 [status, ~] = system('adb shell "su -c ps"');
+                %                 [status, ~] = system('adb shell "su -c ps"');
                 [status, ~] = system('adb root');
                 switch status
                     case 1
@@ -919,17 +921,17 @@ classdef IHABdata < handle
             [~, cmdout] = system('adb shell ls /sdcard/ihab/features');
             vStatus = [vStatus, (~isempty(find(strfind(cmdout, 'No such file or directory'))) || ~isempty(cmdout))];
             
-%             [~, cmdout] = system('adb shell ls -l /sdcard/ihab');
+            %             [~, cmdout] = system('adb shell ls -l /sdcard/ihab');
             
-%             if contains(cmdout, obj.sLogFile)
-%                 tmp = splitlines(cmdout);
-%                 for iLine = 1:length(tmp)
-%                     if contains(tmp{iLine}, obj.sLogFile)
-%                         tmp2 = split(tmp{iLine});
-%                         vStatus = [vStatus, tmp2{4}<100];
-%                     end
-%                 end
-%             end
+            %             if contains(cmdout, obj.sLogFile)
+            %                 tmp = splitlines(cmdout);
+            %                 for iLine = 1:length(tmp)
+            %                     if contains(tmp{iLine}, obj.sLogFile)
+            %                         tmp2 = split(tmp{iLine});
+            %                         vStatus = [vStatus, tmp2{4}<100];
+            %                     end
+            %                 end
+            %             end
             
             if (mean(vStatus) == 0)
                 obj.cListQuestionnaire{end+1} = 'Data was erased from mobile device.';
@@ -1070,9 +1072,9 @@ classdef IHABdata < handle
             
             obj.hListBox.Value = obj.cListQuestionnaire;
             
-%             if obj.isDataComplete()
-                obj.hButton_Analyse.Enable = 'On';
-%             end
+            %             if obj.isDataComplete()
+            obj.hButton_Analyse.Enable = 'On';
+            %             end
             
             if obj.bLog
                 obj.extractConnection();
@@ -1215,7 +1217,7 @@ classdef IHABdata < handle
             vTimeBattery = vTimeBattery - nMinTime;
             
             obj.hLabel_Calculating.Visible = 'Off';
-
+            
             obj.hAxes.Visible = 'On';
             
             if ~isempty(vState)
@@ -1224,7 +1226,7 @@ classdef IHABdata < handle
                     vX = [vTimeState(iState), vTimeState(iState), ...
                         vTimeState(iState+1), vTimeState(iState+1)];
                     vY = [0.5, 1, 1, 0.5];
-
+                    
                     if vState(iState) == 1
                         p = patch(obj.hAxes, vX, vY, obj.mColors(1,:));
                         obj.vProportions(1) = obj.vProportions(1) + vX(end)-vX(1);
@@ -1249,7 +1251,7 @@ classdef IHABdata < handle
                         obj.hAxes.NextPlot = 'add';
                     end
                 end
-
+                
             end
             
             
@@ -1272,7 +1274,7 @@ classdef IHABdata < handle
             
             stairs(obj.hAxes, vTimeDisplay, vDisplay*0.50, 'Color', obj.mColors(3,:));
             plot(obj.hAxes, vTimeBattery, vLevelBattery*0.99, 'k');
-
+            
             obj.hHotspot_Legend = patch(obj.hAxes, vTimeBluetooth([1,1,end,end]),[0.5,1,1,0.5], [0.5,0.5,0.5], 'FaceAlpha',0.01);
             obj.hHotspot_Legend.LineStyle = 'none';
             obj.hHotspot_Legend.ButtonDownFcn = @obj.callbackLegend;
@@ -1303,7 +1305,7 @@ classdef IHABdata < handle
             
             [obj.vProportions_Sorted, idx] = sort(obj.vProportions, 'ascend');
             obj.vStateNumSorted = obj.vStateNum(idx);
-         
+            
         end
         
         function [] = getPreferencesFromFile(obj)
@@ -1315,8 +1317,8 @@ classdef IHABdata < handle
             
             fclose(hFid);
         end
-     
-        function [] = writePreferencesToFile(obj) 
+        
+        function [] = writePreferencesToFile(obj)
             hFid = fopen(['functions', filesep, obj.sFileName_Preferences], 'w');
             
             fprintf(hFid, 'MinPartLength[min]: %d\n', obj.stPreferences.MinPartLength);
@@ -1358,18 +1360,18 @@ classdef IHABdata < handle
                     obj.nPatchWidth, obj.nPatchHeight];
                 obj.hPatch_Legend_Charging.Text = '';
                 obj.hPatch_Legend_Charging.BackgroundColor = obj.mColors(obj.vStateNumSorted(iState),:);
-
+                
                 obj.hLabel_Legend_Charging = uilabel(obj.hFig2);
                 obj.hLabel_Legend_Charging.Position = [110,20+(2+iState)*obj.nDivision_Vertical+obj.nButtonHeight+(iState-1)*obj.nPatchHeight,...
                     obj.nLegendLabelWidth, obj.nLegendLabelHeight];
                 obj.hLabel_Legend_Charging.Text = sprintf('%s (%.1f%%)',obj.cStates{obj.vStateNumSorted(iState)}, vPercentage(iState));
-
+                
             end
             
         end
         
         function [] = callbackMinPartLength(obj, ~, ~)
-           
+            
             % Figure "Part Length"
             obj.hFig3 = uifigure();
             obj.hFig3.Position = [(obj.vScreenSize(3)-obj.nWidth_PartLength)/2-50,...
@@ -1399,13 +1401,13 @@ classdef IHABdata < handle
             % Edit Text "Part Length"
             obj.hEditText_PartLength = uieditfield(obj.hFig3, 'numeric');
             obj.hEditText_PartLength.Position = ...
-            [obj.nDivision_Horizontal, ...
+                [obj.nDivision_Horizontal, ...
                 obj.nDivision_Vertical, ...
                 obj.nButtonWidth, ...
                 obj.nButtonHeight];
             obj.hEditText_PartLength.Editable = 'On';
             obj.hEditText_PartLength.Value = obj.stPreferences.MinPartLength;
-           
+            
         end
         
         function [] = callbackEnterPartLength(obj, ~, ~)
@@ -1422,38 +1424,110 @@ classdef IHABdata < handle
             
         end
         
-        function [] = callbachCompareEMA(obj, ~, ~)
-           obj.compareEMA(); 
+        function [] = callbackCompareEMA(obj, ~, ~)
+            obj.compareEMA();
         end
         
         function [] = compareEMA(obj, ~, ~)
-           
-            obj.stComparison.EMA01 = uigetdir(pwd, 'Please specify directory of EMA #1');
-            obj.stComparison.EMA02 = uigetdir(pwd, 'Please specify directory of EMA #2');
             
-            if isempty([obj.stComparison.EMA01, filesep, 'cache']) || ...
-                ~exist([obj.stComparison.EMA01, filesep, 'cache'], 'dir') ~= 7
-                
-                disp('No cache found for EMA 1');
+            %             obj.stComparison.Folder01 = uigetdir(pwd, 'Please specify directory of EMA #1');
+            %             obj.stComparison.Folder02 = uigetdir(pwd, 'Please specify directory of EMA #2');
             
-            end
             
-            if ~isempty([obj.stComparison.EMA02, filesep, 'cache']) && ...
-                exist([obj.stComparison.EMA02, filesep, 'cache'], 'dir') ~= 7
-                
-                disp('No cache found for EMA 2');
+            obj.stComparison.Folder01 = 'I:\IHAB_DataExploration\data\IHAB_1_EMA2018\KE07IN22_180607_mh';
+            obj.stComparison.Folder02 = 'I:\IHAB_DataExploration\data\IHAB_2_EMA2018\KE07IN22_180724_aw';
             
+            tic;
+            
+            obj.hProgress = BlindProgress(obj);
+
+            obj.clearEntries();
+            
+            
+            %% EMA01
+            
+            
+
+            % Automatically extract subject info from folder name
+
+            cPathName = split(obj.stComparison.Folder01, '\');
+            sInfo = cPathName{end};
+
+            cSubjectData = regexp(sInfo, ...
+                '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
+
+            if isempty(cSubjectData{1}{5})
+                cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
             else
-                disp('Cache found for EMA 2');
+                obj.stSubject.Appendix = cSubjectData{1}{6};
+                cSubjectData = {cSubjectData{1}{2:4}};
             end
+
+            if isValidSubjectData(cSubjectData)
+
+                obj.stSubject.Name = cSubjectData{1};
+                obj.stSubject.Date = cSubjectData{2};
+                obj.stSubject.Experimenter = cSubjectData{3};
+                obj.stSubject.Folder = obj.stComparison.Folder01;
+
+                obj.hEditSubject.Value = obj.stSubject.Name;
+                obj.hEditDate.Value = obj.stSubject.Date;
+                obj.hEditExperimenter.Value = obj.stSubject.Experimenter;
+
+                obj.hEditSubject.Editable = 'Off';
+                obj.hEditDate.Editable = 'Off';
+                obj.hEditExperimenter.Editable = 'Off';
+
+                obj.hButton_Create.Enable = 'Off';
+
+            else
+                obj.cListQuestionnaire{end} = 'Cannot read folder.';
+                obj.hListBox.Value = obj.cListQuestionnaire;
+                return;
+            end
+
+
+
+
+            obj.stAnalysis = struct('NumberOfDays', [], ...
+                'Dates', [], ...
+                'TimePerDay', [], ...
+                'NumberOfParts', [], ...
+                'NumberOfQuestionnaires', []);
+
+
+
+            % OUTPUT INFO
+            obj.cListQuestionnaire{end+1} = ...
+                sprintf('[  ] Analysing subject: %s', obj.stSubject.Name);
+            obj.hListBox.Value = obj.cListQuestionnaire;
+            drawnow;
+
+            % Check Data and compute Overview
+            bSuccess = main(obj.stSubject.Name, obj);
+
+            if ~bSuccess
+                return;
+            end
+
             
-            
-            
+
+
+%% EMA02
+                
+                
+                
+                
+                
+            sDataFolder_Output = [pwd, filesep, 'Overviews'];
+            if ~exist(sDataFolder_Output, 'dir')
+                mkdir(sDataFolder_Output);
+            end
             
             
             
         end
-       
+        
         function [] = analyseData(obj, ~, ~)
             
             if exist([obj.sFolderMain, filesep, 'cache', filesep, ...
@@ -1476,28 +1550,28 @@ classdef IHABdata < handle
                 'NumberOfQuestionnaires', []);
             
             sDataFolder_Output = [pwd, filesep, 'Overviews'];
-
+            
             if ~exist(sDataFolder_Output, 'dir')
                 mkdir(sDataFolder_Output);
             end
-
+            
             % OUTPUT INFO
             obj.cListQuestionnaire{end+1} = ...
                 sprintf('[  ] Analysing subject: %s', obj.stSubject.Name);
             obj.hListBox.Value = obj.cListQuestionnaire;
             drawnow;
-
+            
             % Check Data and compute Overview
             bSuccess = main(obj.stSubject.Name, obj);
-           
+            
             if ~bSuccess
-               return; 
+                return;
             end
             
             obj.cListQuestionnaire{end} = sprintf('\t.generating pdf files -');
             obj.hListBox.Value = obj.cListQuestionnaire;
             obj.hProgress.startTimer();
-
+            
             % Generate profile PDF's and Fingerprints
             generate_profile(obj.stSubject.Name, 1, obj);
             
@@ -1521,7 +1595,7 @@ classdef IHABdata < handle
             
             sResult_PDF_Profile = [obj.sFolderMain, filesep, 'profile.pdf'];
             movefile(sResult_PDF_Profile, sResult_PDF_Profile_New);
-           
+            
             obj.hProgress.stopTimer();
             
             % OUTPUT INFO

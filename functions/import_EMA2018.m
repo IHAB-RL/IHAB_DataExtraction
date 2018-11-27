@@ -39,29 +39,25 @@ function [] = import_EMA2018(obj, folder_idx)
     % .csv and .mat file name
     csv_mat_file_name = ['Questionnaires_' obj.stSubject.Name];
 
-    % paths ...
-%     main_path = [pwd filesep 'IHAB_Rohdaten_EMA2018'];
-%     main_path = dir([])
-%     folder_path = dir([pwd filesep 'IHAB_Rohdaten_EMA2018' filesep obj.stSubject.Name '*' ]);
-
-    folder_path = dir([obj.stSubject.Folder, '*']);
+%     folder_path = dir([obj.stSubject.Folder, '*']);
     
-    % for subjects with multiple days 
-    if length(folder_path) > 1 && nargin < 2
-        
-        input_string = {folder_path.name};
-        [folder_idx, cancel_button] = listdlg('PromptString','Select a directory:',...
-            'SelectionMode','single',...
-            'ListString', input_string);
-        
-        if cancel_button ~= 0
-            folder_path = folder_path(folder_idx);
-        else
-            return
-        end
-    else
-        folder_path = folder_path(folder_idx);
-    end
+%     
+%     % for subjects with multiple days 
+%     if length(folder_path) > 1 && nargin < 2
+%         
+%         input_string = {folder_path.name};
+%         [folder_idx, cancel_button] = listdlg('PromptString','Select a directory:',...
+%             'SelectionMode','single',...
+%             'ListString', input_string);
+%         
+%         if cancel_button ~= 0
+%             folder_path = folder_path(folder_idx);
+%         else
+%             return
+%         end
+%     else
+%         folder_path = folder_path(folder_idx);
+%     end
 
     % ... another path
 %     fullpath = [main_path filesep folder_path.name filesep obj.stSubject.Name '_Quest'];
