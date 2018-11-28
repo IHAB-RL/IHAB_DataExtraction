@@ -22,7 +22,7 @@ corruptFileCounter = 0;
 
 for nn = 1:length(AllDataEntries)
     
-    if all(TrueValues~=AllDataEntries(nn).bytes)
+    if all(TrueValues ~= AllDataEntries(nn).bytes)
         [~,szNameofFile] = fileparts(AllDataEntries(nn).name);
         fprintf(fid,'%s.feat\n',szNameofFile);
         corruptFileCounter = corruptFileCounter + 1;
@@ -30,7 +30,7 @@ for nn = 1:length(AllDataEntries)
     
 end
 
-fprintf('%t-%i of %i files are corrupt\n', corruptFileCounter, length(AllDataEntries));
+%fprintf('%t-%i of %i files are corrupt\n', corruptFileCounter, length(AllDataEntries));
 fclose(fid);
 
 end

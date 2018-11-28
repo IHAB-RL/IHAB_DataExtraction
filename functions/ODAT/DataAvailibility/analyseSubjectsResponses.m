@@ -1,4 +1,4 @@
-function [bSuccess] = analyseSubjectsResponses(subjectID,printMode,hasSubjectiveData, obj)
+function [] = analyseSubjectsResponses(printMode,hasSubjectiveData, obj)
 
 % Version 1.0 Data Availibility is displayed
 % Version 1.1 GUI integration
@@ -7,9 +7,6 @@ function [bSuccess] = analyseSubjectsResponses(subjectID,printMode,hasSubjective
 % 1) to get more from the data
 %    a) color-code the speech understanding
 %    b) marker-size for the importace (or other parts)
-
-
-bSuccess = 1;
 
 %szBaseDir = fullfile(pwd,'ObjectiveDataAnalysisToolbox','HALLO_EMA2016_all');
 if nargin < 3
@@ -20,8 +17,7 @@ if nargin < 2
 end
 % szBaseDir = fullfile(pwd,'IHAB_Rohdaten_EMA2018');
 % subjectPath = dir([szBaseDir filesep subjectID '*']);
-szBaseDir = [obj.stSubject.Folder,filesep, '..'];
-
+%szBaseDir = [obj.stSubject.Folder,filesep, '..'];
 
 obj.cListQuestionnaire{end} = sprintf('\t.analysing subject data -');
 obj.hListBox.Value = obj.cListQuestionnaire;
@@ -42,7 +38,7 @@ end
 % Find unique test subjects
 % allSubjects = getallsubjects(obj.stSubject.Folder);
 
-allSubjects = {obj.stSubject.Name};
+%allSubjects = {obj.stSubject.Name};
 
 clear dateVecOneSubjectQ;
 
@@ -67,16 +63,17 @@ if hasSubjectiveData
         szMin = szTime(4:5);
         szSec = szTime(7:8);
         
-        dateVecOneSubjectQ(kk) =  datetime(str2double(szYear),str2double(szMonth)...
-            ,str2double(szDay),str2double(szHour),str2double(szMin),str2double(szSec));
+        dateVecOneSubjectQ(kk) =  datetime(str2double(szYear), ...
+            str2double(szMonth), str2double(szDay),str2double(szHour), ...
+            str2double(szMin),str2double(szSec));
     end
     % unique Dates of one subject
-    dateVecDayOnlyQ= dateVecOneSubjectQ-timeofday(dateVecOneSubjectQ);
-    uniqueDaysQ = unique(dateVecDayOnlyQ);
+    dateVecDayOnlyQ = dateVecOneSubjectQ - timeofday(dateVecOneSubjectQ);
+%     uniqueDaysQ = unique(dateVecDayOnlyQ);
     
-    szSubjectName = TableOneSubject.SubjectID{1};
+%     szSubjectName = TableOneSubject.SubjectID;
 else
-    szSubjectName = subjectID;
+%     szSubjectName = obj.stSubject.Name;
 end
 
 % subIndex = [];
@@ -113,7 +110,7 @@ end
 
 dateVecDayOnlyFeatPSD = dateVecAllFeatPSD-timeofday(dateVecAllFeatPSD);
 AllDates = getdatesonesubject(obj);
-AllDates = AllDates.(szSubjectName)(:);
+AllDates = AllDates.(obj.stSubject.Name)(:);
 
 if ~printMode
     % Feature Data RMS
@@ -156,7 +153,7 @@ else
     availableZCRColor = 'g';
 end
 
-
+% Gather statistical data for report
 obj.stAnalysis.NumberOfDays = length(AllDates);
 obj.stAnalysis.Dates = AllDates;
 
@@ -212,8 +209,8 @@ for kk = 1:length(AllDates)
         
     end
     
+    % Gather statistical data for report
     obj.stAnalysis.NumberOfParts(kk) = PartCounter+1;
-    
     
     if ~printMode
         
@@ -324,6 +321,7 @@ for kk = 1:length(AllDates)
         %% now plot questionaire info
         idx = find(dateVecDayOnlyQ == AllDates(kk));
         
+        % Gather statistical data for report
         obj.stAnalysis.NumberOfQuestionnaires(kk) = length(idx);
 
         if ~isempty(idx) && length(idx) > 1
@@ -404,7 +402,6 @@ for kk = 1:length(AllDates)
                         obj.cListQuestionnaire{end} = sprintf('    Questionnaire data incomplete.');
                         obj.hListBox.Value = obj.cListQuestionnaire;
                         close(hFig_Overview);
-                        bSuccess = 0;
                         return; 
                     end
                     
@@ -522,10 +519,9 @@ for kk = 1:length(AllDates)
     fprintf(fid,'Valid: %s\n', strValidData);
     fprintf(fid,'\n');
     
-    
+   % Gather statistical data for report 
     obj.stAnalysis.TimePerDay(kk) = round(numAvailableDataAllDays(kk)*60);
 
-    
     % Plot error codes
     lineDistance = 0.1;
     fontSize = 6.5;
@@ -606,7 +602,7 @@ end
 set(gca,'YTick',1:length(AllDates));
 set(gca,'YTickLabel',datestr(AllDates));
 
-title([szSubjectName ' data availability']);
+title([obj.stSubject.Name, ' data availability']);
 ylim([1-0.5 length(AllDates)+1]);
 
 % Save the figure as PDF and EPS ('016_' for page numbering in PDF)
@@ -625,7 +621,7 @@ fprintf(fid,'Total hours: %s\n', totalHours);
 fprintf(fid,'Total validity: %s', strValidDataTotal);
 fclose(fid);
 
-obj.hProgress.stopTimer();;
+obj.hProgress.stopTimer();
 
 end
 % EOF

@@ -23,19 +23,24 @@ classdef BlindProgress < handle
         end
         
         function [] = stopTimer(obj, ~, ~)
-            stop(obj.t);
+            if obj.t.Running
+                stop(obj.t);
+            end
         end
         
         function [] = startTimer(obj, ~, ~)
-           start(obj.t); 
+            if ~obj.t.Running
+                start(obj.t);
+            end
         end
-
+        
         function [] = killTimer(obj, ~, ~)
-           delete(obj.t); 
+            obj.stopTimer();
+            delete(obj.t);
         end
         
         function [] = stopCallback(obj, ~, ~)
-
+            
             obj.sLast = '-';
             tmp = obj.targetObj.cListQuestionnaire{end};
             tmp(end) = '';

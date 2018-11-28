@@ -11,6 +11,8 @@ classdef IHABdata < handle
         stPreferences;
         stAnalysis;
         stComparison;
+        stPrint;
+        bComparison;
         
         sTitleFig1 = 'IHAB data';
         sTitleFig2 = 'Legend';
@@ -65,7 +67,6 @@ classdef IHABdata < handle
         nPatchWidth = 40;
         nLegendLabelWidth = 140;
         nLegendLabelHeight = 28;
-        
         nCalculatingWidth = 60;
         nCalculatingHeight = 20;
         
@@ -195,7 +196,8 @@ classdef IHABdata < handle
                 'Date', [], ...
                 'Experimenter', [], ...
                 'Folder', [], ...
-                'Appendix', '-');
+                'Appendix', '-', ...
+                'Code', []);
             
             obj.stEditText = struct('EditSubject', [],...
                 'EditDate', [],...
@@ -209,15 +211,25 @@ classdef IHABdata < handle
                 'TimePerDay', [], ...
                 'NumberOfParts', [], ...
                 'NumberOfQuestionnaires', []);
-            
-            obj.stComparison = struct('Folder01', [], ...
-                'Analysis01' , [], ...
-                'Folder02', [], ...
-                'Analysis02', []);
+           
+            obj.stPrint = struct('Width', 6/2.54, ...
+                'Height', 3/2.54, ...
+                'AxesLineWidth', 0.75, ...
+                'FontSize', 10, ...
+                'LineWidth', 1.5, ...
+                'MarkerSize', 8, ...
+                'InvertHardcopy', 'on', ...
+                'PaperUnits', 'inches', ...
+                'DPI', 300);
+
+            obj.stComparison = struct('Folder', [], ...
+                'Analysis' , []);
             
             obj.mColors = getColors();
             
             obj.getPreferencesFromFile();
+            
+            obj.bComparison = false;
             
             % Create the GUI
             obj.gui();
@@ -400,7 +412,7 @@ classdef IHABdata < handle
             % Text Min Part Length
             obj.hLabel_MinPartLength = uilabel(obj.hTab2);
             obj.hLabel_MinPartLength.Position = [2*obj.nDivision_Horizontal + obj.nButtonWidth,...
-                obj.nDivision_Vertical*1.5,...
+                obj.nDivision_Vertical - 4,...
                 obj.nButtonWidth+20,...
                 obj.nButtonHeight];
             obj.hLabel_MinPartLength.Text = 'MPL:';
@@ -416,7 +428,7 @@ classdef IHABdata < handle
             obj.hButton_Compare.Enable = 'On';
             obj.hButton_Compare.ButtonPushedFcn = @obj.callbackCompareEMA;
             
-            % Text "Min Part Length"
+            % Button "Min Part Length"
             obj.hButton_MinPartLength = uibutton(obj.hTab2);
             obj.hButton_MinPartLength.Position = [2*obj.nDivision_Horizontal + obj.nButtonWidth + 30,...
                 obj.nDivision_Vertical + 4,...
@@ -571,6 +583,8 @@ classdef IHABdata < handle
                 obj.stSubject.Date = obj.hEditDate.Value;
                 obj.stSubject.Experimenter = obj.hEditExperimenter.Value;
                 obj.stSubject.Folder = sSubjectFolder;
+                obj.stSubject.Code = [obj.stSubject.Name, '_' , ...
+                    obj.stSubject.Date, '_', obj.stSubject.Experimenter];
                 system(['mkdir ', '"', obj.stSubject.Folder, '"']);
                 obj.bNewFolder = 1;
                 
@@ -655,6 +669,7 @@ classdef IHABdata < handle
                 obj.stSubject.Date = cSubjectData{2};
                 obj.stSubject.Experimenter = cSubjectData{3};
                 obj.stSubject.Folder = sFolder;
+                obj.stSubject.Code = sInfo;
                 
                 obj.hEditSubject.Value = obj.stSubject.Name;
                 obj.hEditDate.Value = obj.stSubject.Date;
@@ -1434,86 +1449,117 @@ classdef IHABdata < handle
             %             obj.stComparison.Folder02 = uigetdir(pwd, 'Please specify directory of EMA #2');
             
             
-            obj.stComparison.Folder01 = 'I:\IHAB_DataExploration\data\IHAB_1_EMA2018\KE07IN22_180607_mh';
-            obj.stComparison.Folder02 = 'I:\IHAB_DataExploration\data\IHAB_2_EMA2018\KE07IN22_180724_aw';
+            obj.stComparison = [];
+            obj.stComparison(1).Folder = 'F:\IHAB-rl_Auswertung\IHAB_1_EMA2018\KE07IN22_180607_mh';
+            obj.stComparison(2).Folder = 'F:\IHAB-rl_Auswertung\IHAB_2_EMA2018\KE07IN22_180724_aw';
             
+           
             tic;
-            
-            obj.hProgress = BlindProgress(obj);
 
-            obj.clearEntries();
+            obj.bComparison = true;
             
             
-            %% EMA01
+            for iEMA = 1:2
             
-            
+                obj.clearEntries();
 
-            % Automatically extract subject info from folder name
+                obj.hProgress = BlindProgress(obj);
 
-            cPathName = split(obj.stComparison.Folder01, '\');
-            sInfo = cPathName{end};
 
-            cSubjectData = regexp(sInfo, ...
-                '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
+                %% EMA01
+                
+                sFolder = obj.stComparison(iEMA).Folder;
 
-            if isempty(cSubjectData{1}{5})
-                cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
-            else
-                obj.stSubject.Appendix = cSubjectData{1}{6};
-                cSubjectData = {cSubjectData{1}{2:4}};
-            end
 
-            if isValidSubjectData(cSubjectData)
 
-                obj.stSubject.Name = cSubjectData{1};
-                obj.stSubject.Date = cSubjectData{2};
-                obj.stSubject.Experimenter = cSubjectData{3};
-                obj.stSubject.Folder = obj.stComparison.Folder01;
+                % Automatically extract subject info from folder name
 
-                obj.hEditSubject.Value = obj.stSubject.Name;
-                obj.hEditDate.Value = obj.stSubject.Date;
-                obj.hEditExperimenter.Value = obj.stSubject.Experimenter;
+                cPathName = split(sFolder, '\');
+                sInfo = cPathName{end};
 
-                obj.hEditSubject.Editable = 'Off';
-                obj.hEditDate.Editable = 'Off';
-                obj.hEditExperimenter.Editable = 'Off';
+                cSubjectData = regexp(sInfo, ...
+                    '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
 
-                obj.hButton_Create.Enable = 'Off';
+                if isempty(cSubjectData{1}{5})
+                    cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
+                else
+                    obj.stSubject.Appendix = cSubjectData{1}{6};
+                    cSubjectData = {cSubjectData{1}{2:4}};
+                end
 
-            else
-                obj.cListQuestionnaire{end} = 'Cannot read folder.';
+                if isValidSubjectData(cSubjectData)
+
+                    obj.stSubject.Name = cSubjectData{1};
+                    obj.stSubject.Date = cSubjectData{2};
+                    obj.stSubject.Experimenter = cSubjectData{3};
+                    obj.stSubject.Folder = sFolder;
+                    obj.stSubject.Code = sInfo;
+
+                    obj.hEditSubject.Value = obj.stSubject.Name;
+                    obj.hEditDate.Value = obj.stSubject.Date;
+                    obj.hEditExperimenter.Value = obj.stSubject.Experimenter;
+
+                    obj.hEditSubject.Editable = 'Off';
+                    obj.hEditDate.Editable = 'Off';
+                    obj.hEditExperimenter.Editable = 'Off';
+
+                    obj.hButton_Create.Enable = 'Off';
+
+                else
+                    obj.hProgress.killTimer();
+                    obj.cListQuestionnaire{end} = 'Cannot read folder.';
+                    obj.hListBox.Value = obj.cListQuestionnaire;
+                    return;
+                end
+
+                obj.stAnalysis = struct('NumberOfDays', [], ...
+                    'Dates', [], ...
+                    'TimePerDay', [], ...
+                    'NumberOfParts', [], ...
+                    'NumberOfQuestionnaires', []);
+
+                % OUTPUT INFO
+                obj.cListQuestionnaire{end+1} = ...
+                    sprintf('[  ] Performing comparison: %s (%d/2)', obj.stSubject.Name, iEMA);
                 obj.hListBox.Value = obj.cListQuestionnaire;
-                return;
+                drawnow;
+
+                obj.hProgress.startTimer();
+                % Check Data and compute Overview
+                main(obj);
+                
+                obj.hProgress.stopTimer();
+                obj.cListQuestionnaire{end} = sprintf('\t.generating pdf files -');
+                obj.hListBox.Value = obj.cListQuestionnaire;
+                obj.hProgress.startTimer();
+
+                % Generate profile PDF's and Fingerprints
+                generate_profile(false, obj);
+                
+                obj.stComparison(iEMA).Analysis = obj.stAnalysis;
+                
+               
+            
             end
-
-
-
-
-            obj.stAnalysis = struct('NumberOfDays', [], ...
-                'Dates', [], ...
-                'TimePerDay', [], ...
-                'NumberOfParts', [], ...
-                'NumberOfQuestionnaires', []);
-
-
-
+            
+            
+            
             % OUTPUT INFO
-            obj.cListQuestionnaire{end+1} = ...
-                sprintf('[  ] Analysing subject: %s', obj.stSubject.Name);
+            obj.hProgress.stopTimer();
+            obj.cListQuestionnaire{end} = sprintf('\t.merging files -');
             obj.hListBox.Value = obj.cListQuestionnaire;
-            drawnow;
-
-            % Check Data and compute Overview
-            bSuccess = main(obj.stSubject.Name, obj);
-
-            if ~bSuccess
-                return;
-            end
-
+            obj.hProgress.startTimer();
+            
+            
+  
+            mergeAndCompilePDFLatex_Comparison(obj);
             
 
+            
+            toc;
 
-%% EMA02
+
+
                 
                 
                 
@@ -1525,8 +1571,25 @@ classdef IHABdata < handle
             end
             
             
+            obj.hProgress.killTimer();
+            obj.bComparison = false;
+            fprintf('DONE!\n');
+            
             
         end
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         function [] = analyseData(obj, ~, ~)
             
@@ -1562,11 +1625,7 @@ classdef IHABdata < handle
             drawnow;
             
             % Check Data and compute Overview
-            bSuccess = main(obj.stSubject.Name, obj);
-            
-            if ~bSuccess
-                return;
-            end
+            main(obj);
             
             obj.cListQuestionnaire{end} = sprintf('\t.generating pdf files -');
             obj.hListBox.Value = obj.cListQuestionnaire;

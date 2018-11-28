@@ -54,8 +54,8 @@ function stSubject = validatesubject(obj, configStruct)
 % ---------------------------------------------------------
 
 % Parameters for version check
-yearNewData = 2018;
-monthNewData = 4;
+%yearNewData = 2018;
+%monthNewData = 4;
 
 % Get name of subject without any postfix
 % [szFilePath, szName] = fileparts(szSubjectDir);

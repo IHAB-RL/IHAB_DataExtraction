@@ -1,4 +1,4 @@
-function bSuccess = main(szSubjectID, obj)
+function [] = main(obj)
 
 % Check if subject exists and get the folder name
 
@@ -6,8 +6,8 @@ stSubject = struct('FolderName', obj.stSubject.Folder, 'SubjectID', obj.stSubjec
 
 if ~isempty(stSubject)
     
-    if exist(['cache', filesep, szSubjectID, '.mat'],'file')
-        load(['cache', filesep, szSubjectID, '.mat'], 'configStruct', 'stSubject');
+    if exist(['cache', filesep, obj.stSubject.Code, '.mat'],'file')
+        load(['cache', filesep, obj.stSubject.Code, '.mat'], 'configStruct', 'stSubject');
         obj.cListQuestionnaire{end+1} = sprintf('\t.using cached data');
         obj.hListBox.Value = obj.cListQuestionnaire;
     else
@@ -34,7 +34,7 @@ if ~isempty(stSubject)
         
         % First: Check for broken data
         obj.hProgress.startTimer();
-        checkDataIntegrity(obj, szSubjectID);
+        checkDataIntegrity(obj, obj.stSubject.Name);
         obj.hProgress.stopTimer();
         
         % These parameters are for the validation check
@@ -59,8 +59,8 @@ if ~isempty(stSubject)
             mkdir('cache');
         end
         
-        if ~exist(['cache', filesep, szSubjectID], 'file')
-            save(['cache', filesep, szSubjectID], 'configStruct', 'stSubject');
+        if ~exist(['cache', filesep, obj.stSubject.Code], 'file')
+            save(['cache', filesep, obj.stSubject.Code], 'configStruct', 'stSubject');
         end
         
         %% Overview
@@ -69,7 +69,8 @@ if ~isempty(stSubject)
     % Black/white printing
     isPrintMode = true;
 
-    bSuccess = analyseSubjectsResponses(szSubjectID, isPrintMode, 1, obj);
+    analyseSubjectsResponses(isPrintMode, 1, obj);
+    
     
 end
 
