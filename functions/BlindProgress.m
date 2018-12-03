@@ -23,20 +23,26 @@ classdef BlindProgress < handle
         end
         
         function [] = stopTimer(obj, ~, ~)
+            
             if obj.t.Running
                 stop(obj.t);
             end
+            
         end
         
         function [] = startTimer(obj, ~, ~)
+            
             if ~obj.t.Running
                 start(obj.t);
             end
+            
         end
         
         function [] = killTimer(obj, ~, ~)
+            
             obj.stopTimer();
             delete(obj.t);
+         
         end
         
         function [] = stopCallback(obj, ~, ~)
@@ -50,7 +56,6 @@ classdef BlindProgress < handle
         end
         
         function [] = startCallback(obj, ~, ~)
-            
             
             switch obj.sLast
                 

@@ -1,5 +1,6 @@
 function [] = mergeAndCompilePDFLatex_Comparison(obj)
 
+sFile_TitlePage = 'titlePage_Comparison.tex';
 sFile_Profile = 'Profile_Comparison.tex';
 sFile_Graphic = 'graphic_Comparison.tex';
 sFile_Part_Diagrams = 'diagrams_Comparison.tex';
@@ -45,6 +46,7 @@ cCaptions = {['Personal Profile: ', obj.stSubject.Name], ...
     [obj.stSubject.Name, ' data availability']};
 
 % Read LaTeX data
+sTitlePage = fileread(fullfile(obj.sFolder_Latex, sFile_TitlePage));
 sProfile = fileread(fullfile(obj.sFolder_Latex, sFile_Profile));
 sGraphics = fileread(fullfile(obj.sFolder_Latex, filesep, sFile_Graphic));
 sPart_Diagrams = fileread(fullfile(obj.sFolder_Latex, sFile_Part_Diagrams));
@@ -55,7 +57,7 @@ sDetails_Overview = fileread(fullfile(obj.sFolder_Latex, sFile_Details_Overview)
 
 
 vRotation = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 0, 0, 0, 0, 0];
-vWidth = [1.1, 1.2, 1.1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+vWidth = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
 
 sDiagrams = '';
 
@@ -63,17 +65,21 @@ nDiagrams = 16;
 for iDiagram = 1:nDiagrams
 
     sCurrentChart = strrep(sGraphics, '$filename1$', ...
-        strrep([obj.stComparison(1).Folder, filesep, 'graphics', filesep, cFileNames{iDiagram}], '\', '/'));
+        strrep([obj.stComparison(1).Folder, filesep, 'graphics', ...
+        filesep, cFileNames{iDiagram}], '\', '/'));
     sCurrentChart = strrep(sCurrentChart, '$filename2$', ...
-        strrep([obj.stComparison(2).Folder, filesep, 'graphics', filesep, cFileNames{iDiagram}], '\', '/'));
+        strrep([obj.stComparison(2).Folder, filesep, 'graphics', ...
+        filesep, cFileNames{iDiagram}], '\', '/'));
     
     
     
 %     sCurrentChart = strrep(sCurrentChart, '$vspace$', '0');
-    sCurrentChart = strrep(sCurrentChart, '$caption$', cCaptions{iDiagram});
-    
-    sCurrentChart = strrep(sCurrentChart, '$rotation$', num2str(vRotation(iDiagram)));
-    sCurrentChart = strrep(sCurrentChart, '$width$', num2str(vWidth(iDiagram)));
+    sCurrentChart = strrep(sCurrentChart, '$caption$', ...
+        cCaptions{iDiagram});
+    sCurrentChart = strrep(sCurrentChart, '$rotation$', ...
+        num2str(vRotation(iDiagram)));
+    sCurrentChart = strrep(sCurrentChart, '$width$', ...
+        num2str(vWidth(iDiagram)));
     
     sDiagrams = [sDiagrams, sCurrentChart];
     
@@ -115,7 +121,8 @@ for iDay = 1:obj.stComparison(1).Analysis.NumberOfDays
 end
 
 sOverview = strrep(sGraphics, '$filename$', ...
-        strrep([obj.stComparison(1).Folder, filesep, 'graphics', filesep, cFileNames{17}], '\', '/'));
+        strrep([obj.stComparison(1).Folder, filesep, 'graphics', ...
+        filesep, cFileNames{17}], '\', '/'));
 sOverview = strrep(sOverview, '$caption$', cCaptions{17});
 
 % Overview is displayed in portrait mode
@@ -152,7 +159,8 @@ for iDay = 1:obj.stComparison(2).Analysis.NumberOfDays
 end
 
 sOverview = strrep(sGraphics, '$filename$', ...
-        strrep([obj.stComparison(2).Folder, filesep, 'graphics', filesep, cFileNames{17}], '\', '/'));
+        strrep([obj.stComparison(2).Folder, filesep, 'graphics', ...
+        filesep, cFileNames{17}], '\', '/'));
 sOverview = strrep(sOverview, '$caption$', cCaptions{17});
 
 % Overview is displayed in portrait mode
@@ -169,10 +177,26 @@ sOverview = [sOverview_1, sOverview_2];
 %% Adjust general information
 
 
-% Replace Subject's name
-sProfile = strrep(sProfile, '$subject$', obj.stSubject.Name);
-sProfile = strrep(sProfile, '$latexfolder$', strrep(obj.sFolder_Latex, '\', '/'));
-sProfile = strrep(sProfile, '$appendix$', strrep(obj.stSubject.Appendix, '_', ' '));
+% Replace Information on titlepage
+sTitlePage = strrep(sTitlePage, '$termProfile$', obj.stLaTeXCommands.termProfile);
+sTitlePage = strrep(sTitlePage, '$termComparison$', obj.stLaTeXCommands.termComparison);
+sTitlePage = strrep(sTitlePage, '$termSubject$', obj.stLaTeXCommands.termSubject);
+sTitlePage = strrep(sTitlePage, '$subject$', obj.stSubject.Name);
+sTitlePage = strrep(sTitlePage, '$termUpdated$', obj.stLaTeXCommands.termUpdated);
+sTitlePage = strrep(sTitlePage, '$termComments$', obj.stLaTeXCommands.termComments);
+sTitlePage = strrep(sTitlePage, '$appendix$', ...
+    strrep(obj.stSubject.Appendix, '_', ' '));
+sTitlePage = strrep(sTitlePage, '$latexfolder$', ...
+    strrep(obj.sFolder_Latex, '\', '/'));
+
+% Insert Footer
+sProfile = strrep(sProfile, '$headtext_left$', ['Vergleich: ', ...
+    obj.stSubject.Name]);
+sProfile = strrep(sProfile, '$headtext_center$', 'Stand:');
+sProfile = strrep(sProfile, '$headtext_right$', obj.stLaTeXCommands.termInstitute);
+sProfile = strrep(sProfile, '$foottext_left$', '');
+sProfile = strrep(sProfile, '$foottext_center$', '');
+sProfile = strrep(sProfile, '$foottext_right$', 'Seite');
 
 % Replace Part Page variables
 sPart_Diagrams = strrep(sPart_Diagrams, '$numberofquestionnaires$', ...
@@ -194,6 +218,8 @@ sPart_Overview = strrep(sPart_Overview, '$detailsoverview$', ...
 
 %% Merge all LaTeX data together
 
+
+sProfile = strrep(sProfile, '$titlePage$', sTitlePage);
 sProfile = strrep(sProfile, '$part_diagrams$', sPart_Diagrams);
 sProfile = strrep(sProfile, '$part_overview$', sPart_Overview);
 % sProfile = strrep(sProfile, '$part_fingerprints$', sPart_Fingerprints);

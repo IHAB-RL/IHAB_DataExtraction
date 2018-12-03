@@ -1,4 +1,4 @@
-function generate_profile(isObjective, obj)
+function generateProfile(obj)
 
     % Combine all fingerprints within szDir into one pdf file.
     %
@@ -24,9 +24,9 @@ function generate_profile(isObjective, obj)
     if ~isempty(obj.stSubject.Folder)
         
         %% Personal Profile:
-        PersonalProfile(obj);
+        generateDiagrams(obj);
         
-        if isObjective        
+        if obj.bIncludeObjectiveData        
            
             szFeature = 'RMS';
             tableDates = getdatesonesubject(obj);

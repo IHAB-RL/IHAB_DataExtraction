@@ -12,7 +12,9 @@ classdef IHABdata < handle
         stAnalysis;
         stComparison;
         stPrint;
+        stLaTeXCommands;
         bComparison;
+        bIncludeObjectiveData = false;
         
         sTitleFig1 = 'IHAB data';
         sTitleFig2 = 'Legend';
@@ -192,37 +194,53 @@ classdef IHABdata < handle
             set(0,'Units','Pixels') ;
             obj.vScreenSize = get(0,'screensize');
             
-            obj.stSubject = struct('Name', [], ...
+            obj.stSubject = struct( ...
+                'Name', [], ...
                 'Date', [], ...
                 'Experimenter', [], ...
                 'Folder', [], ...
                 'Appendix', '-', ...
                 'Code', []);
             
-            obj.stEditText = struct('EditSubject', [],...
+            obj.stEditText = struct( ...
+                'EditSubject', [],...
                 'EditDate', [],...
                 'EditExperimenter', []);
             
-            obj.stPreferences = struct('MinPartLength', [], ...
+            obj.stPreferences = struct( ...
+                'MinPartLength', [], ...
                 'Test', []);
             
-            obj.stAnalysis = struct('NumberOfDays', [], ...
+            obj.stAnalysis = struct( ...
+                'NumberOfDays', [], ...
                 'Dates', [], ...
                 'TimePerDay', [], ...
                 'NumberOfParts', [], ...
                 'NumberOfQuestionnaires', []);
+            
+            obj.stLaTeXCommands = struct( ...
+                'termSubject', 'TeilnehmerIn', ...
+                'termUpdated', 'Stand', ...
+                'termComments', 'Bemerkungen', ...
+                'termComparison', 'Vergleich', ...
+                'termPage', 'Seite', ...
+                'termProfile', 'Persönliches Hörprofil', ...
+                'termInstitute', 'Projekt IHAB-rl');
            
-            obj.stPrint = struct('Width', 6/2.54, ...
-                'Height', 3/2.54, ...
+            obj.stPrint = struct( ...
+                'Width', [6, 6]/2.54, ...
+                'Height', [15, 3.5]/2.54, ...
                 'AxesLineWidth', 0.75, ...
-                'FontSize', 10, ...
+                'FontSize', 9, ...
                 'LineWidth', 1.5, ...
                 'MarkerSize', 8, ...
                 'InvertHardcopy', 'on', ...
                 'PaperUnits', 'inches', ...
-                'DPI', 300);
+                'DPI', 300, ...
+                'MaxCharactersInLabel', 20);
 
-            obj.stComparison = struct('Folder', [], ...
+            obj.stComparison = struct( ...
+                'Folder', [], ...
                 'Analysis' , []);
             
             obj.mColors = getColors();
@@ -425,7 +443,7 @@ classdef IHABdata < handle
                 obj.nButtonWidth,...
                 obj.nButtonHeight];
             obj.hButton_Compare.Text = obj.sLabel_Button_Compare;
-            obj.hButton_Compare.Enable = 'On';
+            obj.hButton_Compare.Enable = 'Off';
             obj.hButton_Compare.ButtonPushedFcn = @obj.callbackCompareEMA;
             
             % Button "Min Part Length"
@@ -729,6 +747,7 @@ classdef IHABdata < handle
             
             if obj.isDataCompleteEnoughForAnalysis()
                 obj.hButton_Analyse.Enable = 'On';
+                obj.hButton_Compare.Enable = 'On';
             end
             
             if obj.bLog
@@ -740,8 +759,12 @@ classdef IHABdata < handle
         function [] = clearEntries(obj, ~, ~)
             
             if ~obj.bClear
-                delete(obj.hAxes.Children);
-                delete(obj.hAxes);
+                try
+                    delete(obj.hAxes.Children);
+                end
+                try
+                    delete(obj.hAxes);
+                end
                 obj.bClear = 1;
                 delete(timerfindall);
             end
@@ -779,6 +802,8 @@ classdef IHABdata < handle
             obj.hEditExperimenter.Editable = 'On';
             
             obj.hButton_Create.Enable = 'Off';
+            obj.hButton_Analyse.Enable = 'Off';
+            obj.hButton_Compare.Enable = 'Off';
             
         end
         
@@ -1327,7 +1352,15 @@ classdef IHABdata < handle
             hFid = fopen(['functions', filesep, obj.sFileName_Preferences]);
             cTemp = textscan(hFid, '%s%f');
             
-            obj.stPreferences.MinPartLength = cTemp{2}(1);
+            if cTemp{2}(1) == -1
+                obj.bIncludeObjectiveData = false;
+                obj.stPreferences.MinPartLength = 0;
+            else 
+                obj.stPreferences.MinPartLength = cTemp{2}(1);
+                obj.bIncludeObjectiveData = true;
+            end
+        
+            
             obj.stPreferences.Test = cTemp{2}(2);
             
             fclose(hFid);
@@ -1337,7 +1370,6 @@ classdef IHABdata < handle
             hFid = fopen(['functions', filesep, obj.sFileName_Preferences], 'w');
             
             fprintf(hFid, 'MinPartLength[min]: %d\n', obj.stPreferences.MinPartLength);
-            fprintf(hFid, 'Test: %d\n', obj.stPreferences.Test);
             
             fclose(hFid);
         end
@@ -1428,11 +1460,24 @@ classdef IHABdata < handle
         function [] = callbackEnterPartLength(obj, ~, ~)
             
             obj.stPreferences.MinPartLength = obj.hEditText_PartLength.Value;
-            obj.writePreferencesToFile;
-            obj.hButton_MinPartLength.Text = num2str(obj.stPreferences.MinPartLength);
-            
-            obj.cListQuestionnaire{end+1} =...
+         
+            if obj.stPreferences.MinPartLength == -1
+                obj.stPreferences.MinPartLength = 0;
+                obj.hButton_MinPartLength.Text = 'n/a';
+                obj.cListQuestionnaire{end+1} =...
+                sprintf('     Objective data excluded from analysis');
+            else
+                obj.hButton_MinPartLength.Text = num2str(obj.stPreferences.MinPartLength);
+                obj.cListQuestionnaire{end+1} =...
                 sprintf('     Minimum part length changed to: %d', obj.stPreferences.MinPartLength);
+            end
+            
+            obj.writePreferencesToFile;
+            
+            
+            
+            
+            
             obj.hListBox.Value = obj.cListQuestionnaire;
             
             close(obj.hFig3);
@@ -1461,19 +1506,14 @@ classdef IHABdata < handle
             
             for iEMA = 1:2
             
-                obj.clearEntries();
-
-                obj.hProgress = BlindProgress(obj);
-
+                obj.bClear = false;
+                obj.clearEntries(); 
 
                 %% EMA01
                 
                 sFolder = obj.stComparison(iEMA).Folder;
 
-
-
                 % Automatically extract subject info from folder name
-
                 cPathName = split(sFolder, '\');
                 sInfo = cPathName{end};
 
@@ -1523,18 +1563,20 @@ classdef IHABdata < handle
                     sprintf('[  ] Performing comparison: %s (%d/2)', obj.stSubject.Name, iEMA);
                 obj.hListBox.Value = obj.cListQuestionnaire;
                 drawnow;
+                
+                obj.hProgress = BlindProgress(obj);
 
                 obj.hProgress.startTimer();
                 % Check Data and compute Overview
                 main(obj);
-                
                 obj.hProgress.stopTimer();
+                
                 obj.cListQuestionnaire{end} = sprintf('\t.generating pdf files -');
                 obj.hListBox.Value = obj.cListQuestionnaire;
                 obj.hProgress.startTimer();
 
                 % Generate profile PDF's and Fingerprints
-                generate_profile(false, obj);
+                generateProfile(obj);
                 
                 obj.stComparison(iEMA).Analysis = obj.stAnalysis;
                 
@@ -1570,10 +1612,17 @@ classdef IHABdata < handle
                 mkdir(sDataFolder_Output);
             end
             
+            obj.hProgress.stopTimer();
+            
+            % OUTPUT INFO
+            obj.cListQuestionnaire{end-1} = sprintf('[x] Performing comparison: %s', obj.stSubject.Name);
+            obj.cListQuestionnaire{end} = sprintf('     Finished in %s\n', formatSeconds(round(toc)));
+            obj.hListBox.Value = obj.cListQuestionnaire;
             
             obj.hProgress.killTimer();
+            
             obj.bComparison = false;
-            fprintf('DONE!\n');
+
             
             
         end
@@ -1632,7 +1681,7 @@ classdef IHABdata < handle
             obj.hProgress.startTimer();
             
             % Generate profile PDF's and Fingerprints
-            generate_profile(obj.stSubject.Name, 1, obj);
+            generateProfile(obj);
             
             % OUTPUT INFO
             obj.hProgress.stopTimer();
@@ -1663,6 +1712,8 @@ classdef IHABdata < handle
             obj.hListBox.Value = obj.cListQuestionnaire;
             
             obj.hProgress.killTimer();
+            
+            delete(timerfindall);
             
         end
         

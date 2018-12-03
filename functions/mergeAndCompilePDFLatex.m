@@ -61,7 +61,7 @@ sDiagrams = '';
 
 nDiagrams = 16;
 for iDiagram = 1:nDiagrams
-
+    
     sCurrentChart = strrep(sGraphics, '$filename$', ...
         strrep([obj.stSubject.Folder, filesep, 'graphics', filesep, cFileNames{iDiagram}], '\', '/'));
     sCurrentChart = strrep(sCurrentChart, '$caption$', cCaptions{iDiagram});
@@ -73,7 +73,7 @@ end
 nRotation = 0;
 sDiagrams = strrep(sDiagrams, '$rotation$', num2str(nRotation));
 sWidth = '1.00';
-sDiagrams = strrep(sDiagrams, '$width$', sWidth);
+% sDiagrams = strrep(sDiagrams, '$width$', sWidth);
 
 
 %% Exchange Overview
@@ -81,7 +81,7 @@ sDiagrams = strrep(sDiagrams, '$width$', sWidth);
 sDetails_Overview_Complete = '';
 
 for iDay = 1:obj.stAnalysis.NumberOfDays
-   
+    
     sDetails_Overview_Day = strrep(sDetails_Overview, ...
         '$daynumber$', num2str(iDay));
     sDetails_Overview_Day = strrep(sDetails_Overview_Day, ...
@@ -101,13 +101,13 @@ for iDay = 1:obj.stAnalysis.NumberOfDays
 end
 
 sOverview = strrep(sGraphics, '$filename$', ...
-        strrep([obj.stSubject.Folder, filesep, 'graphics', filesep, cFileNames{17}], '\', '/'));
+    strrep([obj.stSubject.Folder, filesep, 'graphics', filesep, cFileNames{17}], '\', '/'));
 sOverview = strrep(sOverview, '$caption$', cCaptions{17});
 
 % Overview is displayed in portrait mode
 nRotation = 0;
 sOverview = strrep(sOverview, '$rotation$', num2str(nRotation));
-sWidth = '1.15';
+sWidth = '1.00';
 sOverview = strrep(sOverview, '$width$', sWidth);
 
 
@@ -115,28 +115,30 @@ sOverview = strrep(sOverview, '$width$', sWidth);
 
 
 sFingerprints = '';
-
-% Find all Fingerprint PDF's in folder
-stDir_Fingerprints = dir([obj.stSubject.Folder, filesep, 'graphics', ...
-    filesep, 'Fingerprint*.pdf']);
-
-nFingerprints = length(stDir_Fingerprints);
-for iFingerprint = 1:nFingerprints
     
-    sCurrentFingerprint = strrep(sGraphics, '$filename$', ...
-        strrep([obj.stSubject.Folder, filesep, 'graphics', filesep, ...
-        stDir_Fingerprints(iFingerprint).name], '\', '/'));
-    sCurrentFingerprint = strrep(sCurrentFingerprint, '$caption$', ...
-        strrep(stDir_Fingerprints(iFingerprint).name, '_', '\_'));
-    sFingerprints = [sFingerprints, sCurrentFingerprint];
+if obj.bIncludeObjectiveData
+    % Find all Fingerprint PDF's in folder
+    stDir_Fingerprints = dir([obj.stSubject.Folder, filesep, 'graphics', ...
+        filesep, 'Fingerprint*.pdf']);
     
+    nFingerprints = length(stDir_Fingerprints);
+    for iFingerprint = 1:nFingerprints
+        
+        sCurrentFingerprint = strrep(sGraphics, '$filename$', ...
+            strrep([obj.stSubject.Folder, filesep, 'graphics', filesep, ...
+            stDir_Fingerprints(iFingerprint).name], '\', '/'));
+        sCurrentFingerprint = strrep(sCurrentFingerprint, '$caption$', ...
+            strrep(stDir_Fingerprints(iFingerprint).name, '_', '\_'));
+        sFingerprints = [sFingerprints, sCurrentFingerprint];
+        
+    end
+    
+    % Fingerprints are displayed in landscape mode
+    nRotation = 90;
+    sFingerprints = strrep(sFingerprints, '$rotation$', num2str(nRotation));
+    sWidth = '1.00';
+    sFingerprints = strrep(sFingerprints, '$width$', sWidth);
 end
-
-% Fingerprints are displayed in landscape mode
-nRotation = 90;
-sFingerprints = strrep(sFingerprints, '$rotation$', num2str(nRotation));
-sWidth = '1.50';
-sFingerprints = strrep(sFingerprints, '$width$', sWidth);
 
 
 %% Adjust general information
@@ -158,13 +160,19 @@ sPart_Overview = strrep(sPart_Overview, '$numberofquestionnaires$', ...
     num2str(sum(obj.stAnalysis.NumberOfQuestionnaires)));
 sPart_Overview = strrep(sPart_Overview, '$detailsoverview$', ...
     sDetails_Overview_Complete);
-sPart_Fingerprints = strrep(sPart_Fingerprints, 'minpartlength', ...
-    num2str(obj.stPreferences.MinPartLength));
-sPart_Fingerprints = strrep(sPart_Fingerprints, 'numberofparts', ...
-    num2str(nFingerprints));
+
+if obj.bIncludeObjectiveData
+    sPart_Fingerprints = strrep(sPart_Fingerprints, 'minpartlength', ...
+        num2str(obj.stPreferences.MinPartLength));
+    sPart_Fingerprints = strrep(sPart_Fingerprints, 'numberofparts', ...
+        num2str(nFingerprints));
+else
+   sPart_Fingerprints = ''; 
+end
 
 
 %% Merge all LaTeX data together
+
 
 sProfile = strrep(sProfile, '$part_diagrams$', sPart_Diagrams);
 sProfile = strrep(sProfile, '$part_overview$', sPart_Overview);
@@ -174,6 +182,7 @@ sProfile = strrep(sProfile, '$contents_diagrams$', sDiagrams);
 sProfile = strrep(sProfile, '$contents_overview$', sOverview);
 sProfile = strrep(sProfile, '$contents_fingerprints$', sFingerprints);
 
+
 hFid_Profile = fopen([obj.stSubject.Folder, filesep, 'graphics', ...
     filesep, sFileOutput_tex], 'w');
 fwrite(hFid_Profile, sProfile);
@@ -182,7 +191,7 @@ fclose(hFid_Profile);
 
 %% Compile and tidy up
 
-   
+
 % Compile PDF file TWICE because LaTeX
 system(['pdflatex -shell-escape --src -interaction=nonstopmode ', ...
     obj.stSubject.Folder, filesep, 'graphics', filesep, sFileOutput_tex]);

@@ -1,4 +1,4 @@
-function [] = analyseSubjectsResponses(printMode,hasSubjectiveData, obj)
+function [] = generateOverview(printMode, hasSubjectiveData, obj)
 
 % Version 1.0 Data Availibility is displayed
 % Version 1.1 GUI integration
@@ -69,11 +69,11 @@ if hasSubjectiveData
     end
     % unique Dates of one subject
     dateVecDayOnlyQ = dateVecOneSubjectQ - timeofday(dateVecOneSubjectQ);
-%     uniqueDaysQ = unique(dateVecDayOnlyQ);
+    %     uniqueDaysQ = unique(dateVecDayOnlyQ);
     
-%     szSubjectName = TableOneSubject.SubjectID;
+    %     szSubjectName = TableOneSubject.SubjectID;
 else
-%     szSubjectName = obj.stSubject.Name;
+    %     szSubjectName = obj.stSubject.Name;
 end
 
 % subIndex = [];
@@ -83,11 +83,11 @@ end
 %         break;
 %     end
 % end
-% 
+%
 % if isempty(subIndex)
 %     return;
 % end
-% 
+%
 % if isempty(subIndex)
 %     error('Subject not found')
 % end
@@ -122,7 +122,6 @@ if ~printMode
     dateVecDayOnlyFeatZCR= dateVecAllFeatZCR-timeofday(dateVecAllFeatZCR);
 end
 
-
 numAvailableDataAllDays = zeros(length(AllDates),1);
 numInvalidDay = zeros(length(AllDates),1);
 percentInvalidDay = zeros(length(AllDates),1);
@@ -136,10 +135,11 @@ fid = fopen(txtFile,'wt');
 
 % Plot all data
 hFig_Overview = figure();
-hFig_Overview.Units = 'centimeters';
-hFig_Overview.PaperPositionMode = 'auto';
-hFig_Overview.Position = [0 0 21 29.7];
-hFig_Overview.PaperPosition = [0 0 21 29.7];
+hFig_Overview.Visible = 'Off';
+% hFig_Overview.Units = 'centimeters';
+% hFig_Overview.PaperPositionMode = 'auto';
+% hFig_Overview.Position = [0 0 21 29.7];
+% hFig_Overview.PaperPosition = [0 0 21 29.7];
 set(hFig_Overview,'renderer','Painters')
 %orient(hFig_Overview,'landscape')
 box off
@@ -306,16 +306,11 @@ for kk = 1:length(AllDates)
         end
     end
     
-    
-
-    
     obj.hProgress.stopTimer();
     obj.cListQuestionnaire{end} = sprintf('\t.building overview -');
     obj.hListBox.Value = obj.cListQuestionnaire;
     obj.hProgress.startTimer();
-    
-    
-    
+   
     if hasSubjectiveData
         
         %% now plot questionaire info
@@ -323,7 +318,7 @@ for kk = 1:length(AllDates)
         
         % Gather statistical data for report
         obj.stAnalysis.NumberOfQuestionnaires(kk) = length(idx);
-
+        
         if ~isempty(idx) && length(idx) > 1
             %plot(dateVecAll(idx)-UniqueDays(kk),kk,'x');
             hold on;
@@ -394,15 +389,15 @@ for kk = 1:length(AllDates)
                     if situation > 4
                         situation = 5;
                     end
-           
-%                     if ~isfield(TableOneSubject, 'ListeningEffort')
+                    
+                    %                     if ~isfield(TableOneSubject, 'ListeningEffort')
                     if ~ismember('ListeningEffort', TableOneSubject.Properties.VariableNames)
                         hProgress.stopTimer();
                         obj.cListQuestionnaire{end} = [];
                         obj.cListQuestionnaire{end} = sprintf('    Questionnaire data incomplete.');
                         obj.hListBox.Value = obj.cListQuestionnaire;
                         close(hFig_Overview);
-                        return; 
+                        return;
                     end
                     
                     LE = TableOneSubject.ListeningEffort(idx(ss));
@@ -519,43 +514,62 @@ for kk = 1:length(AllDates)
     fprintf(fid,'Valid: %s\n', strValidData);
     fprintf(fid,'\n');
     
-   % Gather statistical data for report 
+    % Gather statistical data for report
     obj.stAnalysis.TimePerDay(kk) = round(numAvailableDataAllDays(kk)*60);
-
+    
     % Plot error codes
     lineDistance = 0.1;
     fontSize = 6.5;
     fontColor = [0, 0, 0] + 0.5;
     
     % Line for valid data
-    hLineZero = plot([onlyTimeOfDay(1) onlyTimeOfDay(end)],[yDistance(kk)+5*lineDistance yDistance(kk)+5*lineDistance],'color',[0,0,0]);
+    hLineZero = plot([onlyTimeOfDay(1) onlyTimeOfDay(end)], ...
+        [yDistance(kk)+5*lineDistance yDistance(kk)+5*lineDistance], ...
+        'Color', [0,0,0]);
     set(hLineZero,'LineWidth',0.1);
-    t = text(onlyTimeOfDay(1)-minutes(60),yDistance(kk)+5*lineDistance,'VALID DATA','HorizontalAlignment','right','color',fontColor);
+    t = text(onlyTimeOfDay(1)-minutes(60), yDistance(kk)+5*lineDistance, ...
+        'VALID DATA', 'HorizontalAlignment', 'right', 'Color', ...
+        fontColor, 'BackGroundColor', 'w');
     t.FontSize = fontSize+0.5;
     
     % Line for too high RMS (error code: -1)
-    hLineMinusOne = plot([onlyTimeOfDay(1) onlyTimeOfDay(end)],[yDistance(kk)+4*lineDistance yDistance(kk)+4*lineDistance],'color',fontColor, 'LineStyle','--');
+    hLineMinusOne = plot([onlyTimeOfDay(1) onlyTimeOfDay(end)], ...
+        [yDistance(kk)+4*lineDistance yDistance(kk)+4*lineDistance], ...
+        'Color', fontColor, 'LineStyle', '--');
     set(hLineMinusOne,'LineWidth',0.1);
-    t = text(onlyTimeOfDay(1)-minutes(60),yDistance(kk)+4*lineDistance,'RMS too high','HorizontalAlignment','right','color',fontColor);
+    t = text(onlyTimeOfDay(1)-minutes(60), yDistance(kk)+4*lineDistance, ...
+        'RMS too high', 'HorizontalAlignment', 'right', 'Color', ...
+        fontColor, 'BackGroundColor', 'w');
     t.FontSize = fontSize;
     
     % Line for too low RMS (error code: -2)
-    hLineMinusTwo = plot([onlyTimeOfDay(1) onlyTimeOfDay(end)],[yDistance(kk)+3*lineDistance yDistance(kk)+3*lineDistance],'color',fontColor, 'LineStyle','--');
+    hLineMinusTwo = plot([onlyTimeOfDay(1) onlyTimeOfDay(end)], ...
+        [yDistance(kk)+3*lineDistance yDistance(kk)+3*lineDistance], ...
+        'Color', fontColor, 'LineStyle', '--');
     set(hLineMinusTwo,'LineWidth',0.1);
-    t = text(onlyTimeOfDay(1)-minutes(60),yDistance(kk)+3*lineDistance,'RMS too low','HorizontalAlignment','right','color',fontColor);
+    t = text(onlyTimeOfDay(1)-minutes(60), yDistance(kk)+3*lineDistance, ...
+        'RMS too low', 'HorizontalAlignment', 'right', 'Color', ...
+        fontColor, 'BackGroundColor', 'w');
     t.FontSize = fontSize;
     
     % Line for mono/no stereo signal (error code: -3)
-    hLineMinusThree = plot([onlyTimeOfDay(1) onlyTimeOfDay(end)],[yDistance(kk)+2*lineDistance yDistance(kk)+2*lineDistance],'color',fontColor, 'LineStyle','--');
+    hLineMinusThree = plot([onlyTimeOfDay(1) onlyTimeOfDay(end)], ...
+        [yDistance(kk)+2*lineDistance yDistance(kk)+2*lineDistance], ...
+        'Color', fontColor, 'LineStyle', '--');
     set(hLineMinusThree,'LineWidth',0.1);
-    t = text(onlyTimeOfDay(1)-minutes(60),yDistance(kk)+2*lineDistance,'no stereo signal','HorizontalAlignment','right','color',fontColor);
+    t = text(onlyTimeOfDay(1)-minutes(60), yDistance(kk)+2*lineDistance, ...
+        'no stereo signal', 'HorizontalAlignment', 'right', 'Color', ...
+        fontColor, 'BackGroundColor', 'w');
     t.FontSize = fontSize;
     
     % Line for invalid coherence (error code: -4)
-    hLineMinusFour = plot([onlyTimeOfDay(1) onlyTimeOfDay(end)],[yDistance(kk)+1*lineDistance yDistance(kk)+1*lineDistance],'color',fontColor, 'LineStyle','--');
+    hLineMinusFour = plot([onlyTimeOfDay(1) onlyTimeOfDay(end)], ...
+        [yDistance(kk)+1*lineDistance yDistance(kk)+1*lineDistance], ...
+        'Color',fontColor, 'LineStyle','--');
     set(hLineMinusFour,'LineWidth',0.1);
-    t = text(onlyTimeOfDay(1)-minutes(60),yDistance(kk)+1*lineDistance,'coherence invalid','HorizontalAlignment','right','color',fontColor);
-    t.FontSize = fontSize;
+    t = text(onlyTimeOfDay(1)-minutes(60), yDistance(kk)+1*lineDistance, ...
+        'coherence invalid', 'HorizontalAlignment', 'right', ...
+        'Color', fontColor, 'BackGroundColor', 'w', 'FontSize', fontSize);
     
     % Plot error codes to the figure
     
@@ -602,16 +616,40 @@ end
 set(gca,'YTick',1:length(AllDates));
 set(gca,'YTickLabel',datestr(AllDates));
 
-title([obj.stSubject.Name, ' data availability']);
+% title([obj.stSubject.Name, ' data availability']);
 ylim([1-0.5 length(AllDates)+1]);
 
+hFig_Overview.Color = 'w';
+
+nWidth_Overview = 6/2.54;
+nHeight_Overview = 8.5/2.54;
+
+tmp_pos = get(gcf, 'Position');
+hFig_Overview.Position = [tmp_pos(1), tmp_pos(2), ...
+    nWidth_Overview*obj.stPrint.DPI, nHeight_Overview*obj.stPrint.DPI];
+set(gca, 'FontSize', obj.stPrint.FontSize, ...
+    'LineWidth', 1);
+hFig_Overview.InvertHardcopy = obj.stPrint.InvertHardcopy;
+hFig_Overview.PaperUnits = 'inches';
+tmp_papersize = hFig_Overview.PaperSize;
+tmp_left = (tmp_papersize(1) - nWidth_Overview)/2;
+tmp_bottom = (tmp_papersize(2) - nHeight_Overview)/2;
+tmp_figuresize = [tmp_left, tmp_bottom, nWidth_Overview, ...
+    nHeight_Overview];
+hFig_Overview.PaperPosition = tmp_figuresize;
+
+export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, ...
+    '17_' obj.stSubject.Name, '.pdf'], '-native');
+
 % Save the figure as PDF and EPS ('016_' for page numbering in PDF)
-print(hFig_Overview,'-fillpage',fullfile(szGraphicsDir,...
-    ['17_' obj.stSubject.Name]),'-dpdf');
+% print(hFig_Overview,'-fillpage',fullfile(szGraphicsDir,...
+%     ['17_' obj.stSubject.Name]),'-dpdf');
+
+
 % saveas(hFig_Overview,fullfile(szGraphicsDir,...
 %     ['17_' obj.stSubject.Name]),'epsc')
 
-close(gcf);
+close(hFig_Overview);
 
 % Write information on validity per day to file
 totalHours = num2str(round(10*sum(numAvailableDataAllDays)/60)/10);
