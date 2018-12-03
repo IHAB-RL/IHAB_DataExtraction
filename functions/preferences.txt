@@ -1,1 +1,2 @@
-MinPartLength[min]: 0
+MinPartLength[min]: 10
+Test: 14

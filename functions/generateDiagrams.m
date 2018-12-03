@@ -27,7 +27,6 @@ obj.cListQuestionnaire{end} = sprintf('\t.creating profile -');
 obj.hListBox.Value = obj.cListQuestionnaire;
 hProgress = BlindProgress(obj);
 
-
 % get table
 load([obj.stSubject.Folder filesep, ...
     'Questionnaires_', obj.stSubject.Name, '.mat'], 'QuestionnairesTable')
@@ -119,22 +118,10 @@ tmp_figuresize = [tmp_left, tmp_bottom, nWidth_Pie, ...
     nHeight_Pie];
 hFig_Pie.PaperPosition = tmp_figuresize;
 
-% title(['Personal Profile: ', obj.stSubject.Name, newline newline]);
-% print(hFig_Pie, [obj.stSubject.Folder, filesep, 'graphics', filesep, num2str(figure_idx, '%2.2d') '_Profile_Situations'], '-depsc','-r300')
-
 export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, ...
     num2str(figure_idx, '%2.2d') '_Profile_Situations', '.pdf'], '-native');
 
-
 clf;
-
-
-
-
-
-
-
-
 
 % loop over all 3 Parameters
 for parameters_idx = 1 : 3
@@ -147,13 +134,16 @@ for parameters_idx = 1 : 3
     for situations_idx = 1 : 5
         
         % get parameter from table
-        temp_table = QuestionnairesTable.((eval(sprintf('parameter_variable{%d}', parameters_idx))));
-        on_situation = temp_table(QuestionnairesTable.Situation == situations_idx);
+        temp_table = QuestionnairesTable.((eval(sprintf( ...
+            'parameter_variable{%d}', parameters_idx))));
+        on_situation = temp_table( ...
+            QuestionnairesTable.Situation == situations_idx);
         
         % loop over all 7 options
         for idx = 1 : 7
             if ~isempty(find((on_situation) == idx, 1))
-                parameters{1, situations_idx}{idx} = length(find((on_situation) == idx));
+                parameters{1, situations_idx}{idx} = ...
+                    length(find((on_situation) == idx));
             else
                 parameters{1, situations_idx}{idx} = 0;
             end
@@ -163,7 +153,8 @@ for parameters_idx = 1 : 3
         % there's probably a better way to do this...
         k = 1; kk = 2;
         for idx = 1 : 3
-            parameters{2, situations_idx}{idx} = sum([parameters{1, situations_idx}{k : kk}]);
+            parameters{2, situations_idx}{idx} = ...
+                sum([parameters{1, situations_idx}{k : kk}]);
             if idx == 1
                 k = 3; kk = 5;
             elseif idx == 2
@@ -171,7 +162,8 @@ for parameters_idx = 1 : 3
             end
         end
         
-        parameters{2, situations_idx} = cell2mat(parameters{2, situations_idx});
+        parameters{2, situations_idx} = ...
+            cell2mat(parameters{2, situations_idx});
         
     end
     
@@ -191,8 +183,12 @@ for parameters_idx = 1 : 3
     for idx = 1:size(parameters_plot, 2)
         bar_handle(idx).FaceColor = bar_colors(idx, :);
     end
-%     title([eval(sprintf('parameter_name{%d}', parameters_idx)) ' getrennt nach Situation']);
-
+    
+    if obj.bTitles
+        title([eval(sprintf('parameter_name{%d}', parameters_idx)), ...
+            ' getrennt nach Situation']);
+    end
+    
     grid minor;
     ylabel('Anzahl');
 
@@ -227,21 +223,13 @@ for parameters_idx = 1 : 3
         nHeight_Situations];
     hFig_Situations.PaperPosition = tmp_figuresize;
     
-    % PDF
-%     print(hFig_Situations, '-bestfit', [obj.stSubject.Folder, filesep, 'graphics', filesep, num2str(figure_idx, '%2.2d')...
-%         '_Profile_Situation_' num2str(parameters_idx)],'-dpdf', '-r300')
-%     
-    export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, num2str(figure_idx, '%2.2d')...
-        '_Profile_Situation_' num2str(parameters_idx), '.pdf'], '-native');
+    export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, ...
+        num2str(figure_idx, '%2.2d'), '_Profile_Situation_', ...
+        num2str(parameters_idx), '.pdf'], '-native');
     
     clf;
     
-    
-    
-    
-    
-    
-    
+   
     %% Uebersicht der mittleren Bewertungen nach Aktivitaet
     
     
@@ -251,8 +239,10 @@ for parameters_idx = 1 : 3
     for activities_idx = 1 : 29%27
         
         % Get parameter from table
-        temp_table = QuestionnairesTable.((eval(sprintf('parameter_variable{%d}', parameters_idx))));
-        on_activity = temp_table(QuestionnairesTable.Activity == activities_idx);
+        temp_table = QuestionnairesTable.((...
+            eval(sprintf('parameter_variable{%d}', parameters_idx))));
+        on_activity = temp_table(...
+            QuestionnairesTable.Activity == activities_idx);
         
         % Loop over all 7 options
         numerator = 0;
@@ -271,7 +261,8 @@ for parameters_idx = 1 : 3
         % Divide in Difficulties
         k = 1; kk = 2;
         for idx = 1 : 3
-            parameters{4, activities_idx}{idx} = sum([parameters{3, activities_idx}{k : kk}]);
+            parameters{4, activities_idx}{idx} = sum([parameters{3, ...
+                activities_idx}{k : kk}]);
             if idx == 1
                 k = 3; kk = 5;
             elseif idx == 2
@@ -279,9 +270,9 @@ for parameters_idx = 1 : 3
             end
         end
         
-        parameters{4, activities_idx} = cell2mat(parameters{4, activities_idx});
+        parameters{4, activities_idx} = ...
+            cell2mat(parameters{4, activities_idx});
     end
-    
     
     % Prepare for plotting
     parameters_plot = reshape([parameters{4, :}], 3, 29)'; %27)';
@@ -299,13 +290,17 @@ for parameters_idx = 1 : 3
     hFig_Activity.Color = 'w';
     
     plot(mean_plot, 1:length(mean_plot), 'linewidth', 2)
-%     title([eval(sprintf('parameter_name_mean{%d}', parameters_idx))...
-%         ' ' eval(sprintf('parameter_name{%d}', parameters_idx)) ' getrennt nach Aktivität']);
+    
+    if obj.bTitles
+        title([eval(sprintf('parameter_name_mean{%d}', parameters_idx)), ...
+            ' ' eval(sprintf('parameter_name{%d}', parameters_idx)), ... 
+            ' getrennt nach Aktivität']);
+    end
+    
     grid minor
     yticks(1 : length(mean_plot));
     xticks(1 : 7);
-%     xtickangle(45);
-    
+
      % X Tick Labels
     cSituationNames = eval(sprintf('scales(%d,:)', parameters_idx));
     for iName = 1:length(cSituationNames)
@@ -344,29 +339,15 @@ for parameters_idx = 1 : 3
     tmp_figuresize = [tmp_left, tmp_bottom, nWidth_Activity, ...
         nHeight_Activity];
     hFig_Activity.PaperPosition = tmp_figuresize;
-    
-    % PDF
-%     print(hFig_Situations, '-bestfit', [obj.stSubject.Folder, filesep, 'graphics', filesep, num2str(figure_idx, '%2.2d')...
-%         '_Profile_Situation_' num2str(parameters_idx)],'-dpdf', '-r300')
-%     
-    export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, num2str(figure_idx, '%2.2d')...
-        '_Profile_Activity_Mean_' num2str(parameters_idx), '.pdf'], '-native');
-    % PDF
-%     print(hFig_Activity,'-fillpage', [obj.stSubject.Folder, filesep, 'graphics', filesep, num2str(figure_idx, '%2.2d')...
-%         '_Profile_Activity_Mean_' num2str(parameters_idx)],'-dpdf')
-    
+
+    export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, ...
+        num2str(figure_idx, '%2.2d'), '_Profile_Activity_Mean_', ...
+        num2str(parameters_idx), '.pdf'], '-native');
+
     clf;
     
-    
-    
-    
-    
-    
-    
     % Bar Graph
-    
-    
-    
+   
     figure_idx = figure_idx+1;
     hFig_Activity2 = figure();
     hFig_Activity2.Visible = 'Off';
@@ -375,7 +356,12 @@ for parameters_idx = 1 : 3
     for idx = 1:size(parameters_plot, 2)
         bar_handle(idx).FaceColor = bar_colors(idx,:);
     end
-%     title([eval(sprintf('parameter_name{%d}', parameters_idx)) ' getrennt nach Aktivität']);
+    
+    if obj.bTitles
+        title([eval(sprintf('parameter_name{%d}', parameters_idx)), ...
+            ' getrennt nach Aktivität']);
+    end
+    
     grid minor;
     xlabel('Anzahl');
     legend(difficulties, 'Location', 'Best', 'Orientation', 'Vertical');
@@ -412,28 +398,24 @@ for parameters_idx = 1 : 3
         nHeight_Activity2];
     hFig_Activity2.PaperPosition = tmp_figuresize;
     
-    
-    % PDF
-%     print(hFig_Activity2, '-fillpage', [obj.stSubject.Folder, filesep, 'graphics', filesep num2str(figure_idx, '%2.2d')...
-%         '_Profile_Activity_' num2str(parameters_idx)],'-dpdf')
-    
-    export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep num2str(figure_idx, '%2.2d')...
-    	'_Profile_Activity_' num2str(parameters_idx), '.pdf'], '-native');
+    export_fig([obj.stSubject.Folder, filesep, 'graphics', ...
+        filesep num2str(figure_idx, '%2.2d'), '_Profile_Activity_', ...
+        num2str(parameters_idx), '.pdf'], '-native');
     
     clf;
     
     
-    
-    
-    
-    
     %% Uebersicht der mittleren Bewertung nach Signalquelle
+    
+    
     % Loop over all 24 Sources
     for sources_idx = 1 : 32 %24
         
         % Get parameter from table
-        temp_table = QuestionnairesTable.((eval(sprintf('parameter_variable{%d}', parameters_idx))));
-        On_Source = temp_table((QuestionnairesTable.Target_Source) == sources_idx);
+        temp_table = QuestionnairesTable.((eval(sprintf(...
+            'parameter_variable{%d}', parameters_idx))));
+        On_Source = temp_table((...
+            QuestionnairesTable.Target_Source) == sources_idx);
         
         % Loop over all 7 options
         numerator = 0;
@@ -452,7 +434,8 @@ for parameters_idx = 1 : 3
         % Divide in Difficulties
         k = 1; kk = 2;
         for idx = 1 : 3
-            parameters{6, sources_idx}{idx} = sum([parameters{5, sources_idx}{k : kk}]);
+            parameters{6, sources_idx}{idx} = ...
+                sum([parameters{5, sources_idx}{k : kk}]);
             if idx == 1
                 k = 3; kk = 5;
             elseif idx == 2
@@ -481,16 +464,19 @@ for parameters_idx = 1 : 3
     hFig_Source.Color = 'w';
    
     plot(mean_plot, 1:length(mean_plot), 'linewidth', 2)
-%     title([eval(sprintf('parameter_name_mean{%d}', parameters_idx))...
-%         ' '  eval(sprintf('parameter_name{%d}', parameters_idx)) ' getrennt nach Signalquellen']);
+    
+    if obj.bTitles
+        title([eval(sprintf('parameter_name_mean{%d}', parameters_idx)), ...
+            ' ',  eval(sprintf('parameter_name{%d}', parameters_idx)), ...
+            ' getrennt nach Signalquellen']);
+    end
+    
     grid minor
     yticks(1:length(mean_plot));
     xticks(1:7);
     xtickangle(45);
     set(gca, 'YLim', [0.5 length(mean_plot)+0.5]);
-%     set(gca, 'YTickLabel', source_name(options_idx));
     set(gca, 'XLim', [0.5 7.5]);
-%     set(gca, 'XTickLabel', eval(sprintf('scales(%d,:)', parameters_idx)))
     
     % X Tick Labels
     cSituationNames = eval(sprintf('scales(%d,:)', parameters_idx));
@@ -526,28 +512,27 @@ for parameters_idx = 1 : 3
     tmp_figuresize = [tmp_left, tmp_bottom, nWidth_Source, ...
         nHeight_Source];
     hFig_Source.PaperPosition = tmp_figuresize;
-    
-    
-    % PDF
-%     print(hFig_Source, '-fillpage', [obj.stSubject.Folder, filesep, 'graphics', filesep, num2str(figure_idx, '%2.2d')...
-%         '_Profile_Source_Mean_' num2str(parameters_idx)],'-dpdf')
-    
-    export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, num2str(figure_idx, '%2.2d')...
-        '_Profile_Source_Mean_' num2str(parameters_idx), '.pdf'], '-native');
+
+    export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, ...
+        num2str(figure_idx, '%2.2d'), '_Profile_Source_Mean_', ...
+        num2str(parameters_idx), '.pdf'], '-native');
     
     clf;
     
+    % Regular Plot
     
-    
-    
-    % Plot
     figure_idx = figure_idx+1;
     hFig_Source2 = figure();
     hFig_Source2.Visible = 'Off';
-     hFig_Source2.Color = 'w';
+    hFig_Source2.Color = 'w';
     
     bar_handle = barh(parameters_plot, 1);
-%     title([eval(sprintf('parameter_name{%d}', parameters_idx)) ' getrennt nach Signalquellen']);
+    
+    if obj.bTitles
+        title([eval(sprintf('parameter_name{%d}', parameters_idx)), ...
+            ' getrennt nach Signalquellen']);
+    end
+    
     for idx = 1:size(parameters_plot,2)
         bar_handle(idx).FaceColor = bar_colors(idx,:);
     end
@@ -555,9 +540,7 @@ for parameters_idx = 1 : 3
     xlabel('Anzahl');
     legend(difficulties,...
         'Location', 'best', 'Orientation', 'vertical');
-%     set(gca, 'YTickLabel', source_name(options_idx));
     set(gca, 'XLim', [0 (max(parameters_plot(:)) + 0.5)]);
-    
     
     % Y Tick Labels
     cSituationNames = source_name(options_idx);
@@ -584,13 +567,10 @@ for parameters_idx = 1 : 3
     tmp_figuresize = [tmp_left, tmp_bottom, nWidth_Source2, ...
         nHeight_Source2];
     hFig_Source2.PaperPosition = tmp_figuresize;
-    
-    % PDF
-%     print(hFig_Source2, '-fillpage', [obj.stSubject.Folder, filesep, 'graphics', filesep, num2str(figure_idx, '%2.2d')...
-%         '_Profile_Source_' num2str(parameters_idx)],'-dpdf')
-    
-    export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, num2str(figure_idx, '%2.2d')...
-        '_Profile_Source_' num2str(parameters_idx), '.pdf'], '-native');
+
+    export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, ...
+        num2str(figure_idx, '%2.2d'), '_Profile_Source_', ...
+        num2str(parameters_idx), '.pdf'], '-native');
     
     clf;
     
