@@ -136,7 +136,7 @@ if obj.bIncludeObjectiveData
     % Fingerprints are displayed in landscape mode
     nRotation = 90;
     sFingerprints = strrep(sFingerprints, '$rotation$', num2str(nRotation));
-    sWidth = '1.00';
+    sWidth = 'width=1.50\textwidth,';
     sFingerprints = strrep(sFingerprints, '$width$', sWidth);
 end
 

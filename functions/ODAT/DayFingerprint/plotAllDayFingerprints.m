@@ -39,7 +39,7 @@ load (szFullFile)
 
 % szTestSubject =  szSubject;
 % caAllSubjects = getallsubjects(szBaseDir);
-% 
+%
 % correctIdx = 0;
 % for allSubsIdx = 1:numel(caAllSubjects)
 %     if strcmpi(caAllSubjects{allSubsIdx}.SubjectID, szTestSubject)
@@ -210,17 +210,20 @@ end
 %% objective Data
 %
 % figure('Units','normalized','PaperPosition',[0.15 0.05 0.5 0.85]);
-figure('Units','normalized','PaperPosition',[0 0 1 1],'Position',[0 0 1 1]);
+hFig_Fingerprint = figure('Units','normalized','PaperPosition',[0 0 1 1],'Position',[0 0 1 1]);
 
-mTextTitle = uicontrol(gcf,'style','text');
-set(mTextTitle, 'Units','normalized','Position', [0.2 0.91 0.6 0.05], ...
-    'String',[obj.stSubject.Name, ' ', datestr(desiredDay)], 'FontSize', 16);
-mTextOVD = uicontrol(gcf,'style','text');
-set(mTextOVD, 'Units','normalized','Position', [0.9 0.76 0.1 0.05], ...
-    'String','OVD','FontSize',12);
-mTextRMS = uicontrol(gcf,'style','text');
-set(mTextRMS, 'Units','normalized','Position', [0.9 0.092 0.1 0.05], ...
-    'String','RMS','FontSize',12);
+mTextTitle = uicontrol(hFig_Fingerprint, 'Style', 'Text');
+set(mTextTitle, 'Units', 'normalized', 'Position', [0.2 0.91 0.6 0.05], ...
+    'String',[obj.stSubject.Name, ' ', datestr(desiredDay)], 'FontSize', 16, ...
+    'BackGroundColor', 'w')
+
+mTextOVD = uicontrol(hFig_Fingerprint, 'Style', 'Text');
+set(mTextOVD, 'Units', 'normalized', 'Position', [0.96 0.78 0.03 0.03], ...
+    'String', 'OVD', 'FontSize', 12, 'BackGroundColor', 'w');
+
+mTextRMS = uicontrol(hFig_Fingerprint,'style','text');
+set(mTextRMS, 'Units', 'normalized', 'Position', [0.96 0.117 0.03 0.03], ...
+    'String', 'RMS', 'FontSize', 12, 'BackGroundColor', 'w');
 
 %% Erst die Coherence
 axCoher = axes('Position',[GUI_xStart 0.55 GUI_xAxesWidth 0.18]);
@@ -252,6 +255,9 @@ drawnow;
 
 PosVecCoher = get(axCoher,'Position');
 
+
+
+
 %% RMS und OVD
 
 axRMS = axes('Position',[GUI_xStart 0.09 PosVecCoher(3) 0.09]);
@@ -264,11 +270,13 @@ axRMS.YLabel = ylabel('dB SPL');
 clear FinaltimeVecRMS;
 clear FinalDataRMS;
 
+
 %% OVD
 axOVD = axes('Position',[GUI_xStart 0.75  PosVecCoher(3) 0.1]);
 hOVD = plot(datenum(FinaltimeVecPSD),FinalDataMeanCohe);
 axOVD.YLabel = ylabel('mean real coh.');
 clear FinalDataMeanCohe;
+
 hOVD.Color = [0 0 0];
 hold on;
 idx_fixedThresh = find(FinalDataOVD_fixed>0.5);
@@ -329,7 +337,7 @@ if hstart ~= hend
     XTicksTime = FinaltimeVecPSD;
     
     if (XTicksTime(end).Minute - XTicksTime(1).Minute < 10) % UK
-       return; 
+        return;
     end
     
     XTicksTime(:).Minute = 0;
@@ -352,6 +360,9 @@ set(axCoher,'XTick',XTicksTime);
 set(axCoher,'XTickLabel',[]);
 set(axPxx,'XTick',datenum(XTicksTime));
 set(axPxx,'XTickLabel',[]);
+
+
+
 
 %%
 if hasSubjectiveData
@@ -548,6 +559,8 @@ if bPrint
 end
 
 clf;
+
+end
 
 %% Kalibrierungsdaten
 %set(axQ,'YTick',[]);

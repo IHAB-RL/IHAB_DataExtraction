@@ -13,9 +13,9 @@ classdef IHABdata < handle
         stComparison;
         stPrint;
         stLaTeXCommands;
-        bComparison;
         bIncludeObjectiveData = false;
         bTitles = false;
+        nCompare_Run;
         
         sTitleFig1 = 'IHAB data';
         sTitleFig2 = 'Legend';
@@ -246,13 +246,10 @@ classdef IHABdata < handle
             
             obj.mColors = getColors();
             
-            obj.getPreferencesFromFile();
-            
-            obj.bComparison = false;
-            
             % Create the GUI
             obj.gui();
             
+            obj.getPreferencesFromFile();
         end
         
         function [] = gui(obj)
@@ -1351,12 +1348,15 @@ classdef IHABdata < handle
             hFid = fopen(['functions', filesep, obj.sFileName_Preferences]);
             cTemp = textscan(hFid, '%s%f');
             
+            obj.stPreferences.MinPartLength = cTemp{2}(1);
+            
             if cTemp{2}(1) == -1
                 obj.bIncludeObjectiveData = false;
-                obj.stPreferences.MinPartLength = 0;
+                obj.hButton_MinPartLength.Text = 'n/a';
             else
-                obj.stPreferences.MinPartLength = cTemp{2}(1);
                 obj.bIncludeObjectiveData = true;
+                obj.hButton_MinPartLength.Text = ...
+                    num2str(obj.stPreferences.MinPartLength);
             end
             
             obj.stPreferences.Test = cTemp{2}(2);
@@ -1461,7 +1461,6 @@ classdef IHABdata < handle
             obj.stPreferences.MinPartLength = obj.hEditText_PartLength.Value;
             
             if obj.stPreferences.MinPartLength == -1
-                obj.stPreferences.MinPartLength = 0;
                 obj.hButton_MinPartLength.Text = 'n/a';
                 obj.cListQuestionnaire{end+1} =...
                     sprintf('     Objective data excluded from analysis');
@@ -1485,27 +1484,22 @@ classdef IHABdata < handle
         
         function [] = compareEMA(obj, ~, ~)
             
-            %             obj.stComparison.Folder01 = uigetdir(pwd, 'Please specify directory of EMA #1');
-            %             obj.stComparison.Folder02 = uigetdir(pwd, 'Please specify directory of EMA #2');
-            
+            % Omit objective data for comparison
+            nTempIncludeObjectiveData = obj.bIncludeObjectiveData;
+            obj.bIncludeObjectiveData = false;
             
             obj.stComparison = [];
-            obj.stComparison(1).Folder = 'F:\IHAB-rl_Auswertung\IHAB_1_EMA2018\KE07IN22_180607_mh';
-            obj.stComparison(2).Folder = 'F:\IHAB-rl_Auswertung\IHAB_2_EMA2018\KE07IN22_180724_aw';
-            
-            
+            obj.stComparison(1).Folder = obj.stSubject.Folder;
+            obj.stComparison(2).Folder = uigetdir(pwd, 'Please specify directory of EMA #2');
+
             tic;
-            
-            obj.bComparison = true;
-            
             
             for iEMA = 1:2
                 
                 obj.bClear = false;
                 obj.clearEntries();
-                
-                %% EMA01
-                
+                obj.nCompare_Run = iEMA;
+
                 sFolder = obj.stComparison(iEMA).Folder;
                 
                 % Automatically extract subject info from folder name
@@ -1571,41 +1565,40 @@ classdef IHABdata < handle
                 obj.hProgress.startTimer();
                 
                 % Generate profile PDF's and Fingerprints
-                generateProfile(obj);
+                generateProfile_Comparison(obj);
                 
                 obj.stComparison(iEMA).Analysis = obj.stAnalysis;
                 
-                
-                
             end
-            
-            
             
             % OUTPUT INFO
             obj.hProgress.stopTimer();
             obj.cListQuestionnaire{end} = sprintf('\t.merging files -');
             obj.hListBox.Value = obj.cListQuestionnaire;
             obj.hProgress.startTimer();
-            
-            
-            
+
             mergeAndCompilePDFLatex_Comparison(obj);
-            
-            
-            
-            toc;
-            
-            
-            
-            
-            
-            
-            
+
+            % OUTPUT INFO
+            obj.hProgress.stopTimer();
+            obj.cListQuestionnaire{end} = sprintf('\t.copying files -');
+            obj.hListBox.Value = obj.cListQuestionnaire;
+            obj.hProgress.startTimer();
             
             sDataFolder_Output = [pwd, filesep, 'Overviews'];
             if ~exist(sDataFolder_Output, 'dir')
                 mkdir(sDataFolder_Output);
             end
+            
+            % Filename of Profile
+            sResult_PDF_Profile_New = [obj.sFolderMain, filesep, 'Overviews', filesep,...
+                'Comparison_', obj.stSubject.Name, '_', datestr(date, 'dd.mm.yy'), '.pdf'];
+            sResult_PDF_Profile = [obj.sFolderMain, filesep, 'profile.pdf'];
+            movefile(sResult_PDF_Profile, sResult_PDF_Profile_New);
+            
+            obj.hProgress.stopTimer();
+            
+            toc;
             
             obj.hProgress.stopTimer();
             
@@ -1615,25 +1608,11 @@ classdef IHABdata < handle
             obj.hListBox.Value = obj.cListQuestionnaire;
             
             obj.hProgress.killTimer();
-            
-            obj.bComparison = false;
-            
-            
-            
+           
+            % Reset inclusion of objective data
+            obj.bIncludeObjectiveData = nTempIncludeObjectiveData;
+           
         end
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         function [] = analyseData(obj, ~, ~)
             
@@ -1694,8 +1673,7 @@ classdef IHABdata < handle
             
             % Filename of Profile
             sResult_PDF_Profile_New = [obj.sFolderMain, filesep, 'Overviews', filesep,...
-                'Personal_Profile_', obj.stSubject.Name, '_Aku_', datestr(date, 'dd.mm.yy'), '.pdf'];
-            
+                'Personal_Profile_', obj.stSubject.Name, '_', datestr(date, 'dd.mm.yy'), '.pdf'];
             sResult_PDF_Profile = [obj.sFolderMain, filesep, 'profile.pdf'];
             movefile(sResult_PDF_Profile, sResult_PDF_Profile_New);
             
@@ -1707,7 +1685,7 @@ classdef IHABdata < handle
             obj.hListBox.Value = obj.cListQuestionnaire;
             
             obj.hProgress.killTimer();
-            
+           
             delete(timerfindall);
             
         end

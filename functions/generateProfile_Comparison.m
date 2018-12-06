@@ -1,4 +1,4 @@
-function generateProfileComparison(obj)
+function generateProfile_Comparison(obj)
 
     % Combine all fingerprints within szDir into one pdf file.
     %
@@ -24,7 +24,7 @@ function generateProfileComparison(obj)
     if ~isempty(obj.stSubject.Folder)
         
         %% Personal Profile:
-        generateDiagramsComparison(obj);
+        generateDiagrams_Comparison(obj);
         
         if obj.bIncludeObjectiveData        
            
