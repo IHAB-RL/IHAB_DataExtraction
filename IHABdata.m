@@ -149,7 +149,7 @@ classdef IHABdata < handle
         hEditText_PartLength;
         hLabel_PartLength;
         sLabel_MinPartLength_Text = ...
-            sprintf('Please enter minimum\npart length [min]:');
+            sprintf('Please enter minimum\npart length [min] (-1 -> n/a):');
         sLabel_MinPartLength_Enter = 'Enter';
         
         cListQuestionnaire = {' '};
@@ -1482,6 +1482,33 @@ classdef IHABdata < handle
             obj.compareEMA();
         end
         
+        function stOut = extractSubjectInfoFromFolder(~, sFolder)
+           
+            cPathName = split(sFolder, '\');
+            sInfo = cPathName{end};
+            stOut = struct();
+
+            cSubjectData = regexp(sInfo, ...
+                '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
+
+            if isempty(cSubjectData{1}{5})
+                cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
+            else
+                stOut.Appendix = cSubjectData{1}{6};
+                cSubjectData = {cSubjectData{1}{2:4}};
+            end
+
+            if isValidSubjectData(cSubjectData)
+                
+                stOut.Name = cSubjectData{1};
+                stOut.Date = cSubjectData{2};
+                stOut.Experimenter = cSubjectData{3};
+                stOut.Folder = sFolder;
+                stOut.Code = sInfo;
+                
+            end 
+        end
+        
         function [] = compareEMA(obj, ~, ~)
             
             % Omit objective data for comparison
@@ -1491,7 +1518,19 @@ classdef IHABdata < handle
             obj.stComparison = [];
             obj.stComparison(1).Folder = obj.stSubject.Folder;
             obj.stComparison(2).Folder = uigetdir(pwd, 'Please specify directory of EMA #2');
-
+            
+            if obj.stComparison(2).Folder == 0
+                return;
+            end
+            
+            stInfo1 = obj.extractSubjectInfoFromFolder(obj.stComparison(1).Folder);
+            stInfo2 = obj.extractSubjectInfoFromFolder(obj.stComparison(2).Folder);
+            
+            if ~strcmp(stInfo1.Name, stInfo2.Name)
+                errordlg('Subjects must be the same.', 'Subject mismatch');
+                return;
+            end
+            
             tic;
             
             for iEMA = 1:2
@@ -1499,7 +1538,7 @@ classdef IHABdata < handle
                 obj.bClear = false;
                 obj.clearEntries();
                 obj.nCompare_Run = iEMA;
-
+                
                 sFolder = obj.stComparison(iEMA).Folder;
                 
                 % Automatically extract subject info from folder name
@@ -1551,7 +1590,6 @@ classdef IHABdata < handle
                 obj.cListQuestionnaire{end+1} = ...
                     sprintf('[  ] Performing comparison: %s (%d/2)', obj.stSubject.Name, iEMA);
                 obj.hListBox.Value = obj.cListQuestionnaire;
-                drawnow;
                 
                 obj.hProgress = BlindProgress(obj);
                 
@@ -1576,9 +1614,9 @@ classdef IHABdata < handle
             obj.cListQuestionnaire{end} = sprintf('\t.merging files -');
             obj.hListBox.Value = obj.cListQuestionnaire;
             obj.hProgress.startTimer();
-
+            
             mergeAndCompilePDFLatex_Comparison(obj);
-
+            
             % OUTPUT INFO
             obj.hProgress.stopTimer();
             obj.cListQuestionnaire{end} = sprintf('\t.copying files -');
@@ -1598,20 +1636,16 @@ classdef IHABdata < handle
             
             obj.hProgress.stopTimer();
             
-            toc;
-            
-            obj.hProgress.stopTimer();
-            
             % OUTPUT INFO
             obj.cListQuestionnaire{end-1} = sprintf('[x] Performing comparison: %s', obj.stSubject.Name);
             obj.cListQuestionnaire{end} = sprintf('     Finished in %s\n', formatSeconds(round(toc)));
             obj.hListBox.Value = obj.cListQuestionnaire;
             
             obj.hProgress.killTimer();
-           
+            
             % Reset inclusion of objective data
             obj.bIncludeObjectiveData = nTempIncludeObjectiveData;
-           
+            
         end
         
         function [] = analyseData(obj, ~, ~)
@@ -1685,7 +1719,7 @@ classdef IHABdata < handle
             obj.hListBox.Value = obj.cListQuestionnaire;
             
             obj.hProgress.killTimer();
-           
+            
             delete(timerfindall);
             
         end

@@ -522,6 +522,8 @@ for kk = 1:length(AllDates)
     fontSize = 6.5;
     fontColor = [0, 0, 0] + 0.5;
     
+    nMargin = 2.25-0.25*obj.stAnalysis.NumberOfDays;
+    
     % Line for valid data
     hLineZero = plot([onlyTimeOfDay(1) onlyTimeOfDay(end)], ...
         [yDistance(kk)+5*lineDistance yDistance(kk)+5*lineDistance], ...
@@ -529,7 +531,8 @@ for kk = 1:length(AllDates)
     set(hLineZero,'LineWidth',0.1);
     t = text(onlyTimeOfDay(1)-minutes(60), yDistance(kk)+5*lineDistance, ...
         'VALID DATA', 'HorizontalAlignment', 'right', 'Color', ...
-        fontColor, 'BackGroundColor', 'w');
+        fontColor, 'BackGroundColor', 'w', ...
+        'FontSize', fontSize, 'Margin', nMargin);
     t.FontSize = fontSize+0.5;
     
     % Line for too high RMS (error code: -1)
@@ -539,7 +542,8 @@ for kk = 1:length(AllDates)
     set(hLineMinusOne,'LineWidth',0.1);
     t = text(onlyTimeOfDay(1)-minutes(60), yDistance(kk)+4*lineDistance, ...
         'RMS too high', 'HorizontalAlignment', 'right', 'Color', ...
-        fontColor, 'BackGroundColor', 'w');
+        fontColor, 'BackGroundColor', 'w', ...
+        'FontSize', fontSize, 'Margin', nMargin);
     t.FontSize = fontSize;
     
     % Line for too low RMS (error code: -2)
@@ -549,7 +553,8 @@ for kk = 1:length(AllDates)
     set(hLineMinusTwo,'LineWidth',0.1);
     t = text(onlyTimeOfDay(1)-minutes(60), yDistance(kk)+3*lineDistance, ...
         'RMS too low', 'HorizontalAlignment', 'right', 'Color', ...
-        fontColor, 'BackGroundColor', 'w');
+        fontColor, 'BackGroundColor', 'w', ...
+        'FontSize', fontSize, 'Margin', nMargin);
     t.FontSize = fontSize;
     
     % Line for mono/no stereo signal (error code: -3)
@@ -559,7 +564,8 @@ for kk = 1:length(AllDates)
     set(hLineMinusThree,'LineWidth',0.1);
     t = text(onlyTimeOfDay(1)-minutes(60), yDistance(kk)+2*lineDistance, ...
         'no stereo signal', 'HorizontalAlignment', 'right', 'Color', ...
-        fontColor, 'BackGroundColor', 'w');
+        fontColor, 'BackGroundColor', 'w', ...
+        'FontSize', fontSize, 'Margin', nMargin);
     t.FontSize = fontSize;
     
     % Line for invalid coherence (error code: -4)
@@ -569,7 +575,8 @@ for kk = 1:length(AllDates)
     set(hLineMinusFour,'LineWidth',0.1);
     t = text(onlyTimeOfDay(1)-minutes(60), yDistance(kk)+1*lineDistance, ...
         'coherence invalid', 'HorizontalAlignment', 'right', ...
-        'Color', fontColor, 'BackGroundColor', 'w', 'FontSize', fontSize);
+        'Color', fontColor, 'BackGroundColor', 'w', ...
+        'FontSize', fontSize, 'Margin', nMargin);
     
     % Plot error codes to the figure
     
@@ -613,11 +620,12 @@ else
 end
 
 % Set dates as Y-tick labels
-set(gca,'YTick',1:length(AllDates));
-set(gca,'YTickLabel',datestr(AllDates));
+set(gca, 'YTick', 1:length(AllDates));
+set(gca, 'YTickLabel', datestr(AllDates));
+set(gca, 'Box', 'Off');
 
 % title([obj.stSubject.Name, ' data availability']);
-ylim([1-0.5 length(AllDates)+1]);
+ylim([1-0.5, length(AllDates)+1]);
 
 hFig_Overview.Color = 'w';
 
@@ -637,6 +645,8 @@ tmp_bottom = (tmp_papersize(2) - nHeight_Overview)/2;
 tmp_figuresize = [tmp_left, tmp_bottom, nWidth_Overview, ...
     nHeight_Overview];
 hFig_Overview.PaperPosition = tmp_figuresize;
+
+
 
 export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, ...
     '17_' obj.stSubject.Name, '.pdf'], '-native');

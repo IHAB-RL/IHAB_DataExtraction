@@ -481,7 +481,7 @@ for parameters_idx = 1 : 3
     mean_plot = cell2mat(mean_values{parameters_idx}(2, :))';
     mean_plot = mean_plot(options_idx, :);
     
-    % Plot
+    % Regular Plot
     figure_idx = figure_idx+1;
     
     hFig_Source = figure();
@@ -499,7 +499,6 @@ for parameters_idx = 1 : 3
     grid minor
     xticks(1:length(mean_plot));
     yticks(1:7);
-%     xtickangle(45);
     set(gca, 'XLim', [0.5 length(mean_plot)+0.5]);
     set(gca, 'YLim', [0.5 7.5]);
     
@@ -553,7 +552,7 @@ for parameters_idx = 1 : 3
     
     clf;
     
-    % Regular Plot
+    % Bar Graph
     
     figure_idx = figure_idx+1;
     hFig_Source2 = figure();
@@ -572,6 +571,7 @@ for parameters_idx = 1 : 3
     end
     grid minor;
     ylabel('Anzahl');
+    
     legend(difficulties,...
         'Location', 'best', 'Orientation', 'vertical');
     set(gca, 'YLim', [0 (max(parameters_plot(:)) + 0.5)]);

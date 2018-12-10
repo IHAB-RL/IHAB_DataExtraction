@@ -1,4 +1,4 @@
-function generateProfileComparison(obj)
+function generateProfile(obj)
 
     % Combine all fingerprints within szDir into one pdf file.
     %
@@ -24,7 +24,7 @@ function generateProfileComparison(obj)
     if ~isempty(obj.stSubject.Folder)
         
         %% Personal Profile:
-        generateDiagramsComparison(obj);
+        generateDiagrams(obj);
         
         if obj.bIncludeObjectiveData        
            
@@ -35,9 +35,7 @@ function generateProfileComparison(obj)
             
             hProgress = BlindProgress(obj);
             
-%             offset = numDates * 1.1;
             for nDate = 1:numDates
-%                 clc; progress_bar(nDate, numDates + offset, 5, 5)
                 dateDay = tableDates.(obj.stSubject.Name)(nDate);
                 
                 % Get all available parts for each day and each subject
@@ -46,16 +44,11 @@ function generateProfileComparison(obj)
                 
                 % Loop over all parts of one day for one subject
                 for jj = 1:iNrOfParts
-                    
-%                     fprintf('Computing Fingerprint %d of %d.\n', jj, iNrOfParts);
-                    
                    
                     hProgress.stopTimer();
                     obj.cListQuestionnaire{end} = sprintf('\t.generating fingerprint of day %d, part %d of %d -', nDate, jj, iNrOfParts);
                     obj.hListBox.Value = obj.cListQuestionnaire;
                     hProgress = BlindProgress(obj);
-                    
-                    
                     
                     computeDayFingerprintData(obj, dateDay, jj, 0);
                     
@@ -85,65 +78,12 @@ function generateProfileComparison(obj)
                     end
                 end
             end
-        end % if qOnly
-        
-        
-        
-        
+        end 
         
         obj.hProgress.stopTimer();  
         obj.cListQuestionnaire{end} = sprintf('\t.merging graphic objects -');
         obj.hListBox.Value = obj.cListQuestionnaire;
         obj.hProgress.startTimer();
-
-        
-        %% Merge PDFs:
-   
-%         mergeAndCompilePDFLatex(obj);
-        
-%         % get pdfs
-%         pdf_files = dir([obj.stSubject.Folder filesep 'graphics', filesep, '*.pdf']);
-% 
-%         % filter out previous Profiles
-%         prev_pp = strfind({pdf_files.name}, 'Personal')';
-%         prev_pp(cellfun(@isempty, prev_pp)) = {0};
-%         prev_pp = cell2mat(prev_pp);
-%         prev_pp = ~logical(prev_pp);
-%         pdf_files = pdf_files([prev_pp]);
-% 
-%         % sort pdfs
-%         % date with seconds is too crude, use datenum or numbered filename!
-%         [~,index] = sortrows({pdf_files.name}.'); 
-%         pdf_files = pdf_files(index); 
-%         clear index
-% 
-%         for filesIdx = 1:length(pdf_files)
-%             
-%             % append to final list
-%             input_list{filesIdx, :} = fullfile(pdf_files(filesIdx).folder, ... 
-%                     pdf_files(filesIdx).name);
-%            
-%         end
-% 
-%         date_name = datestr(datetime(), 'dd.mm.yy');
-%         
-%         if isObjective == 0
-%             file_name = ([obj.stSubject.Folder, filesep 'graphics', filesep, 'Personal_Profile_',...
-%                 szSubjectID '_Quest_' date_name '.pdf']);
-%             append_pdfs(file_name, input_list{:})
-%         else
-%             file_name = ([obj.stSubject.Folder, filesep, 'graphics', filesep, 'Personal_Profile_',...
-%                 szSubjectID '_Aku_' date_name '.pdf']);
-%             append_pdfs(file_name, input_list{:})
-%         end
-%         
-%         % sk180522: delete temporary PDFs
-%         for iFile = 1:length(input_list)
-%             delete(input_list{iFile});
-%         end 
-%           
-%         
-%         
 
     else
        

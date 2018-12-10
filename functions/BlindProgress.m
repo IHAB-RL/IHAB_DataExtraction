@@ -24,7 +24,7 @@ classdef BlindProgress < handle
         
         function [] = stopTimer(obj, ~, ~)
             
-            if obj.t.Running
+            if strcmp(obj.t.Running, 'on')
                 stop(obj.t);
             end
             
@@ -32,7 +32,7 @@ classdef BlindProgress < handle
         
         function [] = startTimer(obj, ~, ~)
             
-            if ~obj.t.Running
+            if strcmp(obj.t.Running, 'off')
                 start(obj.t);
             end
             
