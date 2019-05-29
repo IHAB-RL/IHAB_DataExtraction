@@ -14,6 +14,9 @@ classdef IHABdata < handle
         stPrint;
         bComparison;
         
+        isParallel = true;
+        isBatch = false;
+        
         sTitleFig1 = 'IHAB data';
         sTitleFig2 = 'Legend';
         sTitleFig3 = 'Change Minimum Part Length';
@@ -177,6 +180,12 @@ classdef IHABdata < handle
     
     methods
         function [obj] = IHABdata()
+            
+            if obj.isParallel && isempty(gcp('nocreate'))
+                myCluster = parcluster();
+                myCluster.NumWorkers = 12;
+                myPool = parpool(myCluster);
+            end
             
             obj.nHeight_PartLength = 3*obj.nDivision_Vertical + 2*obj.nButtonHeight;
             obj.nWidth_PartLength = 3*obj.nDivision_Horizontal + 2*obj.nButtonWidth;
@@ -549,6 +558,8 @@ classdef IHABdata < handle
         
         function [] = createNewSubject(obj, ~, ~)
             
+            obj.isBatch = false;
+            
             if ~obj.checkEntryConformity()
                 return;
             end
@@ -635,18 +646,66 @@ classdef IHABdata < handle
         end
         
         function [] = callbackOpen(obj, ~, ~)
-            obj.openSubjectFolder();
+            obj.transferSubjectFolder();
         end
         
-        function [] = openSubjectFolder(obj, ~, ~)
+        
+        function [] = transferSubjectFolder(obj, ~, ~)
+           
+            [sFolder] = uigetdir();
             
-            [sFolder] = uigetdir(pwd);
+            cSubjectData = regexp(sFolder, ...
+                '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
+            
+            if isempty(cSubjectData)
+                obj.isBatch = true;
+                obj.openBatchSubjectFolder(sFolder);
+            else
+                obj.isBatch = false;
+                obj.openSubjectFolder(sFolder);
+            end
+            
+        end
+        
+        function [] = openBatchSubjectFolder(obj, sFolder)
+        
+            % Obtain all Contents from given Folder
+            stDir = dir(sFolder);
+            stDir(1:2) = [];
+            nDir = length(stDir);
+            vErase = [];
+            
+            % Clear all Non-Directories from List
+            for iDir = 1:nDir
+               if ~stDir(iDir).isdir
+                   vErase = [vErase, iDir];
+               end
+            end
+            stDir(vErase) = [];
+            nDir = length(stDir);
+            
+            % Iteration over all Folders
+            for iDir = 1:nDir
+                obj.openSubjectFolder([stDir(iDir).folder, filesep, stDir(iDir).name]);
+                obj.callbackAnalyseData();
+            end
+            
+        
+        end
+        
+        
+        function [] = openSubjectFolder(obj, sFolder)
             
             if (sFolder == 0)
                 return;
             end
             
             obj.clearEntries();
+            
+            if obj.isBatch
+                obj.cListQuestionnaire{end} = '::: Batch processing. :::';
+                obj.hListBox.Value = obj.cListQuestionnaire; 
+            end
             
             % Automatically extract subject info from folder name
             
@@ -1632,7 +1691,7 @@ classdef IHABdata < handle
             obj.hProgress.startTimer();
             
             % Generate profile PDF's and Fingerprints
-            generate_profile(obj.stSubject.Name, 1, obj);
+            generate_profile(false, obj);
             
             % OUTPUT INFO
             obj.hProgress.stopTimer();
@@ -1652,7 +1711,11 @@ classdef IHABdata < handle
             sResult_PDF_Profile_New = [obj.sFolderMain, filesep, 'Overviews', filesep,...
                 'Personal_Profile_', obj.stSubject.Name, '_Aku_', datestr(date, 'dd.mm.yy'), '.pdf'];
             
+            sResult_PDF_Profile_Subject = [obj.stSubject.Folder, filesep,...
+                'Personal_Profile_', obj.stSubject.Name, '_Aku_', datestr(date, 'dd.mm.yy'), '.pdf'];
+            
             sResult_PDF_Profile = [obj.sFolderMain, filesep, 'profile.pdf'];
+            copyfile(sResult_PDF_Profile, sResult_PDF_Profile_Subject);
             movefile(sResult_PDF_Profile, sResult_PDF_Profile_New);
             
             obj.hProgress.stopTimer();

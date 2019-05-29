@@ -175,8 +175,18 @@ for parameters_idx = 1 : 3
     end
     
     bar_handle = bar(parameters_plot, 1);
-    for idx = 1:size(parameters_plot, 2)
-        bar_handle(idx).FaceColor = bar_colors(idx, :);
+    
+    if size(size(parameters_plot, 2)) > 1
+        
+        for idx = 1:size(parameters_plot, 2)
+            bar_handle(idx).FaceColor = bar_colors(idx, :);
+        end
+    
+    else
+        
+%         for idx = 1:size(parameters_plot, 2)
+            bar_handle(1).FaceColor = bar_colors(1, :);
+%         end
     end
     title([eval(sprintf('parameter_name{%d}', parameters_idx)) ' getrennt nach Situation']);
     grid minor;

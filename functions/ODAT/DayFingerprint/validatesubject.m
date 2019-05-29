@@ -200,16 +200,87 @@ caErrorCodes = cell(numFeatures*NumFeatFiles,1);
 caPercentErrors = cell(numFeatures*NumFeatFiles,1);
 finalList = cell(numFeatures*NumFeatFiles,1);
 listCounter = 0;
+
+tmpList = cell(NumFeatFiles, numFeatures);
+tmpErrorCodes = cell(NumFeatFiles);
+tmpCaPercentErrors = cell(NumFeatFiles);
+
 % tic;
-for ii = 1:NumFeatFiles
+
+if obj.isParallel
     
-    %clc; %progress_bar(ii, NumFeatFiles, 3, 5)
-    [iErrorCode, percentErrors] = validatechunk(listFeatFiles{ii}, configStruct);
-    finalList(listCounter*numFeatures+1:(listCounter+1)*numFeatures,1) = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
-    caErrorCodes(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = iErrorCode;
-    caPercentErrors(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = percentErrors;
-    listCounter = listCounter +1;
+
+    parfor ii = 1 : NumFeatFiles
+        
+        %clc; %progress_bar(ii, NumFeatFiles, 3, 5)
+        [iErrorCode, percentErrors] = validatechunk(listFeatFiles{ii}, configStruct);
+%         finalList(listCounter*numFeatures+1:(listCounter+1)*numFeatures,1) = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+%         finalList((ii-1)*numFeatures+1:((ii-1)+1)*numFeatures,1) = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+        
+%         tmpList{ii, :} = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+        tmp = strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat');
+        tmpList(ii, :) = tmp';
+
+%         tmpList{ii, :} = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+%         tmpList{ii, 2} = [strcat(caFeatures(2), partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+%         tmpList{ii, 3} = [strcat(caFeatures(3), partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+        
+
+        
+%         caErrorCodes(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = iErrorCode;
+        tmpErrorCodes(ii) = iErrorCode;
+
+%         caErrorCodes((ii-1)*numFeatures+1:((ii-1)+1)*numFeatures) = iErrorCode;
+%         caPercentErrors(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = percentErrors;
+%         caPercentErrors((ii-1)*numFeatures+1:((ii-1)+1)*numFeatures) = percentErrors;
+
+        tmpCaPercentErrors(ii) = percentErrors;
+
+%         listCounter = listCounter +1;
+    end
+    
+    for ii = 1 : NumFeatFiles
+        
+        idx1 = (ii-1)*numFeatures+1;
+        idx2 = (ii-1)*numFeatures+2;
+        idx3 = (ii-1)*numFeatures+3;
+        
+        finalList(idx1 ,1) = tmpList(ii, 1);
+        finalList(idx2 ,1) = tmpList(ii, 2);
+        finalList(idx3 ,1) = tmpList(ii, 3);
+        
+        caErrorCodes(idx1, 1) = tmpErrorCodes(ii);
+        caErrorCodes(idx2, 1) = tmpErrorCodes(ii);
+        caErrorCodes(idx3, 1) = tmpErrorCodes(ii);
+       
+        caPercentErrors(idx1, 1) = tmpCaPercentErrors(ii);
+        caPercentErrors(idx2, 1) = tmpCaPercentErrors(ii);
+        caPercentErrors(idx3, 1) = tmpCaPercentErrors(ii);
+        
+    end
+    
+else
+    
+    for ii = 1:NumFeatFiles
+    
+        %clc; %progress_bar(ii, NumFeatFiles, 3, 5)
+        [iErrorCode, percentErrors] = validatechunk(listFeatFiles{ii}, configStruct);
+        finalList(listCounter*numFeatures+1:(listCounter+1)*numFeatures,1) = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+        caErrorCodes(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = iErrorCode;
+        caPercentErrors(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = percentErrors;
+        listCounter = listCounter +1;
+    end
+
 end
+
+
+
+
+
+
+
+
+
 stSubject.chunkID = struct('FileName',{finalList},'ErrorCode',{caErrorCodes}, 'PercentageError', {caPercentErrors});
 
 save(szMatFile,'stSubject');

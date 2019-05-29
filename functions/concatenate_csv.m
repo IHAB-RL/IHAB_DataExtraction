@@ -12,6 +12,7 @@ function concatenate_csv()
     % get all csv files and read the first one
     csv_files = dir([cd filesep 'IHAB_Rohdaten_EMA2018' filesep '**' filesep 'Questionnaires_*.mat']);
     load([csv_files(1).folder filesep csv_files(1).name], 'QuestionnairesTable')
+    
     table_a = QuestionnairesTable;
 
     % concatenate all csv files into temporary 'table_a'
