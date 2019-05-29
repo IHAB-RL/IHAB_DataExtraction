@@ -68,9 +68,9 @@ if ~isempty(stSubject)
     
     % Black/white printing
     isPrintMode = true;
-
-    analyseSubjectsResponses(isPrintMode, 1, obj);
-    
+    obj.hProgress.startTimer();
+    generateOverview(isPrintMode, 1, obj);
+    obj.hProgress.stopTimer();
     
 end
 

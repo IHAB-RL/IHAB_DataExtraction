@@ -12,7 +12,10 @@ classdef IHABdata < handle
         stAnalysis;
         stComparison;
         stPrint;
-        bComparison;
+        stLaTeXCommands;
+        bIncludeObjectiveData = false;
+        bTitles = false;
+        nCompare_Run;
         
         isParallel = true;
         isBatch = false;
@@ -149,7 +152,7 @@ classdef IHABdata < handle
         hEditText_PartLength;
         hLabel_PartLength;
         sLabel_MinPartLength_Text = ...
-            sprintf('Please enter minimum\npart length [min]:');
+            sprintf('Please enter minimum\npart length [min] (-1 -> n/a):');
         sLabel_MinPartLength_Enter = 'Enter';
         
         cListQuestionnaire = {' '};
@@ -201,48 +204,61 @@ classdef IHABdata < handle
             set(0,'Units','Pixels') ;
             obj.vScreenSize = get(0,'screensize');
             
-            obj.stSubject = struct('Name', [], ...
+            obj.stSubject = struct( ...
+                'Name', [], ...
                 'Date', [], ...
                 'Experimenter', [], ...
                 'Folder', [], ...
                 'Appendix', '-', ...
                 'Code', []);
             
-            obj.stEditText = struct('EditSubject', [],...
+            obj.stEditText = struct( ...
+                'EditSubject', [],...
                 'EditDate', [],...
                 'EditExperimenter', []);
             
-            obj.stPreferences = struct('MinPartLength', [], ...
+            obj.stPreferences = struct( ...
+                'MinPartLength', [], ...
                 'Test', []);
             
-            obj.stAnalysis = struct('NumberOfDays', [], ...
+            obj.stAnalysis = struct( ...
+                'NumberOfDays', [], ...
                 'Dates', [], ...
                 'TimePerDay', [], ...
                 'NumberOfParts', [], ...
                 'NumberOfQuestionnaires', []);
-           
-            obj.stPrint = struct('Width', 6/2.54, ...
-                'Height', 3/2.54, ...
+            
+            obj.stLaTeXCommands = struct( ...
+                'termSubject', 'TeilnehmerIn', ...
+                'termUpdated', 'Stand', ...
+                'termComments', 'Bemerkungen', ...
+                'termComparison', 'Vergleich', ...
+                'termPage', 'Seite', ...
+                'termProfile', 'Persönliches Hörprofil', ...
+                'termInstitute', 'Projekt IHAB-rl');
+            
+            obj.stPrint = struct( ...
+                'Width', [6, 6]/2.54, ...
+                'Height', [15, 3.5]/2.54, ...
                 'AxesLineWidth', 0.75, ...
-                'FontSize', 10, ...
+                'FontSize', 9, ...
                 'LineWidth', 1.5, ...
                 'MarkerSize', 8, ...
                 'InvertHardcopy', 'on', ...
                 'PaperUnits', 'inches', ...
-                'DPI', 300);
-
-            obj.stComparison = struct('Folder', [], ...
+                'DPI', 300, ...
+                'MaxCharactersInLabel', 20);
+            
+            obj.stComparison = struct( ...
+                'Folder', [], ...
                 'Analysis' , []);
             
             obj.mColors = getColors();
             
-            obj.getPreferencesFromFile();
-            
-            obj.bComparison = false;
-            
             % Create the GUI
             obj.gui();
             
+            obj.getPreferencesFromFile();
         end
         
         function [] = gui(obj)
@@ -434,7 +450,7 @@ classdef IHABdata < handle
                 obj.nButtonWidth,...
                 obj.nButtonHeight];
             obj.hButton_Compare.Text = obj.sLabel_Button_Compare;
-            obj.hButton_Compare.Enable = 'On';
+            obj.hButton_Compare.Enable = 'Off';
             obj.hButton_Compare.ButtonPushedFcn = @obj.callbackCompareEMA;
             
             % Button "Min Part Length"
@@ -788,6 +804,7 @@ classdef IHABdata < handle
             
             if obj.isDataCompleteEnoughForAnalysis()
                 obj.hButton_Analyse.Enable = 'On';
+                obj.hButton_Compare.Enable = 'On';
             end
             
             if obj.bLog
@@ -799,8 +816,12 @@ classdef IHABdata < handle
         function [] = clearEntries(obj, ~, ~)
             
             if ~obj.bClear
-                delete(obj.hAxes.Children);
-                delete(obj.hAxes);
+                try
+                    delete(obj.hAxes.Children);
+                end
+                try
+                    delete(obj.hAxes);
+                end
                 obj.bClear = 1;
                 delete(timerfindall);
             end
@@ -838,6 +859,8 @@ classdef IHABdata < handle
             obj.hEditExperimenter.Editable = 'On';
             
             obj.hButton_Create.Enable = 'Off';
+            obj.hButton_Analyse.Enable = 'Off';
+            obj.hButton_Compare.Enable = 'Off';
             
         end
         
@@ -1197,7 +1220,6 @@ classdef IHABdata < handle
             sMinTimeString = cLog{1}(1:23);
             nMinTime = stringToTimeMs(sMinTimeString);
             
-            
             vTimeBluetooth = [];
             vBluetooth = [];
             vTimeBattery = [];
@@ -1207,7 +1229,6 @@ classdef IHABdata < handle
             vTimeDisplay = [];
             vDisplay = [];
             vTimeVibration = [];
-            
             
             for iLog = 1:length(cLog)-1
                 sLogTime = cLog{iLog}(1:23);
@@ -1387,6 +1408,16 @@ classdef IHABdata < handle
             cTemp = textscan(hFid, '%s%f');
             
             obj.stPreferences.MinPartLength = cTemp{2}(1);
+            
+            if cTemp{2}(1) == -1
+                obj.bIncludeObjectiveData = false;
+                obj.hButton_MinPartLength.Text = 'n/a';
+            else
+                obj.bIncludeObjectiveData = true;
+                obj.hButton_MinPartLength.Text = ...
+                    num2str(obj.stPreferences.MinPartLength);
+            end
+            
             obj.stPreferences.Test = cTemp{2}(2);
             
             fclose(hFid);
@@ -1487,11 +1518,19 @@ classdef IHABdata < handle
         function [] = callbackEnterPartLength(obj, ~, ~)
             
             obj.stPreferences.MinPartLength = obj.hEditText_PartLength.Value;
-            obj.writePreferencesToFile;
-            obj.hButton_MinPartLength.Text = num2str(obj.stPreferences.MinPartLength);
             
-            obj.cListQuestionnaire{end+1} =...
-                sprintf('     Minimum part length changed to: %d', obj.stPreferences.MinPartLength);
+            if obj.stPreferences.MinPartLength == -1
+                obj.hButton_MinPartLength.Text = 'n/a';
+                obj.cListQuestionnaire{end+1} =...
+                    sprintf('     Objective data excluded from analysis');
+            else
+                obj.hButton_MinPartLength.Text = num2str(obj.stPreferences.MinPartLength);
+                obj.cListQuestionnaire{end+1} =...
+                    sprintf('     Minimum part length changed to: %d', obj.stPreferences.MinPartLength);
+            end
+            
+            obj.writePreferencesToFile;
+            
             obj.hListBox.Value = obj.cListQuestionnaire;
             
             close(obj.hFig3);
@@ -1502,106 +1541,132 @@ classdef IHABdata < handle
             obj.compareEMA();
         end
         
+        function stOut = extractSubjectInfoFromFolder(~, sFolder)
+           
+            cPathName = split(sFolder, '\');
+            sInfo = cPathName{end};
+            stOut = struct();
+
+            cSubjectData = regexp(sInfo, ...
+                '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
+
+            if isempty(cSubjectData{1}{5})
+                cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
+            else
+                stOut.Appendix = cSubjectData{1}{6};
+                cSubjectData = {cSubjectData{1}{2:4}};
+            end
+
+            if isValidSubjectData(cSubjectData)
+                
+                stOut.Name = cSubjectData{1};
+                stOut.Date = cSubjectData{2};
+                stOut.Experimenter = cSubjectData{3};
+                stOut.Folder = sFolder;
+                stOut.Code = sInfo;
+                
+            end 
+        end
+        
         function [] = compareEMA(obj, ~, ~)
             
-            %             obj.stComparison.Folder01 = uigetdir(pwd, 'Please specify directory of EMA #1');
-            %             obj.stComparison.Folder02 = uigetdir(pwd, 'Please specify directory of EMA #2');
-            
+            % Omit objective data for comparison
+            nTempIncludeObjectiveData = obj.bIncludeObjectiveData;
+            obj.bIncludeObjectiveData = false;
             
             obj.stComparison = [];
-            obj.stComparison(1).Folder = 'F:\IHAB-rl_Auswertung\IHAB_1_EMA2018\KE07IN22_180607_mh';
-            obj.stComparison(2).Folder = 'F:\IHAB-rl_Auswertung\IHAB_2_EMA2018\KE07IN22_180724_aw';
+            obj.stComparison(1).Folder = obj.stSubject.Folder;
+            obj.stComparison(2).Folder = uigetdir(pwd, 'Please specify directory of EMA #2');
             
-           
+            if obj.stComparison(2).Folder == 0
+                return;
+            end
+            
+            stInfo1 = obj.extractSubjectInfoFromFolder(obj.stComparison(1).Folder);
+            stInfo2 = obj.extractSubjectInfoFromFolder(obj.stComparison(2).Folder);
+            
+            if ~strcmp(stInfo1.Name, stInfo2.Name)
+                errordlg('Subjects must be the same.', 'Subject mismatch');
+                return;
+            end
+            
             tic;
-
-            obj.bComparison = true;
-            
             
             for iEMA = 1:2
-            
+                
+                obj.bClear = false;
                 obj.clearEntries();
-
-                obj.hProgress = BlindProgress(obj);
-
-
-                %% EMA01
+                obj.nCompare_Run = iEMA;
                 
                 sFolder = obj.stComparison(iEMA).Folder;
-
-
-
+                
                 % Automatically extract subject info from folder name
-
                 cPathName = split(sFolder, '\');
                 sInfo = cPathName{end};
-
+                
                 cSubjectData = regexp(sInfo, ...
                     '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
-
+                
                 if isempty(cSubjectData{1}{5})
                     cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
                 else
                     obj.stSubject.Appendix = cSubjectData{1}{6};
                     cSubjectData = {cSubjectData{1}{2:4}};
                 end
-
+                
                 if isValidSubjectData(cSubjectData)
-
+                    
                     obj.stSubject.Name = cSubjectData{1};
                     obj.stSubject.Date = cSubjectData{2};
                     obj.stSubject.Experimenter = cSubjectData{3};
                     obj.stSubject.Folder = sFolder;
                     obj.stSubject.Code = sInfo;
-
+                    
                     obj.hEditSubject.Value = obj.stSubject.Name;
                     obj.hEditDate.Value = obj.stSubject.Date;
                     obj.hEditExperimenter.Value = obj.stSubject.Experimenter;
-
+                    
                     obj.hEditSubject.Editable = 'Off';
                     obj.hEditDate.Editable = 'Off';
                     obj.hEditExperimenter.Editable = 'Off';
-
+                    
                     obj.hButton_Create.Enable = 'Off';
-
+                    
                 else
                     obj.hProgress.killTimer();
                     obj.cListQuestionnaire{end} = 'Cannot read folder.';
                     obj.hListBox.Value = obj.cListQuestionnaire;
                     return;
                 end
-
+                
                 obj.stAnalysis = struct('NumberOfDays', [], ...
                     'Dates', [], ...
                     'TimePerDay', [], ...
                     'NumberOfParts', [], ...
                     'NumberOfQuestionnaires', []);
-
+                
                 % OUTPUT INFO
                 obj.cListQuestionnaire{end+1} = ...
                     sprintf('[  ] Performing comparison: %s (%d/2)', obj.stSubject.Name, iEMA);
                 obj.hListBox.Value = obj.cListQuestionnaire;
-                drawnow;
-
+                
+                obj.hProgress = BlindProgress(obj);
+                
                 obj.hProgress.startTimer();
                 % Check Data and compute Overview
                 main(obj);
-                
                 obj.hProgress.stopTimer();
+                
                 obj.cListQuestionnaire{end} = sprintf('\t.generating pdf files -');
                 obj.hListBox.Value = obj.cListQuestionnaire;
                 obj.hProgress.startTimer();
-
+                
                 % Generate profile PDF's and Fingerprints
-                generate_profile(false, obj);
+                generateProfile_Comparison(obj);
                 
                 obj.stComparison(iEMA).Analysis = obj.stAnalysis;
                 
-               
-            
             end
-            
-            
             
             % OUTPUT INFO
             obj.hProgress.stopTimer();
@@ -1609,46 +1674,38 @@ classdef IHABdata < handle
             obj.hListBox.Value = obj.cListQuestionnaire;
             obj.hProgress.startTimer();
             
-            
-  
             mergeAndCompilePDFLatex_Comparison(obj);
             
-
+            % OUTPUT INFO
+            obj.hProgress.stopTimer();
+            obj.cListQuestionnaire{end} = sprintf('\t.copying files -');
+            obj.hListBox.Value = obj.cListQuestionnaire;
+            obj.hProgress.startTimer();
             
-            toc;
-
-
-
-                
-                
-                
-                
-                
             sDataFolder_Output = [pwd, filesep, 'Overviews'];
             if ~exist(sDataFolder_Output, 'dir')
                 mkdir(sDataFolder_Output);
             end
             
+            % Filename of Profile
+            sResult_PDF_Profile_New = [obj.sFolderMain, filesep, 'Overviews', filesep,...
+                'Comparison_', obj.stSubject.Name, '_', datestr(date, 'dd.mm.yy'), '.pdf'];
+            sResult_PDF_Profile = [obj.sFolderMain, filesep, 'profile.pdf'];
+            movefile(sResult_PDF_Profile, sResult_PDF_Profile_New);
+            
+            obj.hProgress.stopTimer();
+            
+            % OUTPUT INFO
+            obj.cListQuestionnaire{end-1} = sprintf('[x] Performing comparison: %s', obj.stSubject.Name);
+            obj.cListQuestionnaire{end} = sprintf('     Finished in %s\n', formatSeconds(round(toc)));
+            obj.hListBox.Value = obj.cListQuestionnaire;
             
             obj.hProgress.killTimer();
-            obj.bComparison = false;
-            fprintf('DONE!\n');
             
+            % Reset inclusion of objective data
+            obj.bIncludeObjectiveData = nTempIncludeObjectiveData;
             
         end
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         function [] = analyseData(obj, ~, ~)
             
@@ -1691,7 +1748,8 @@ classdef IHABdata < handle
             obj.hProgress.startTimer();
             
             % Generate profile PDF's and Fingerprints
-            generate_profile(false, obj);
+
+            generateProfile(obj);
             
             % OUTPUT INFO
             obj.hProgress.stopTimer();
@@ -1713,7 +1771,7 @@ classdef IHABdata < handle
             
             sResult_PDF_Profile_Subject = [obj.stSubject.Folder, filesep,...
                 'Personal_Profile_', obj.stSubject.Name, '_Aku_', datestr(date, 'dd.mm.yy'), '.pdf'];
-            
+
             sResult_PDF_Profile = [obj.sFolderMain, filesep, 'profile.pdf'];
             copyfile(sResult_PDF_Profile, sResult_PDF_Profile_Subject);
             movefile(sResult_PDF_Profile, sResult_PDF_Profile_New);
@@ -1726,6 +1784,8 @@ classdef IHABdata < handle
             obj.hListBox.Value = obj.cListQuestionnaire;
             
             obj.hProgress.killTimer();
+            
+            delete(timerfindall);
             
         end
         
