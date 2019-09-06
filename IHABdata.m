@@ -184,7 +184,9 @@ classdef IHABdata < handle
     
     methods
         function [obj] = IHABdata(varargin)
-                
+            
+            checkPrerequisites();
+            
             if obj.isParallel && isempty(gcp('nocreate'))
                 myCluster = parcluster();
                 myCluster.NumWorkers = 12;
@@ -264,6 +266,7 @@ classdef IHABdata < handle
                 
                 obj.hProgressCommandLine = BlindProgressCommandLine();
                 
+                
                 sFolder = varargin{1};
                 
                 openSubjectFolderCommandLine(obj, sFolder);
@@ -279,7 +282,7 @@ classdef IHABdata < handle
                     'found in {obj}.stAnalysis\n']);
                 
             else
-            
+                
                 % Create the GUI
                 obj.gui();
                 
@@ -693,7 +696,7 @@ classdef IHABdata < handle
         
         
         function [] = transferSubjectFolder(obj, ~, ~)
-           
+            
             [sFolder] = uigetdir();
             
             cSubjectData = regexp(sFolder, ...
@@ -710,7 +713,7 @@ classdef IHABdata < handle
         end
         
         function [] = openBatchSubjectFolder(obj, sFolder)
-        
+            
             % Obtain all Contents from given Folder
             stDir = dir(sFolder);
             stDir(1:2) = [];
@@ -719,9 +722,9 @@ classdef IHABdata < handle
             
             % Clear all Non-Directories from List
             for iDir = 1:nDir
-               if ~stDir(iDir).isdir
-                   vErase = [vErase, iDir];
-               end
+                if ~stDir(iDir).isdir
+                    vErase = [vErase, iDir];
+                end
             end
             stDir(vErase) = [];
             nDir = length(stDir);
@@ -732,11 +735,11 @@ classdef IHABdata < handle
                 obj.callbackAnalyseData();
             end
             
-        
+            
         end
         
         function [] = openSubjectFolderCommandLine(obj, sFolder)
-           
+            
             % Automatically extract subject info from folder name
             
             cPathName = split(sFolder, '\');
@@ -759,7 +762,7 @@ classdef IHABdata < handle
                 obj.stSubject.Experimenter = cSubjectData{3};
                 obj.stSubject.Folder = sFolder;
                 obj.stSubject.Code = sInfo;
-              
+                
             else
                 fprintf('Cannot read folder.\n');
                 return;
@@ -804,7 +807,7 @@ classdef IHABdata < handle
             end
             
         end
-           
+        
         function [] = openSubjectFolder(obj, sFolder)
             
             if (sFolder == 0)
@@ -815,7 +818,7 @@ classdef IHABdata < handle
             
             if obj.isBatch
                 obj.cListQuestionnaire{end} = '::: Batch processing. :::';
-                obj.hListBox.Value = obj.cListQuestionnaire; 
+                obj.hListBox.Value = obj.cListQuestionnaire;
             end
             
             % Automatically extract subject info from folder name
@@ -1637,21 +1640,21 @@ classdef IHABdata < handle
         end
         
         function stOut = extractSubjectInfoFromFolder(~, sFolder)
-           
+            
             cPathName = split(sFolder, '\');
             sInfo = cPathName{end};
             stOut = struct();
-
+            
             cSubjectData = regexp(sInfo, ...
                 '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
-
+            
             if isempty(cSubjectData{1}{5})
                 cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
             else
                 stOut.Appendix = cSubjectData{1}{6};
                 cSubjectData = {cSubjectData{1}{2:4}};
             end
-
+            
             if isValidSubjectData(cSubjectData)
                 
                 stOut.Name = cSubjectData{1};
@@ -1660,7 +1663,7 @@ classdef IHABdata < handle
                 stOut.Folder = sFolder;
                 stOut.Code = sInfo;
                 
-            end 
+            end
         end
         
         function [] = compareEMA(obj, ~, ~)
@@ -1843,7 +1846,7 @@ classdef IHABdata < handle
             obj.hProgress.startTimer();
             
             % Generate profile PDF's and Fingerprints
-
+            
             generateProfile(obj);
             
             % OUTPUT INFO
@@ -1866,7 +1869,7 @@ classdef IHABdata < handle
             
             sResult_PDF_Profile_Subject = [obj.stSubject.Folder, filesep,...
                 'Personal_Profile_', obj.stSubject.Name, '_Aku_', datestr(date, 'dd.mm.yy'), '.pdf'];
-
+            
             sResult_PDF_Profile = [obj.sFolderMain, filesep, 'profile.pdf'];
             copyfile(sResult_PDF_Profile, sResult_PDF_Profile_Subject);
             movefile(sResult_PDF_Profile, sResult_PDF_Profile_New);
