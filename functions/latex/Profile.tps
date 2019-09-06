@@ -11,13 +11,13 @@ MaxPos.x=-1
 MaxPos.y=-1
 NormalPos.left=4
 NormalPos.top=26
-NormalPos.right=1562
-NormalPos.bottom=700
+NormalPos.right=1066
+NormalPos.bottom=686
 Class=LaTeXView
 Document=Profile.tex
 
 [Frame0_View0,0]
-TopLine=27
+TopLine=81
 Cursor=1173
 
 [Frame1]
@@ -29,8 +29,8 @@ MaxPos.x=-1
 MaxPos.y=-1
 NormalPos.left=4
 NormalPos.top=26
-NormalPos.right=1562
-NormalPos.bottom=700
+NormalPos.right=1066
+NormalPos.bottom=686
 Class=LaTeXView
 Document=diagrams.tex
 
@@ -47,8 +47,8 @@ MaxPos.x=-1
 MaxPos.y=-1
 NormalPos.left=4
 NormalPos.top=26
-NormalPos.right=1562
-NormalPos.bottom=700
+NormalPos.right=1066
+NormalPos.bottom=686
 Class=LaTeXView
 Document=fingerprints.tex
 
@@ -65,8 +65,8 @@ MaxPos.x=-1
 MaxPos.y=-1
 NormalPos.left=4
 NormalPos.top=26
-NormalPos.right=1562
-NormalPos.bottom=700
+NormalPos.right=1066
+NormalPos.bottom=686
 Class=LaTeXView
 Document=overview.tex
 
@@ -83,8 +83,8 @@ MaxPos.x=-1
 MaxPos.y=-1
 NormalPos.left=4
 NormalPos.top=26
-NormalPos.right=1562
-NormalPos.bottom=700
+NormalPos.right=1066
+NormalPos.bottom=686
 Class=LaTeXView
 Document=detailsoverview.tex
 

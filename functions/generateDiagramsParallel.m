@@ -1,4 +1,4 @@
-function generateDiagrams(obj)
+function generateDiagramsParallel(obj)
 
 %% Darstellung aus EMA 2018
 %
@@ -73,71 +73,156 @@ activities_name = PossibleAnswers.text(18:47);
 source_name = PossibleAnswers.text([57:65, 75:82, 91:97, 107:114]);
 
 
-%% Haeufigkeitsuebersicht Situationen - Pie Chart
-
-
-% get situations
-situations(1 : 5) = sum((QuestionnairesTable.Situation == (1 : 5)));
-
-% plot
-figure_idx = 1;
-hFig_Pie = figure();
-hFig_Pie.Visible = 'Off';
-
-pie_handle = pie(situations);
-pie_colors = pie_colors((situations>0)', :);
-
-% apply the colors to the pie chart
-for idx = 1 : length(find(situations>0))
-    set(pie_handle(idx*2-1), 'FaceColor', pie_colors(idx, :))
-end
-
-legend(situation_name(situations > 0),...
-    'Location', 'northeastoutside', 'Orientation', 'vertical', ...
-    'LineWidth', 0.2);
-set(gca, 'FontSize', 14)
-annotation('textbox', [0.75, 0.45, 0, 0], 'String', ...
-    [num2str(size(QuestionnairesTable, 1)), ' Questionnaires']);
-
-hFig_Pie.Color = 'w';
-
-nWidth_Pie = 6/2.54;
-nHeight_Pie = 3.5/2.54;
-
-tmp_pos = get(gcf, 'Position');
-hFig_Pie.Position = [tmp_pos(1), tmp_pos(2), ...
-    nWidth_Pie*obj.stPrint.DPI, nHeight_Pie*obj.stPrint.DPI];
-set(gca, 'FontSize', obj.stPrint.FontSize, ...
-    'LineWidth', obj.stPrint.LineWidth);
-hFig_Pie.InvertHardcopy = obj.stPrint.InvertHardcopy;
-hFig_Pie.PaperUnits = 'inches';
-tmp_papersize = hFig_Pie.PaperSize;
-tmp_left = (tmp_papersize(1) - nWidth_Pie)/2;
-tmp_bottom = (tmp_papersize(2) - nHeight_Pie)/2;
-tmp_figuresize = [tmp_left, tmp_bottom, nWidth_Pie, ...
-    nHeight_Pie];
-hFig_Pie.PaperPosition = tmp_figuresize;
-
-export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, ...
-    num2str(figure_idx, '%2.2d') '_Profile_Situations', '.pdf'], '-native');
-
-clf;
+stParams = struct('bar_colors', bar_colors, ...
+    'pie_colors', pie_colors, ...
+    'parameter_variable', {parameter_variable}, ...
+    'parameter_name', {parameter_name}, ...
+    'paremter_name_mean', {parameter_name_mean}, ...
+    'scales', {scales}, ...
+    'difficulties', {difficulties}, ...
+    'situation_name', {situation_name}, ...
+    'activities_name', {activities_name}, ...
+    'source_name', {source_name}, ...
+    'QuestionnairesTable', {QuestionnairesTable}, ...
+    'PossibleAnswers', {PossibleAnswers}); 
 
 % loop over all 3 Parameters
-for parameters_idx = 1 : 3
+parfor iPlot = 1:10
+    distrubuteWork(obj, iPlot, stParams);
+end
+
+clear parameters
+
+hProgress.stopTimer();
+
+end
+
+function [] = distrubuteWork(obj, index, stParams)
+
+    switch index
+        case 1
+            HaeufigkeitsuebersichtSituationenPieChart(obj, stParams);
+        case 2
+            UebersichtZuBewertungenNachSituationBarGraph(obj, 1, stParams, 2);
+        case 3
+            UebersichtDerMittlerenBewertungenNachAktivitaet(obj, 1, stParams, 3);
+        case 4
+            UebersichtDerMittlerenBewertungNachSignalquelle(obj, 1, stParams, 5);
+        case 5
+            UebersichtZuBewertungenNachSituationBarGraph(obj, 2, stParams, 7);
+        case 6
+            UebersichtDerMittlerenBewertungenNachAktivitaet(obj, 2, stParams, 8);
+        case 7
+            UebersichtDerMittlerenBewertungNachSignalquelle(obj, 2, stParams, 10);
+        case 8
+            UebersichtZuBewertungenNachSituationBarGraph(obj, 3, stParams, 12);
+        case 9
+            UebersichtDerMittlerenBewertungenNachAktivitaet(obj, 3, stParams, 13);
+        case 10
+            UebersichtDerMittlerenBewertungNachSignalquelle(obj, 3, stParams, 15);
+    end
     
+end
+
+function [] = HaeufigkeitsuebersichtSituationenPieChart(obj, stParams)
+
+    %% Unpacking
+
+    bar_colors = stParams.bar_colors;
+    pie_colors =  stParams.pie_colors;
+    parameter_variable = stParams.parameter_variable;
+    parameter_name = stParams.parameter_name;
+    paremter_name_mean = stParams.paremter_name_mean;
+    scales = stParams.scales;
+    difficulties = stParams.difficulties;
+    situation_name = stParams.situation_name;
+    activities_name = stParams.activities_name;
+    source_name = stParams.source_name;
+    QuestionnairesTable = stParams.QuestionnairesTable;
+    PossibleAnswers = stParams.PossibleAnswers;
+
+    %%
+
+    % get situations
+    situations(1 : 5) = sum((QuestionnairesTable.Situation == (1 : 5)));
+
+    % plot
+    figure_idx = 1;
+    hFig_Pie = figure();
+    hFig_Pie.Visible = 'Off';
+
+    pie_handle = pie(situations);
+    pie_colors = pie_colors((situations>0)', :);
+
+    % apply the colors to the pie chart
+    for idx = 1 : length(find(situations>0))
+        set(pie_handle(idx*2-1), 'FaceColor', pie_colors(idx, :))
+    end
+
+    legend(situation_name(situations > 0),...
+        'Location', 'northeastoutside', 'Orientation', 'vertical', ...
+        'LineWidth', 0.2);
+    set(gca, 'FontSize', 14)
+    annotation('textbox', [0.75, 0.45, 0, 0], 'String', ...
+        [num2str(size(QuestionnairesTable, 1)), ' Questionnaires']);
+
+    hFig_Pie.Color = 'w';
+
+    nWidth_Pie = 6/2.54;
+    nHeight_Pie = 3.5/2.54;
+
+    tmp_pos = get(gcf, 'Position');
+    hFig_Pie.Position = [tmp_pos(1), tmp_pos(2), ...
+        nWidth_Pie*obj.stPrint.DPI, nHeight_Pie*obj.stPrint.DPI];
+    set(gca, 'FontSize', obj.stPrint.FontSize, ...
+        'LineWidth', obj.stPrint.LineWidth);
+    hFig_Pie.InvertHardcopy = obj.stPrint.InvertHardcopy;
+    hFig_Pie.PaperUnits = 'inches';
+    tmp_papersize = hFig_Pie.PaperSize;
+    tmp_left = (tmp_papersize(1) - nWidth_Pie)/2;
+    tmp_bottom = (tmp_papersize(2) - nHeight_Pie)/2;
+    tmp_figuresize = [tmp_left, tmp_bottom, nWidth_Pie, ...
+        nHeight_Pie];
+    hFig_Pie.PaperPosition = tmp_figuresize;
+
+    export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, ...
+        num2str(figure_idx, '%2.2d') '_Profile_Situations', '.pdf'], '-native');
+
+    clf;
+end
+
+function [] = UebersichtZuBewertungenNachSituationBarGraph(obj, parameters_idx, stParams, index)
+
+    %% Unpacking
+
+    bar_colors = stParams.bar_colors;
+    pie_colors =  stParams.pie_colors;
+    parameter_variable = stParams.parameter_variable;
+    parameter_name = stParams.parameter_name;
+    paremter_name_mean = stParams.paremter_name_mean;
+    scales = stParams.scales;
+    difficulties = stParams.difficulties;
+    situation_name = stParams.situation_name;
+    activities_name = stParams.activities_name;
+    source_name = stParams.source_name;
+    QuestionnairesTable = stParams.QuestionnairesTable;
+    PossibleAnswers = stParams.PossibleAnswers;
+
+    %%
     
-    %% Uebersicht zu Bewertungen nach Situation - Bar Graph
-    
+    figure_idx = index;
+
+    situations(1 : 5) = sum((QuestionnairesTable.Situation == (1 : 5)));
+
     
     % loop over all 5 Situations
     for situations_idx = 1 : 5
         
         % get parameter from table
-        temp_table = QuestionnairesTable.((eval(sprintf( ...
+        temp_table = stParams.QuestionnairesTable.((eval(sprintf( ...
             'parameter_variable{%d}', parameters_idx))));
         on_situation = temp_table( ...
-            QuestionnairesTable.Situation == situations_idx);
+            stParams.QuestionnairesTable.Situation == situations_idx);
         
         % loop over all 7 options
         for idx = 1 : 7
@@ -174,18 +259,13 @@ for parameters_idx = 1 : 3
     parameters_plot = parameters_plot(options_idx, :);
     
     % Plot
-    figure_idx = figure_idx+1;
     hFig_Situations = figure();
     hFig_Situations.Visible = 'Off';
     hFig_Situations.Color = 'w';
     
     bar_handle = bar(parameters_plot, 1);
-    if size(parameters_plot, 1) > 1
-        for idx = 1:size(parameters_plot, 2)
-            bar_handle(idx).FaceColor = bar_colors(idx, :);
-        end
-    else
-        bar_handle(1).FaceColor = bar_colors(1, :);
+    for idx = 1:size(parameters_plot, 2)
+        bar_handle(idx).FaceColor = bar_colors(idx, :);
     end
     
     if obj.bTitles
@@ -229,14 +309,32 @@ for parameters_idx = 1 : 3
     
     export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, ...
         num2str(figure_idx, '%2.2d'), '_Profile_Situation_', ...
-        num2str(parameters_idx), '.pdf'], '-native');
+        num2str(parameters_idx), '.pdf'], '-native', '-update');
     
     clf;
+end
+
+function [] = UebersichtDerMittlerenBewertungenNachAktivitaet(obj, parameters_idx, stParams, index)
+
+    %% Unpacking
+
+    bar_colors = stParams.bar_colors;
+    pie_colors =  stParams.pie_colors;
+    parameter_variable = stParams.parameter_variable;
+    parameter_name = stParams.parameter_name;
+    paremter_name_mean = stParams.paremter_name_mean;
+    scales = stParams.scales;
+    difficulties = stParams.difficulties;
+    situation_name = stParams.situation_name;
+    activities_name = stParams.activities_name;
+    source_name = stParams.source_name;
+    QuestionnairesTable = stParams.QuestionnairesTable;
+    PossibleAnswers = stParams.PossibleAnswers;
+
+    %%
     
-   
-    %% Uebersicht der mittleren Bewertungen nach Aktivitaet
-    
-    
+    figure_idx = index;
+
     % Regular Plot
     
     % Loop over all 27 Activities
@@ -288,7 +386,6 @@ for parameters_idx = 1 : 3
     mean_plot = mean_plot(options_idx, :);
     
     % Plot
-    figure_idx = figure_idx+1;
     hFig_Activity = figure();
     hFig_Activity.Visible = 'Off';
     hFig_Activity.Color = 'w';
@@ -407,10 +504,28 @@ for parameters_idx = 1 : 3
         num2str(parameters_idx), '.pdf'], '-native');
     
     clf;
-    
-    
-    %% Uebersicht der mittleren Bewertung nach Signalquelle
-    
+end
+
+function [] = UebersichtDerMittlerenBewertungNachSignalquelle(obj, parameters_idx, stParams, index)
+
+    %% Unpacking
+
+    bar_colors = stParams.bar_colors;
+    pie_colors =  stParams.pie_colors;
+    parameter_variable = stParams.parameter_variable;
+    parameter_name = stParams.parameter_name;
+    paremter_name_mean = stParams.paremter_name_mean;
+    scales = stParams.scales;
+    difficulties = stParams.difficulties;
+    situation_name = stParams.situation_name;
+    activities_name = stParams.activities_name;
+    source_name = stParams.source_name;
+    QuestionnairesTable = stParams.QuestionnairesTable;
+    PossibleAnswers = stParams.PossibleAnswers;
+
+    %%
+
+    figure_idx = index;
     
     % Loop over all 24 Sources
     for sources_idx = 1 : 32 %24
@@ -461,8 +576,6 @@ for parameters_idx = 1 : 3
     mean_plot = mean_plot(options_idx, :);
     
     % Plot
-    figure_idx = figure_idx+1;
-    
     hFig_Source = figure();
     hFig_Source.Visible = 'Off';
     hFig_Source.Color = 'w';
@@ -577,13 +690,6 @@ for parameters_idx = 1 : 3
         num2str(parameters_idx), '.pdf'], '-native');
     
     clf;
-    
-    clear parameters
-    
-end
-
-hProgress.stopTimer();
-
 end
 
 %--------------------Licence ---------------------------------------------

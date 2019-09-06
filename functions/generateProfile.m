@@ -24,7 +24,12 @@ function generateProfile(obj)
     if ~isempty(obj.stSubject.Folder)
         
         %% Personal Profile:
-        generateDiagrams(obj);
+        
+%         if obj.isParallel
+%             generateDiagramsParallel(obj);
+%         else
+            generateDiagrams(obj);
+%         end
         
         if obj.bIncludeObjectiveData        
            

@@ -71,218 +71,227 @@ szAkuDataPath = fullfile(obj.stSubject.Folder, [obj.stSubject.Name '_AkuData']);
 
 szMatFile = fullfile(obj.stSubject.Folder, [obj.stSubject.Name '.mat']);
 
-if ~exist(szAkuDataPath, 'dir')
-    error('%s: Sub-directory ''_AkuData'' does not exist',obj.stSubject.Name)
-end
-
-% Get all .feat-file names
-listFeatFiles = listFiles(szAkuDataPath, '*.feat', 1);
-
-% Store names in a cell array
-listFeatFiles = {listFeatFiles.name};
-
-% Get names without paths
-[~,listFeatFiles] = cellfun(@fileparts, listFeatFiles, 'UniformOutput', false);
-listFeatFiles = strcat(listFeatFiles,'.feat');
-
-splitNames = regexpi(listFeatFiles, '_', 'split');
-numFilenameParts = numel(splitNames{1});
-
-
-if numFilenameParts < 4
-    isOldFormat = true;
-else
-    isOldFormat = false;
-end
-
-% Get dates of corrupt files to delete all features with that specific time stamp
-%corruptFiles = listFeatFiles(cellfun(@(x) (strcmpi(x(1),'a')), listFeatFiles));
-corruptTxtFile = fullfile(obj.stSubject.Folder, 'corrupt_files.txt');
-if ~exist(corruptTxtFile,'file')
-    CheckDataIntegrety(obj.stSubject.Name);
-end
-fid = fopen(corruptTxtFile,'r');
-corruptFiles = textscan(fid,'%s\n');
-fclose(fid);
-corruptFiles = corruptFiles{:};
-
-[listFeatFiles, ia] = setdiff(listFeatFiles',corruptFiles,'stable');
-if isOldFormat
-    validNameLength = 21;
-else
-    validNameLength = 28;
-end
-isValidNameLength = cellfun(@(x) (length(x) > validNameLength), corruptFiles);
-
-if all(isValidNameLength == true)
+if exist(szMatFile, 'file') ~= 2
     
-    if isOldFormat
-        corruptFiles = cellfun(@(x) (regexp(x,'\d+_\d+','match')), corruptFiles,'UniformOutput',false);
-    else
-        corruptFiles = cellfun(@(x) (regexp(x,'\d+_\d+_\d+','match')), corruptFiles,'UniformOutput',false);
+    if ~exist(szAkuDataPath, 'dir')
+        error('%s: Sub-directory ''_AkuData'' does not exist',obj.stSubject.Name)
     end
-    corruptFiles = [corruptFiles{:}];
-else
-    errorFID = fopen(fullfile(szSubjectDir,'error.txt'),'w');
-    fprintf(errorFID,'There were files with an invalid name length. Therefore no mat-file was created.');
-    fclose(errorFID);
-    warning('%s: Files with invalid name length found. Returning and continuing with next subject ...', obj.stSubject.Name);
-    return;
-end
-
-datenumCorruptFiles = [];
-if ~isempty(corruptFiles)
-    if isOldFormat
-        datenumCorruptFiles = datenum(cellfun(@(x) x(1:end), corruptFiles, 'UniformOutput',false), 'yyyymmdd_HHMMSSFFF');
+    
+    % Get all .feat-file names
+    listFeatFiles = listFiles(szAkuDataPath, '*.feat', 1);
+    
+    % Store names in a cell array
+    listFeatFiles = {listFeatFiles.name};
+    
+    % Get names without paths
+    [~,listFeatFiles] = cellfun(@fileparts, listFeatFiles, 'UniformOutput', false);
+    listFeatFiles = strcat(listFeatFiles,'.feat');
+    
+    splitNames = regexpi(listFeatFiles, '_', 'split');
+    numFilenameParts = numel(splitNames{1});
+    
+    
+    if numFilenameParts < 4
+        isOldFormat = true;
     else
-        datenumCorruptFiles = datenum(cellfun(@(x) x(8:end), corruptFiles, 'UniformOutput',false), 'yyyymmdd_HHMMSSFFF');
+        isOldFormat = false;
     end
-end
-
-% Get all features
-caFeatures = unique(cellfun(@(x) (x(1:3)), listFeatFiles, 'UniformOutput', false));
-numFeatures = numel(caFeatures);
-
-if isOldFormat
-    partNumber = '';
-    % Get only the dates from the file names
-    listFeatFiles = cellfun(@(x) x(5:22), listFeatFiles, 'UniformOutput', false);
-else
-    partNumber = cellfun(@(x) x(5:10), listFeatFiles, 'UniformOutput', false);
-    % Get only the dates from the file names
-    listFeatFiles = cellfun(@(x) x(12:29), listFeatFiles, 'UniformOutput', false);
-end
-
-
-listFeatFiles = datenum(listFeatFiles,'yyyymmdd_HHMMSSFFF');
-
-% Get indexes of all 'corrupt time stamps'
-if ~isempty(datenumCorruptFiles)
-    corruptIndexes = [];
-    for corruptFile = 1:numel(datenumCorruptFiles)
-        for idxList = 1:numel(listFeatFiles)
-            if datenumCorruptFiles(corruptFile) == listFeatFiles(idxList)
-                corruptIndexes = [corruptIndexes idxList];
-
-            end
+    
+    % Get dates of corrupt files to delete all features with that specific time stamp
+    %corruptFiles = listFeatFiles(cellfun(@(x) (strcmpi(x(1),'a')), listFeatFiles));
+    corruptTxtFile = fullfile(obj.stSubject.Folder, 'corrupt_files.txt');
+    if ~exist(corruptTxtFile,'file')
+        CheckDataIntegrety(obj.stSubject.Name);
+    end
+    fid = fopen(corruptTxtFile,'r');
+    corruptFiles = textscan(fid,'%s\n');
+    fclose(fid);
+    corruptFiles = corruptFiles{:};
+    
+    [listFeatFiles, ia] = setdiff(listFeatFiles',corruptFiles,'stable');
+    if isOldFormat
+        validNameLength = 21;
+    else
+        validNameLength = 28;
+    end
+    isValidNameLength = cellfun(@(x) (length(x) > validNameLength), corruptFiles);
+    
+    if all(isValidNameLength == true)
+        
+        if isOldFormat
+            corruptFiles = cellfun(@(x) (regexp(x,'\d+_\d+','match')), corruptFiles,'UniformOutput',false);
+        else
+            corruptFiles = cellfun(@(x) (regexp(x,'\d+_\d+_\d+','match')), corruptFiles,'UniformOutput',false);
+        end
+        corruptFiles = [corruptFiles{:}];
+    else
+        errorFID = fopen(fullfile(szSubjectDir,'error.txt'),'w');
+        fprintf(errorFID,'There were files with an invalid name length. Therefore no mat-file was created.');
+        fclose(errorFID);
+        warning('%s: Files with invalid name length found. Returning and continuing with next subject ...', obj.stSubject.Name);
+        return;
+    end
+    
+    datenumCorruptFiles = [];
+    if ~isempty(corruptFiles)
+        if isOldFormat
+            datenumCorruptFiles = datenum(cellfun(@(x) x(1:end), corruptFiles, 'UniformOutput',false), 'yyyymmdd_HHMMSSFFF');
+        else
+            datenumCorruptFiles = datenum(cellfun(@(x) x(8:end), corruptFiles, 'UniformOutput',false), 'yyyymmdd_HHMMSSFFF');
         end
     end
     
-    % Delete 'corrupt time stamps'
-    listFeatFiles(corruptIndexes) = [];
+    % Get all features
+    caFeatures = unique(cellfun(@(x) (x(1:3)), listFeatFiles, 'UniformOutput', false));
+    numFeatures = numel(caFeatures);
+    
+    if isOldFormat
+        partNumber = '';
+        % Get only the dates from the file names
+        listFeatFiles = cellfun(@(x) x(5:22), listFeatFiles, 'UniformOutput', false);
+    else
+        partNumber = cellfun(@(x) x(5:10), listFeatFiles, 'UniformOutput', false);
+        % Get only the dates from the file names
+        listFeatFiles = cellfun(@(x) x(12:29), listFeatFiles, 'UniformOutput', false);
+    end
+    
+    
+    listFeatFiles = datenum(listFeatFiles,'yyyymmdd_HHMMSSFFF');
+    
+    % Get indexes of all 'corrupt time stamps'
+    if ~isempty(datenumCorruptFiles)
+        corruptIndexes = [];
+        for corruptFile = 1:numel(datenumCorruptFiles)
+            for idxList = 1:numel(listFeatFiles)
+                if datenumCorruptFiles(corruptFile) == listFeatFiles(idxList)
+                    corruptIndexes = [corruptIndexes idxList];
+                    
+                end
+            end
+        end
+        
+        % Delete 'corrupt time stamps'
+        listFeatFiles(corruptIndexes) = [];
+        
+        if ~isOldFormat
+            partNumber(corruptIndexes) = [];
+        end
+    end
+    
+    % Get time stamps only once regardless of the feature (short feature names will be put in front later on)
+    [uniqueDays,uniIdx,~] = unique(listFeatFiles);
     
     if ~isOldFormat
-        partNumber(corruptIndexes) = [];
+        partNumber = partNumber(uniIdx)';
+        partNumber = strcat('_', partNumber)';
     end
+    uniqueDatesAsStrings = cellstr(datestr(uniqueDays,'yyyymmdd_HHMMSSFFF'));
+    
+    % Append file extension again
+    listFeatFiles = strcat(szAkuDataPath, filesep, 'RMS', partNumber, '_', uniqueDatesAsStrings, '.feat');
+    %listFeatFiles = cellfun(@(x) [szAkuDataPath filesep x '.feat'], uniqueDatesAsStrings, 'UniformOutput', false);
+    
+    NumFeatFiles = numel(listFeatFiles);
+    
+    if isOldFormat
+        partNumber = cell(NumFeatFiles,1);
+    end
+    % fullfile(tempDir, szSubjectDir, [stSubject.SubjectID '.mat']);
+    % Check each chunk for validity via validatechunk.m
+    caErrorCodes = cell(numFeatures*NumFeatFiles,1);
+    caPercentErrors = cell(numFeatures*NumFeatFiles,1);
+    finalList = cell(numFeatures*NumFeatFiles,1);
+    listCounter = 0;
+    
+    tmpList = cell(NumFeatFiles, numFeatures);
+    tmpErrorCodes = cell(NumFeatFiles);
+    tmpCaPercentErrors = cell(NumFeatFiles);
+    
+    % tic;
+    
+    if obj.isParallel
+        
+        %     vIdxPrecompute = [1:3:3*(NumFeatFiles-1)+1; 2:3:3*(NumFeatFiles-1)+2; 3:3:3*NumFeatFiles]'
+        % vIdxPrecompute = reshape(1:3*NumFeatFiles, 3, NumFeatFiles)';
+        
+        parfor ii = 1 : NumFeatFiles
+            
+            %clc; %progress_bar(ii, NumFeatFiles, 3, 5)
+            [iErrorCode, percentErrors] = validatechunk(listFeatFiles{ii}, configStruct);
+            %         finalList(listCounter*numFeatures+1:(listCounter+1)*numFeatures,1) = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+            %         finalList((ii-1)*numFeatures+1:((ii-1)+1)*numFeatures,1) = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+            
+            %         tmpList{ii, :} = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+            
+            
+            tmp = strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat');
+            tmpList(ii, :) = tmp';
+            
+            
+            %         tmpList{ii, :} = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+            %         tmpList{ii, 2} = [strcat(caFeatures(2), partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+            %         tmpList{ii, 3} = [strcat(caFeatures(3), partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+            
+            
+            
+            %         caErrorCodes(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = iErrorCode;
+            tmpErrorCodes(ii) = iErrorCode;
+            
+            %         caErrorCodes((ii-1)*numFeatures+1:((ii-1)+1)*numFeatures) = iErrorCode;
+            %         caPercentErrors(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = percentErrors;
+            %         caPercentErrors((ii-1)*numFeatures+1:((ii-1)+1)*numFeatures) = percentErrors;
+            
+            tmpCaPercentErrors(ii) = percentErrors;
+            
+            %         listCounter = listCounter +1;
+        end
+        
+        for ii = 1 : NumFeatFiles
+            
+            idx1 = (ii-1)*numFeatures+1;
+            idx2 = (ii-1)*numFeatures+2;
+            idx3 = (ii-1)*numFeatures+3;
+            
+            finalList(idx1 ,1) = tmpList(ii, 1);
+            finalList(idx2 ,1) = tmpList(ii, 2);
+            finalList(idx3 ,1) = tmpList(ii, 3);
+            
+            caErrorCodes(idx1, 1) = tmpErrorCodes(ii);
+            caErrorCodes(idx2, 1) = tmpErrorCodes(ii);
+            caErrorCodes(idx3, 1) = tmpErrorCodes(ii);
+            
+            caPercentErrors(idx1, 1) = tmpCaPercentErrors(ii);
+            caPercentErrors(idx2, 1) = tmpCaPercentErrors(ii);
+            caPercentErrors(idx3, 1) = tmpCaPercentErrors(ii);
+            
+        end
+        
+    else
+        
+        for ii = 1:NumFeatFiles
+            
+            %clc; %progress_bar(ii, NumFeatFiles, 3, 5)
+            [iErrorCode, percentErrors] = validatechunk(listFeatFiles{ii}, configStruct);
+            finalList(listCounter*numFeatures+1:(listCounter+1)*numFeatures,1) = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
+            caErrorCodes(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = iErrorCode;
+            caPercentErrors(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = percentErrors;
+            listCounter = listCounter +1;
+        end
+        
+    end
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    stSubject.chunkID = struct('FileName',{finalList},'ErrorCode',{caErrorCodes}, 'PercentageError', {caPercentErrors});
+    
+    save(szMatFile,'stSubject');
+    
 end
 
-% Get time stamps only once regardless of the feature (short feature names will be put in front later on)
-[uniqueDays,uniIdx,~] = unique(listFeatFiles);
-
-if ~isOldFormat
-    partNumber = partNumber(uniIdx)';
-    partNumber = strcat('_', partNumber)';
-end
-uniqueDatesAsStrings = cellstr(datestr(uniqueDays,'yyyymmdd_HHMMSSFFF'));
-
-% Append file extension again
-listFeatFiles = strcat(szAkuDataPath, filesep, 'RMS', partNumber, '_', uniqueDatesAsStrings, '.feat');
-%listFeatFiles = cellfun(@(x) [szAkuDataPath filesep x '.feat'], uniqueDatesAsStrings, 'UniformOutput', false);
-
-NumFeatFiles = numel(listFeatFiles);
-
-if isOldFormat
-    partNumber = cell(NumFeatFiles,1);
-end
-% fullfile(tempDir, szSubjectDir, [stSubject.SubjectID '.mat']);
-% Check each chunk for validity via validatechunk.m
-caErrorCodes = cell(numFeatures*NumFeatFiles,1);
-caPercentErrors = cell(numFeatures*NumFeatFiles,1);
-finalList = cell(numFeatures*NumFeatFiles,1);
-listCounter = 0;
-
-tmpList = cell(NumFeatFiles, numFeatures);
-tmpErrorCodes = cell(NumFeatFiles);
-tmpCaPercentErrors = cell(NumFeatFiles);
-
-% tic;
-
-if obj.isParallel
-    
-
-    parfor ii = 1 : NumFeatFiles
-        
-        %clc; %progress_bar(ii, NumFeatFiles, 3, 5)
-        [iErrorCode, percentErrors] = validatechunk(listFeatFiles{ii}, configStruct);
-%         finalList(listCounter*numFeatures+1:(listCounter+1)*numFeatures,1) = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
-%         finalList((ii-1)*numFeatures+1:((ii-1)+1)*numFeatures,1) = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
-        
-%         tmpList{ii, :} = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
-        tmp = strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat');
-        tmpList(ii, :) = tmp';
-
-%         tmpList{ii, :} = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
-%         tmpList{ii, 2} = [strcat(caFeatures(2), partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
-%         tmpList{ii, 3} = [strcat(caFeatures(3), partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
-        
-
-        
-%         caErrorCodes(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = iErrorCode;
-        tmpErrorCodes(ii) = iErrorCode;
-
-%         caErrorCodes((ii-1)*numFeatures+1:((ii-1)+1)*numFeatures) = iErrorCode;
-%         caPercentErrors(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = percentErrors;
-%         caPercentErrors((ii-1)*numFeatures+1:((ii-1)+1)*numFeatures) = percentErrors;
-
-        tmpCaPercentErrors(ii) = percentErrors;
-
-%         listCounter = listCounter +1;
-    end
-    
-    for ii = 1 : NumFeatFiles
-        
-        idx1 = (ii-1)*numFeatures+1;
-        idx2 = (ii-1)*numFeatures+2;
-        idx3 = (ii-1)*numFeatures+3;
-        
-        finalList(idx1 ,1) = tmpList(ii, 1);
-        finalList(idx2 ,1) = tmpList(ii, 2);
-        finalList(idx3 ,1) = tmpList(ii, 3);
-        
-        caErrorCodes(idx1, 1) = tmpErrorCodes(ii);
-        caErrorCodes(idx2, 1) = tmpErrorCodes(ii);
-        caErrorCodes(idx3, 1) = tmpErrorCodes(ii);
-       
-        caPercentErrors(idx1, 1) = tmpCaPercentErrors(ii);
-        caPercentErrors(idx2, 1) = tmpCaPercentErrors(ii);
-        caPercentErrors(idx3, 1) = tmpCaPercentErrors(ii);
-        
-    end
-    
-else
-    
-    for ii = 1:NumFeatFiles
-    
-        %clc; %progress_bar(ii, NumFeatFiles, 3, 5)
-        [iErrorCode, percentErrors] = validatechunk(listFeatFiles{ii}, configStruct);
-        finalList(listCounter*numFeatures+1:(listCounter+1)*numFeatures,1) = [strcat(caFeatures, partNumber{ii}, '_', uniqueDatesAsStrings{ii}, '.feat')];
-        caErrorCodes(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = iErrorCode;
-        caPercentErrors(listCounter*numFeatures+1:(listCounter+1)*numFeatures) = percentErrors;
-        listCounter = listCounter +1;
-    end
-
-end
-
-
-
-
-
-
-
-
-
-stSubject.chunkID = struct('FileName',{finalList},'ErrorCode',{caErrorCodes}, 'PercentageError', {caPercentErrors});
-
-save(szMatFile,'stSubject');
-     
 % EOF validatesubject.m

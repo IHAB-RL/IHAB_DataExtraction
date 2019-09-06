@@ -79,6 +79,7 @@ classdef IHABdata < handle
         mColors;
         
         hProgress;
+        hProgressCommandLine;
         
         vProportions = zeros(6,1);
         vProportions_Sorted;
@@ -182,8 +183,8 @@ classdef IHABdata < handle
     end
     
     methods
-        function [obj] = IHABdata()
-            
+        function [obj] = IHABdata(varargin)
+                
             if obj.isParallel && isempty(gcp('nocreate'))
                 myCluster = parcluster();
                 myCluster.NumWorkers = 12;
@@ -255,10 +256,33 @@ classdef IHABdata < handle
             
             obj.mColors = getColors();
             
-            % Create the GUI
-            obj.gui();
+            
             
             obj.getPreferencesFromFile();
+            
+            if nargin == 1
+                
+                obj.hProgressCommandLine = BlindProgressCommandLine();
+                
+                sFolder = varargin{1};
+                
+                openSubjectFolderCommandLine(obj, sFolder);
+                
+                examineObjectiveData(obj);
+                
+                generateOverviewCommandLine(obj);
+                
+                fprintf('\nFinished\n\n');
+                fprintf(['Information on available objective data is ',...
+                    'found in {obj}.stAnalysis\n']);
+                
+            else
+            
+                % Create the GUI
+                obj.gui();
+                
+            end
+            
         end
         
         function [] = gui(obj)
@@ -709,7 +733,76 @@ classdef IHABdata < handle
         
         end
         
-        
+        function [] = openSubjectFolderCommandLine(obj, sFolder)
+           
+            % Automatically extract subject info from folder name
+            
+            cPathName = split(sFolder, '\');
+            sInfo = cPathName{end};
+            
+            cSubjectData = regexp(sInfo, ...
+                '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
+            
+            if isempty(cSubjectData{1}{5})
+                cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
+            else
+                obj.stSubject.Appendix = cSubjectData{1}{6};
+                cSubjectData = {cSubjectData{1}{2:4}};
+            end
+            
+            if isValidSubjectData(cSubjectData)
+                
+                obj.stSubject.Name = cSubjectData{1};
+                obj.stSubject.Date = cSubjectData{2};
+                obj.stSubject.Experimenter = cSubjectData{3};
+                obj.stSubject.Folder = sFolder;
+                obj.stSubject.Code = sInfo;
+              
+            else
+                fprintf('Cannot read folder.\n');
+                return;
+            end
+            
+            % check for Log
+            
+            nLog = exist(fullfile(sFolder,'log2.txt'), 'file') == 2;
+            if nLog
+                fprintf('[x] Log data found.\n');
+                obj.bLog = 1;
+            else
+                fprintf('[ ] No Log data was found.\n');
+            end
+            
+            % check for questionnaires
+            
+            stQuestionnaires = dir([sFolder, filesep, cSubjectData{1}, '_Quest']);
+            stQuestionnaires(1:2) = [];
+            nQuestionnaires = length(stQuestionnaires);
+            if nQuestionnaires >= 0
+                fprintf('[x] Questionnaire data found.\n');
+                obj.bQuest = 1;
+            else
+                fprintf('[ ] No Questionnaire data found.');
+            end
+            
+            % check for feature data
+            
+            stFeatures = dir([sFolder, filesep, cSubjectData{1}, '_AkuData']);
+            stFeatures(1:2) = [];
+            nFeatures = length(stFeatures);
+            if nFeatures >= 0
+                fprintf('[x] Feature data found.\n');
+                obj.bFeatures = 1;
+            else
+                fprintf('[ ] No Feature data found.\n');
+            end
+            
+            if obj.isDataCompleteEnoughForAnalysis()
+                fprintf('Data complete for analysis.\n\n');
+            end
+            
+        end
+           
         function [] = openSubjectFolder(obj, sFolder)
             
             if (sFolder == 0)
