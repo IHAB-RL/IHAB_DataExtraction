@@ -7,3 +7,5 @@ Usage:
 	..* from Command line: {obj} = IHABdata([Path to data folder]);
 
 For information on Device Parameters and/or objective Data, use {obj}.stAnalysis
+
+Version 1.0
