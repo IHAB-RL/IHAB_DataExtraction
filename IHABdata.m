@@ -272,6 +272,8 @@ classdef IHABdata < handle
                 
                 generateOverviewCommandLine(obj);
                 
+                readDeviceParameters(obj);
+                
                 fprintf('\nFinished\n\n');
                 fprintf(['Information on available objective data is ',...
                     'found in {obj}.stAnalysis\n']);
