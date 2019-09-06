@@ -4,22 +4,25 @@ Matlab tool for automatic data extraction and analysis from smartphone.
 
 ### Usage: ###  
 
-...Graphical User Interface:
+* Graphical User Interface:
 
-```javascript
+```matlab
 IHABdata()
 ```
 
-...Command Line:
+* Command Line:
 
-```javascript
+```matlab
 [obj] = IHABdata([Path to data folder]);
 ```
 
-
-For information on Device Parameters and/or objective Data, use:
-```javascript
+* For information on Device Parameters and/or objective Data, use:
+```matla
 [obj].stAnalysis
 ```
+
+### Prerequisites: ###
+* Matlab 2018b (or later)
+* ADB (if used with smartphone)
 
 Version 1.0
