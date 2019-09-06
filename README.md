@@ -17,6 +17,9 @@ IHABdata()
 ```
 
 
-For information on Device Parameters and/or objective Data, use [obj].stAnalysis
+For information on Device Parameters and/or objective Data, use:
+```javascript
+[obj].stAnalysis
+```
 
 Version 1.0
