@@ -281,6 +281,8 @@ classdef IHABdata < handle
                 fprintf(['Information on available objective data is ',...
                     'found in {obj}.stAnalysis\n']);
                 
+                obj.hProgressCommandLine.killTimer();
+                
             else
                 
                 % Create the GUI
