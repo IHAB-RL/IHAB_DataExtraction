@@ -1,7 +1,7 @@
-function [] = readDeviceParameters(obj)
+function [] = readDeviceParameters(obj, varargin)
 
-% Read the Device Id, App version and Survey URI from first Questionnaire 
-% file in Quest Folder. -> Every participant used a single device during 
+% Read the Device Id, App version and Survey URI from first Questionnaire
+% file in Quest Folder. -> Every participant used a single device during
 % the study (phone UUID) and the same questionnaire is applied.
 
 fprintf('\t.reading device parameters -');
@@ -28,14 +28,40 @@ if ~isempty(stDir)
         end
     end
     
-    % Extracting Device ID
-    sDeviceId = '';
-    while isempty(sDeviceId)
-        sContents = fgetl(fid);
-        if contains(sContents, 'device_id="')
-            vPos = strfind(sContents, '"');
-            sDeviceId = sContents(vPos(1)+1:vPos(2)-1);
+    if nargin == 2
+        % Workaround for IHAB-rl - Reliable ID system to be implemented in the
+        % future
+        
+        iEMA = varargin{1};
+        
+        stContents = load('IdentificationProbandSystem_Maps.mat');
+        
+        sName = obj.stSubject.Name;
+        if iEMA == 1
+            if isKey(stContents.mapSubject_1, sName)
+                sDeviceId = stContents.mapSubject_1(sName);
+            else
+                sDeviceId = 'Subject not in table'; 
+            end
+        else
+            if isKey(stContents.mapSubject_2, sName)
+                sDeviceId = stContents.mapSubject_2(sName);
+            else
+                sDeviceId = 'Subject not in table'; 
+            end
         end
+        
+    else
+        % Extracting Device ID
+        sDeviceId = '';
+        while isempty(sDeviceId)
+            sContents = fgetl(fid);
+            if contains(sContents, 'device_id="')
+                vPos = strfind(sContents, '"');
+                sDeviceId = sContents(vPos(1)+1:vPos(2)-1);
+            end
+        end
+        
     end
     
     % Extracting App Version

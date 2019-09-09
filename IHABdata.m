@@ -262,10 +262,9 @@ classdef IHABdata < handle
             
             obj.getPreferencesFromFile();
             
-            if nargin == 1
+            if nargin > 0
                 
                 obj.hProgressCommandLine = BlindProgressCommandLine();
-                
                 
                 sFolder = varargin{1};
                 
@@ -275,7 +274,12 @@ classdef IHABdata < handle
                 
                 generateOverviewCommandLine(obj);
                 
-                readDeviceParameters(obj);
+                if (nargin == 2)
+                    iEma = varargin{2};
+                    readDeviceParameters(obj, iEma);
+                else
+                    readDeviceParameters(obj);
+                end
                 
                 fprintf('\nFinished\n\n');
                 fprintf(['Information on available objective data is ',...
