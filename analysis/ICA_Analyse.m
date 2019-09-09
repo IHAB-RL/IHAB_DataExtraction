@@ -19,9 +19,15 @@ szBaseDir ='F:\IHAB_ROHDATEN\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
 szOut = 'E:\Results';
 szDir = dir(szBaseDir);
 szDir(1:2) = [];
-for dd = length(szDir):length(szDir)
-% dd = 14
+for dd = 1:length(szDir)
+
     szPersonDir = [szBaseDir filesep szDir(dd).name]
+    
+    if ~szDir(dd).isdir
+        fprintf('%s is not a valid directory.\n', szDir(dd).name);
+        continue; 
+    end
+    
     if (computeNew)
         obj = IHABdata(szPersonDir);
         save OnePerson obj

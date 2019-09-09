@@ -262,26 +262,32 @@ classdef IHABdata < handle
             
             if nargin > 0
                 
-                obj.hProgressCommandLine = BlindProgressCommandLine();
+                try 
+                    
+                    obj.hProgressCommandLine = BlindProgressCommandLine();
+
+                    sFolder = varargin{1};
+
+                    openSubjectFolderCommandLine(obj, sFolder);
+
+                    examineObjectiveData(obj);
+
+                    generateOverviewCommandLine(obj);
+
+                    if (nargin == 2)
+                        iEMA = varargin{2};
+                        readDeviceParameters(obj, iEMA);
+                    else
+                        readDeviceParameters(obj);
+                    end
+
+                    fprintf('\nFinished\n\n');
+                    fprintf(['Information on available objective data is ',...
+                        'found in {obj}.stAnalysis\n']);
                 
-                sFolder = varargin{1};
-                
-                openSubjectFolderCommandLine(obj, sFolder);
-                
-                examineObjectiveData(obj);
-                
-                generateOverviewCommandLine(obj);
-                
-                if (nargin == 2)
-                    iEMA = varargin{2};
-                    readDeviceParameters(obj, iEMA);
-                else
-                    readDeviceParameters(obj);
+                catch Exception
+                    fprintf('Exception %s caught.', Exception); 
                 end
-                
-                fprintf('\nFinished\n\n');
-                fprintf(['Information on available objective data is ',...
-                    'found in {obj}.stAnalysis\n']);
                 
                 obj.hProgressCommandLine.killTimer();
                 
