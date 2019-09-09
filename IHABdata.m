@@ -275,8 +275,8 @@ classdef IHABdata < handle
                 generateOverviewCommandLine(obj);
                 
                 if (nargin == 2)
-                    iEma = varargin{2};
-                    readDeviceParameters(obj, iEma);
+                    iEMA = varargin{2};
+                    readDeviceParameters(obj, iEMA);
                 else
                     readDeviceParameters(obj);
                 end
