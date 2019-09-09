@@ -1,5 +1,0 @@
-
-ccc;
-a = IHABdata('E:\EK06DI26_180905_aw', 1);
-
-% a = IHABdata('F:\IHAB_ROHDATEN\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018\EK06DI26_180905_aw',1);

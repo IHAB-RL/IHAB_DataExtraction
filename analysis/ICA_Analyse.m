@@ -5,7 +5,7 @@ close all
 addpath('..');
 
 computeNew = 1;
-szPersonDir = 'E:\IHABTest\TE09LD20_181030_aw';
+szPersonDir = 'F:\IHAB_ROHDATEN\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018\HM06LM23_181112_aw';
 %szPersonDir = 'F:\IHAB_2_EMA2018\IHAB_Rohdaten_EMA2018\ES04CH28_190423_aw';
 %szPersonDir =
 
@@ -15,11 +15,12 @@ szPersonDir = 'E:\IHABTest\TE09LD20_181030_aw';
 
 
 % szPersonDir = 'F:\HALLO_EMA2016\EMA_Rohdaten\CH04RT10_161122_fs';
-szBaseDir ='E:\IHABTest';
+szBaseDir ='F:\IHAB_ROHDATEN\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
 szOut = 'E:\Results';
 szDir = dir(szBaseDir);
 szDir(1:2) = [];
 for dd = length(szDir):length(szDir)
+% dd = 14
     szPersonDir = [szBaseDir filesep szDir(dd).name]
     if (computeNew)
         obj = IHABdata(szPersonDir);
@@ -54,4 +55,4 @@ for dd = length(szDir):length(szDir)
         save([szOut filesep obj.stSubject.Name '_' num2str(kk)],'obj', 'AllTime', 'AllData','kk','analDate');
     end
 end
-stop(timerfind)
+% stop(timerfind)
