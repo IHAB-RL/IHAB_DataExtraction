@@ -258,14 +258,11 @@ classdef IHABdata < handle
             
             obj.mColors = getColors();
             
-            
-            
             obj.getPreferencesFromFile();
             
-            if nargin == 1
+            if nargin > 0
                 
                 obj.hProgressCommandLine = BlindProgressCommandLine();
-                
                 
                 sFolder = varargin{1};
                 
@@ -275,11 +272,18 @@ classdef IHABdata < handle
                 
                 generateOverviewCommandLine(obj);
                 
-                readDeviceParameters(obj);
+                if (nargin == 2)
+                    iEMA = varargin{2};
+                    readDeviceParameters(obj, iEMA);
+                else
+                    readDeviceParameters(obj);
+                end
                 
                 fprintf('\nFinished\n\n');
                 fprintf(['Information on available objective data is ',...
                     'found in {obj}.stAnalysis\n']);
+                
+                obj.hProgressCommandLine.killTimer();
                 
             else
                 
