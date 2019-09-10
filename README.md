@@ -16,6 +16,13 @@ IHABdata()
 [obj] = IHABdata([Path to data folder]);
 ```
 
+* or in case of IHAB-rl:
+
+```matlab
+[obj] = IHABdata([Path to data folder], [#EMA run]);
+```
+
+
 * For information on Device Parameters and/or objective Data, use:
 ```matla
 [obj].stAnalysis
