@@ -19,6 +19,7 @@ classdef IHABdata < handle
         
         isParallel = true;
         isBatch = false;
+        isHallo = false;
         
         sTitleFig1 = 'IHAB data';
         sTitleFig2 = 'Legend';
@@ -285,8 +286,10 @@ classdef IHABdata < handle
                     fprintf(['Information on available objective data is ',...
                         'found in {obj}.stAnalysis\n']);
                 
-                catch Exception
-                    fprintf('Exception %s caught.', Exception); 
+                catch MException
+                    obj.hProgressCommandLine.killTimer();
+                    %TODO: Add more info
+                    error('%s', MException.message);
                 end
                 
                 obj.hProgressCommandLine.killTimer();
@@ -758,11 +761,24 @@ classdef IHABdata < handle
             cSubjectData = regexp(sInfo, ...
                 '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
             
-            if isempty(cSubjectData{1}{5})
-                cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
-            else
-                obj.stSubject.Appendix = cSubjectData{1}{6};
-                cSubjectData = {cSubjectData{1}{2:4}};
+            
+            if isempty(cSubjectData)
+            
+               tmp = regexp(sInfo, ...
+                '(\w)*(\w){8}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
+                cSubjectData{1} = tmp{1}{2};
+                cSubjectData{2} = '000000'; %datestr(now, 'yymmdd')
+                cSubjectData{3} = tmp{1}{3};
+            
+            else 
+                
+                if isempty(cSubjectData{1}{5})
+                    cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
+                else
+                    obj.stSubject.Appendix = cSubjectData{1}{6};
+                    cSubjectData = {cSubjectData{1}{2:4}};
+                end
+            
             end
             
             if isValidSubjectData(cSubjectData)
@@ -776,6 +792,7 @@ classdef IHABdata < handle
             else
                 fprintf('Cannot read folder.\n');
                 return;
+            
             end
             
             % check for Log
@@ -790,9 +807,32 @@ classdef IHABdata < handle
             
             % check for questionnaires
             
-            stQuestionnaires = dir([sFolder, filesep, cSubjectData{1}, '_Quest']);
+            sQuestName = '_Quest';
+            
+            if exist([sFolder, filesep, cSubjectData{1}, '_Mobeval'], 'dir') == 7
+                
+                obj.isHallo = true;
+                sFolderQuest = [sFolder, filesep, cSubjectData{1}, '_Mobeval'];
+                stDir = rdir([sFolderQuest, filesep, '**\*.xml']);
+                sProfile = '(\w){8}-(\w){4}-(\w){4}-(\w){4}-(\w){12}.xml';
+
+                for iDir = 1:length(stDir)
+
+                    cContents = regexp(stDir(iDir).name, sProfile, 'tokens');
+                    if ~isempty(cContents)
+                        sQuestName = stDir(iDir).folder;
+                        continue;
+                    end
+                end
+                
+            else
+                sQuestName = [sFolder, filesep, cSubjectData{1}, sQuestName];
+            end
+            
+            stQuestionnaires = dir(sQuestName);
             stQuestionnaires(1:2) = [];
             nQuestionnaires = length(stQuestionnaires);
+            obj.stAnalysis.NumberOfQuestionnaires = nQuestionnaires;
             if nQuestionnaires >= 0
                 fprintf('[x] Questionnaire data found.\n');
                 obj.bQuest = 1;
