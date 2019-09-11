@@ -25,7 +25,7 @@ IHABdata()
 * For complete analysis and PDF outptut:
 ```matlab
 [obj].analyseData()
-``
+```
 
 * For information on Device Parameters and/or objective Data, use:
 ```matlab
