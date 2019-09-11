@@ -15,9 +15,8 @@ end
 if nargin < 2
     printMode = true;
 end
-% szBaseDir = fullfile(pwd,'IHAB_Rohdaten_EMA2018');
-% subjectPath = dir([szBaseDir filesep subjectID '*']);
-%szBaseDir = [obj.stSubject.Folder,filesep, '..'];
+
+fclose all;
 
 if ~obj.isCommandLine
     obj.cListQuestionnaire{end} = sprintf('\t.analysing subject data -');
@@ -109,7 +108,7 @@ numInvalidDay = zeros(length(AllDates),1);
 percentInvalidDay = zeros(length(AllDates),1);
 txtFile = fullfile(obj.stSubject.Folder,[obj.stSubject.Name '.txt']);
 
-if exist(txtFile, 'file')
+if exist(txtFile, 'file') == 2
     delete(txtFile);
 end
 

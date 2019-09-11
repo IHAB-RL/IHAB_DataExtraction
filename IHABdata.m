@@ -58,8 +58,8 @@ classdef IHABdata < handle
         cStates = {'Charging', 'Error', 'Proposing',...
             'Connecting', 'Running', 'Quest'};
         
-        sMessage_Calculating = 'calculating';
-        sMessage_DataFormat = 'unsupported data format';
+        sMessage_Calculating = 'Calculating';
+        sMessage_DataFormat = 'Unsupported data format';
         
         sLabelButton_Legend_Close = 'Close';
         sLabelButton_PartLength_Close = 'Enter';
@@ -286,7 +286,7 @@ classdef IHABdata < handle
 
                     fprintf('\nFinished\n\n');
                     fprintf(['Information on available objective data is ',...
-                        'found in {obj}.stAnalysis\n']);
+                        'found in {obj}.stAnalysis\n\n']);
                 
                 catch MException
                     obj.hProgressCommandLine.killTimer();
@@ -1249,18 +1249,6 @@ classdef IHABdata < handle
             [~, cmdout] = system('adb shell ls /sdcard/ihab/features');
             vStatus = [vStatus, (~isempty(find(strfind(cmdout, 'No such file or directory'))) || ~isempty(cmdout))];
             
-            %             [~, cmdout] = system('adb shell ls -l /sdcard/ihab');
-            
-            %             if contains(cmdout, obj.sLogFile)
-            %                 tmp = splitlines(cmdout);
-            %                 for iLine = 1:length(tmp)
-            %                     if contains(tmp{iLine}, obj.sLogFile)
-            %                         tmp2 = split(tmp{iLine});
-            %                         vStatus = [vStatus, tmp2{4}<100];
-            %                     end
-            %                 end
-            %             end
-            
             if (mean(vStatus) == 0)
                 obj.cListQuestionnaire{end+1} = 'Data was erased from mobile device.';
                 obj.hListBox.Value = obj.cListQuestionnaire;
@@ -1940,6 +1928,26 @@ classdef IHABdata < handle
         
         function [] = analyseData(obj)
             
+            if obj.isHallo
+                if ~obj.isCommandLine
+                    obj.hLabel_Calculating.Text = obj.sMessage_DataFormat;
+                    obj.hLabel_Calculating.Visible = 'On';
+                else
+                   fprintf('%s\n\n', obj.sMessage_DataFormat); 
+                end
+                return;
+            end
+            
+            if obj.isCommandLine
+                warning('off');
+            end
+            
+            if obj.isCommandLine
+                fprintf('Performing analysis and generating PDF output -'); 
+                obj.hProgressCommandLine = BlindProgressCommandLine();
+                obj.hProgressCommandLine.startTimer();
+            end
+            
             if exist([obj.sFolderMain, filesep, 'cache', filesep, ...
                     obj.stSubject.Name, '.mat'], 'file') == 2
                 sErase_tmp = questdlg('Would you like to erase pre-cached data', ...
@@ -2013,10 +2021,16 @@ classdef IHABdata < handle
             obj.cListQuestionnaire{end-1} = sprintf('[x] Analysing subject: %s', obj.stSubject.Name);
             obj.cListQuestionnaire{end} = sprintf('     Finished in %s\n', formatSeconds(round(toc)));
             obj.hListBox.Value = obj.cListQuestionnaire;
-            
-            obj.hProgress.killTimer();
-            
+           
+            if obj.isCommandLine
+                obj.hProgressCommandLine.stopTimer();
+            else
+                obj.hProgress.killTimer();
+            end
+           
             delete(timerfindall);
+            
+            warning('on');
             
         end
         
@@ -2026,11 +2040,8 @@ classdef IHABdata < handle
         end
         
         function [] = callbackAnalyseData(obj, ~, ~)
-            if obj.isDataCompleteEnoughForAnalysis() && ~obj.isHallo
+            if obj.isDataCompleteEnoughForAnalysis()
                 obj.analyseData();
-            elseif obj.isHallo
-                obj.hLabel_Calculating.Text = obj.sMessage_DataFormat;
-                obj.hLabel_Calculating.Visible = 'On';
             end
         end
         
