@@ -271,9 +271,7 @@ classdef IHABdata < handle
                     
                     obj.hProgressCommandLine = BlindProgressCommandLine();
 
-                    sFolder = varargin{1};
-                    
-                    openSubjectFolder(obj, sFolder);
+                    openSubjectFolder(obj, varargin{1});
 
                     examineObjectiveData(obj);
 
