@@ -1,24 +1,32 @@
-function [Data, TimeVec, NrOfParts] =...
-    getObjectiveDataOneDay(obj, desiredDay, szFeature, PartNumberToLoad)
+function [Data,TimeVec,NrOfParts,stInfo]=getObjectiveDataOneDay(szBaseDir,szTestSubjectDir,desiredDay,szFeature,PartNumberToLoad,AllParts)
 % function to load objective data of one day for one test subject
 % Usage [Data,TimeVec]=getObjectiveDataOneDay(szTestSubject,desiredDay, szFeature)
 %
-% GUI IMPLEMENTATION UK
-%
 % Parameters
 % ----------
+% szBaseDir : string
+%    the path of the data folder
 % szTestSubject :  string
 %	 the "name" / pseudonym of the test subject
 % desiredDay :  date/time
 %	 the day of the desired data
 % szFeature :  string
 %	 name of the desired Feature default = 'PSD'
+% PartNumberToLoad : number 
+%    the number of the part to load
+% AllParts : logical
+%    if 0 PartNumberToLoad acts, if 1 all parts of the desired day
 %
 % Returns
 % -------
 % Data :  a matrix containg the feature data
 %
 % TimeVec :  a date/time vector with the corresponding time information
+% 
+% NrOfParts : number of parts at desired day
+%
+% stInfo : a struct containg infos about the feature files, e.g. fs, sample
+%          size
 %
 %------------------------------------------------------------------------
 % Example: Provide example here if applicable (one or two lines)
@@ -28,31 +36,31 @@ function [Data, TimeVec, NrOfParts] =...
 %         provide the citation detail here (with equation no. if applicable)
 % Version History:
 % Ver. 0.01 initial create (empty) 15-May-2017  Initials (eg. JB)
+% modified Sept 2019 (JP): get one or all parts of the desired day
 
-%------------Your function implementation here---------------------------
-
-if nargin < 3
+if nargin < 4
     szFeature = 'PSD';
+end
+if nargin < 5
     PartNumberToLoad = 1;
 end
-if nargin < 4
-    PartNumberToLoad = 1;
+if nargin < 6
+    AllParts = 0;
 end
 
 % check if the test person exist
-% stSubject = getsubjectfolder(szBaseDir,szTestSubject);
-
-if isempty(obj.stSubject.Folder)
+stSubject = getsubject(szBaseDir,szTestSubjectDir);
+if isempty(stSubject)
     Data = [];
     TimeVec = [];
     NrOfParts = [];
-    return;
-    
+    return;  
 end
+
 
 % check if the day has objective data
 % build the full directory
-szDir = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData' ];
+szDir = [szBaseDir filesep stSubject.FolderName filesep stSubject.SubjectID '_AkuData' ];
 
 % List all feat files
 AllFeatFiles = listFiles(szDir,'*.feat');
@@ -65,9 +73,9 @@ AllFeatFiles = {AllFeatFiles.name}';
 AllFeatFiles = strcat(AllFeatFiles,'.feat');
 
 % Load txt file with corrupt file names
-corruptTxtFile = fullfile(obj.stSubject.Folder,'corrupt_files.txt');
+corruptTxtFile = fullfile(szBaseDir, stSubject.FolderName,'corrupt_files.txt');
 if ~exist(corruptTxtFile,'file')
-    CheckDataIntegrety(obj.stSubject.Name);
+    CheckDataIntegrety(stSubject.SubjectID);
 end
 fid = fopen(corruptTxtFile,'r');
 corruptFiles = textscan(fid,'%s\n');
@@ -77,16 +85,16 @@ fclose(fid);
 corruptFiles = corruptFiles{:};
 
 % Delete names of corrupt files from the list with all feat file names
-[featFilesWithoutCorrupt, ia] = setdiff(AllFeatFiles, corruptFiles, 'stable');
+[featFilesWithoutCorrupt, ia] = setdiff(AllFeatFiles,corruptFiles,'stable');
 
 % isFeatFile filters for the wanted feature dates, such as all of 'RMS'
-[dateVecAll,isFeatFile] = Filename2date(featFilesWithoutCorrupt, szFeature);
+[dateVecAll,isFeatFile] = Filename2date(featFilesWithoutCorrupt,szFeature);
 
 % Also filter the corresponding file list
 featFilesWithoutCorrupt = featFilesWithoutCorrupt(logical(isFeatFile));
 
 % Get unique days only
-dateVecDayOnly = dateVecAll - timeofday(dateVecAll);
+dateVecDayOnly= dateVecAll-timeofday(dateVecAll);
 UniqueDays = unique(dateVecDayOnly);
 idx = find(UniqueDays == desiredDay,1);
 
@@ -95,6 +103,8 @@ if ~isempty(idx)
     FinalNonDataIdx = UniqueDays(idx) ~= dateVecDayOnly;
     dateVecAll(FinalNonDataIdx) = [];
     featFilesWithoutCorrupt(FinalNonDataIdx) = [];
+    
+    if ~AllParts 
     % Analysis how many parts are there at this day
     dtMinutes = minutes(diff(dateVecAll));
     idxPartBorders = find (dtMinutes> 1.1);
@@ -110,50 +120,44 @@ if ~isempty(idx)
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    if (PartNumberToLoad <= NrOfParts)
-        PartStartIdx = idxPartBorders(PartNumberToLoad)+1;
+    if (PartNumberToLoad<=NrOfParts)
+        PartStartIdx =  idxPartBorders(PartNumberToLoad)+1;
         PartEndIdx = idxPartBorders(PartNumberToLoad+1);
+        
     else
-        PartStartIdx = idxPartBorders(1)+1;
+        PartStartIdx =  idxPartBorders(1)+1;
         PartEndIdx = idxPartBorders(2);
     end
     
     if PartStartIdx > PartEndIdx
         Data = [];
         TimeVec = [];
+        stInfo = [];
         warning('Start index is greater than end index')
         return;
     end
     dateVecAll = dateVecAll(PartStartIdx:PartEndIdx);
-    featFilesWithoutCorrupt = featFilesWithoutCorrupt(PartStartIdx:PartEndIdx);
-    
-    
-    % pre-allocation
-    [FeatData, ~,~]= LoadFeatureFileDroidAlloc([szDir filesep featFilesWithoutCorrupt{1}]);
-    AssumedBlockSize = size(FeatData,1);
-    
-    if (size(FeatData,2) > 100)
-        AssumedBlockSize = AssumedBlockSize-1;
+    featFilesWithoutCorrupt=featFilesWithoutCorrupt(PartStartIdx:PartEndIdx);
     end
     
-    Data = repmat(zeros(AssumedBlockSize+1,size(FeatData,2)),length(dateVecAll),1);
-    TimeVec = datetime(zeros(length(dateVecAll)*(AssumedBlockSize+1),1),...
-        zeros(length(dateVecAll)*(AssumedBlockSize+1),1),...
-        zeros(length(dateVecAll)*(AssumedBlockSize+1),1));
+    % pre-allocation
+    [FeatData, ~,stInfo]= LoadFeatureFileDroidAlloc([szDir filesep featFilesWithoutCorrupt{1}]);
+    AssumedBlockSize = size(FeatData,1);
+
+    Data = repmat(zeros(AssumedBlockSize,size(FeatData,2)),length(dateVecAll),1);
+    TimeVec = datetime(zeros(length(dateVecAll)*(AssumedBlockSize),1),...
+        zeros(length(dateVecAll)*(AssumedBlockSize),1),...
+        zeros(length(dateVecAll)*(AssumedBlockSize),1));
     
     Startindex = 1;
     for fileIdx = 1:numel(featFilesWithoutCorrupt)
-        
         szFileName =  featFilesWithoutCorrupt{fileIdx};
         [FeatData, ~,~]= LoadFeatureFileDroidAlloc([szDir filesep szFileName]);
         ActBlockSize = size(FeatData,1);
         DateTimeValue = dateVecAll(fileIdx);
-        TimeVec(Startindex:Startindex+ActBlockSize) = linspace(DateTimeValue,DateTimeValue+minutes(1-1/ActBlockSize),ActBlockSize+1);
+        TimeVec(Startindex:Startindex+ActBlockSize-1) = linspace(DateTimeValue,DateTimeValue+minutes(1-1/ActBlockSize),ActBlockSize);
         Data(Startindex:Startindex+ActBlockSize-1,:) = FeatData(1:ActBlockSize,:);
         Startindex = Startindex + ActBlockSize;
-        Data(Startindex,:) = Data(Startindex-1,:);
-        Startindex = Startindex+1;
-        
     end
     
 else
