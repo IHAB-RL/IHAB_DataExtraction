@@ -1,7 +1,8 @@
 function [] = OneSubjectOneDayOVD(stBaseDir, stTestSubject, stDesiredDay, AllParts)
-%% script to evaluate the Own Voice Detection (OVD) and Futher Voice 
-%% Detection (FVD) on real IHAB data
+% function to evaluate the Own Voice Detection (OVD) and Futher Voice 
+% Detection (FVD) on real IHAB data
 % OVD and FVD by Nils Schreiber (Master 2019)
+% Usage: OneSubjectOneDayOVD(stBaseDir, stTestSubject, stDesiredDay, AllParts)
 %
 % input:
 %   stBaseDir     - string, path to data folder (needs to be customized)
@@ -11,9 +12,11 @@ function [] = OneSubjectOneDayOVD(stBaseDir, stTestSubject, stDesiredDay, AllPar
 %   AllParts      - logical whether to select all (1) or just one (0) part  
 %                   of the desired day
 %
-% 10.09.2019 initial create JP
+% Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % contains mainTest.m, main.m and plotAllDayFingerprints.m
 % maínly computeDayFingerprintData.m by Nils Schreiber
+% Version History:
+% Ver. 0.01 initial create 10-Sep-2019  JP
 
 
 % set parameters for data compression
@@ -42,7 +45,7 @@ clear DataRMS TimeVecRMS;
 
 % desired feature PSD
 stFeature = 'PSD';
-[DataPSD,TimeVecPSD,~,stInfo] = getObjectiveDataOneDayJule(stBaseDir,stTestSubject,stDesiredDay, stFeature);
+[DataPSD,TimeVecPSD,~,stInfo] = getObjectiveDataOneDay(stBaseDir,stTestSubject,stDesiredDay, stFeature);
 
 version = 1; % JP modified get_psd
 [Cxy,Pxx,Pyy] = get_psd(DataPSD, version);
@@ -563,7 +566,7 @@ end
 if bPrint
     set(0,'DefaultFigureColor','remove')
     exportName = [stBaseDir filesep stTestSubject filesep ...
-        'Fingerprint_VD_' stTestSubject '_' dateDay];
+        'Fingerprint_VD_' stTestSubject]; % add date
     
     savefig(exportName);
     saveas(gcf, exportName,'pdf')
@@ -601,4 +604,5 @@ fprintf('***estimated %.2f %% futher voice per day\n',100*FVSrel);
 % CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 % TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 % SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 % eof

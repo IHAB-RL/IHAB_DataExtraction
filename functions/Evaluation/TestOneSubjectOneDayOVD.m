@@ -1,14 +1,16 @@
-%% test script to evaluate the Own Voice Detection (OVD) and Futher Voice 
-%% Detection (FVD) on real IHAB data
+% test script to evaluate the Own Voice Detection (OVD) and Futher Voice 
+% Detection (FVD) on real IHAB data
 % OVD and FVD by Nils Schreiber (Master 2019)
-% 10.09.2019 initial create JP
-% calls OneSubjectOneDayOVD.m
+%
+% Author: J. Pohlhausen (c) IHA @ Jade Hochschule applied licence see EOF
+% Version History:
+% Ver. 0.01 initial create 10-Sep-2019 	JP
+
 
 clear; close all;
 
 % path to data folder (needs to be customized)
 stBaseDir = 'K:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
-stBaseDir = '/Volumes/Samsung_T5/IHAB_1_EMA2018/IHAB_Rohdaten_EMA2018';
 
 % name of subject folder
 stTestSubject =  'HN06MA10_180613_aw';
@@ -44,4 +46,5 @@ OneSubjectOneDayOVD(stBaseDir, stTestSubject, stDesiredDay, AllParts);
 % CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 % TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 % SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 % eof
