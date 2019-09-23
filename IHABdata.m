@@ -188,6 +188,8 @@ classdef IHABdata < handle
     methods
         function [obj] = IHABdata(varargin)
             
+            addpath(genpath('functions'));
+            
             checkPrerequisites();
             
             if obj.isParallel && isempty(gcp('nocreate'))
@@ -198,9 +200,7 @@ classdef IHABdata < handle
             
             obj.nHeight_PartLength = 3*obj.nDivision_Vertical + 2*obj.nButtonHeight;
             obj.nWidth_PartLength = 3*obj.nDivision_Horizontal + 2*obj.nButtonWidth;
-            
-            addpath(genpath('functions'));
-            
+         
             if ismac
                 obj.prefix = '/usr/local/bin/';
             else
