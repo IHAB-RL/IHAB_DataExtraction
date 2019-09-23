@@ -43,7 +43,7 @@ gtFlag = 1;
 FVDFlag = 1;
 
 % choose calculation based on audio or features
-mode = 'audio'; %'features'; %
+mode = 'features'; %'audio'; %
 
 % specify subjects that have stored feature data
 if strcmp(mode,'features')

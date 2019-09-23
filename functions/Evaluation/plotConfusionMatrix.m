@@ -1,6 +1,6 @@
-function [] = PlotConfusionMatrix(mConfusion, vLabels, vGroundTruth, vPredicted)
+function [] = plotConfusionMatrix(mConfusion, vLabels, vGroundTruth, vPredicted)
 %% function to plot a confusion matrix
-% Usage : PlotConfusionMatrix(confmat, labels)
+% Usage : plotConfusionMatrix(confmat, labels)
 %
 % Parameters
 % ----------
@@ -12,12 +12,12 @@ function [] = PlotConfusionMatrix(mConfusion, vLabels, vGroundTruth, vPredicted)
 %------------------------------------------------------------------------
 % Example 1: confmat = magic(3);
 %            labels = {'Dog', 'Cat', 'Horse'};
-%            PlotConfusionMatrix(confmat, labels);
+%            plotConfusionMatrix(confmat, labels);
 %
 % Example 2: vGroundTruth = [0 0 0 1 1 0 1 1 1 0 0 1];
 %            vPredicted = [1 0 0 1 1 0 1 0 0 0 1 1];
 %            vLabels = {'OVS', 'no OVS'};
-%            PlotConfusionMatrix([], vLabels, vGroundTruth, vPredicted);
+%            plotConfusionMatrix([], vLabels, vGroundTruth, vPredicted);
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Source: https://stackoverflow.com/questions/33451812/plot-confusion-matrix
