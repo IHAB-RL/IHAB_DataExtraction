@@ -13,8 +13,8 @@ function [] = OneSubjectOneDayOVD(stBaseDir, stTestSubject, stDesiredDay, AllPar
 %                   of the desired day
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
-% contains mainTest.m, main.m and plotAllDayFingerprints.m
-% maínly computeDayFingerprintData.m by Nils Schreiber
+% contains main.m and plotAllDayFingerprints.m 
+% mainly computeDayFingerprintData.m by Nils Schreiber
 % Version History:
 % Ver. 0.01 initial create 10-Sep-2019  JP
 
@@ -38,7 +38,7 @@ if compressData
     [FinalDataRMS,FinaltimeVecRMS] = DataCompactor(DataRMS,TimeVecRMS,stControl);
 else
     FinalDataRMS = DataRMS;
-    FinaltimeVecRMS = timeVecRMS;
+    FinaltimeVecRMS = TimeVecRMS;
 end
 clear DataRMS TimeVecRMS;
 
@@ -68,15 +68,21 @@ end
 stParam.fs = stInfo.fs;
 stParam.nFFT = 1024;
 stParam.vFreqRange  = [400 1000]; % auszuwertender Frequenzbereich
-stParam.vFreqIdx = round(stParam.nFFT*stParam.vFreqRange./(stParam.fs/2));
+stParam.vFreqIdx = round(stParam.nFFT*stParam.vFreqRange./stParam.fs);
 
 % averaged Coherence 
 MeanCohe = mean(real(Cohe(:,stParam.vFreqIdx(1):stParam.vFreqIdx(2))),2);
 
+CohTimeSmoothing_s = 0.1;
+fs_cohdata = 1/0.125;
+
+alpha = exp(-1./(CohTimeSmoothing_s*fs_cohdata));
+MeanCoheTimeSmoothed = filter([1-alpha],[1 -alpha],MeanCohe);
+
 if compressData
-    [FinalDataMeanCohe,FinaltimeVecPSD]=DataCompactor(MeanCohe,TimeVecPSD,stControlOVD);
+    [FinalDataMeanCohe,FinaltimeVecPSD]=DataCompactor(MeanCoheTimeSmoothed,TimeVecPSD,stControlOVD);
 else
-    FinalDataMeanCohe = MeanCohere;
+    FinalDataMeanCohe = MeanCoheTimeSmoothed;
     FinaltimeVecPSD = TimeVecPSD;
 end
 clear Cxy Pxx Pyy Cohe MeanCohe;
@@ -97,10 +103,6 @@ FinalDataPyy2 = FinalDataPyy*stBandDefCohe.ReGroupMatrix;
 FinalDataCohe2 = FinalDataCohe*stBandDefCohe.ReGroupMatrix;
 
 
-% flag whether the ground truth ovs are labeled with 1 (Schreiber) or not
-% (Bilert used to label ovs with increasing numbers, i.e. counting ovs)
-gtFlag = 1;
-
 % logical to save figure
 bPrint = 1;
 
@@ -119,6 +121,7 @@ stDataFVD.vFVS = [];
 [stDataFVD] = FVD3(stDataOVD.vOVS,stDataOVD.snrPrio,stDataOVD.movAvgSNR);
 
 clear FinalDataCxy FinalDataPxx FinalDataPyy;
+
 
 %% subjective data
 quest = dir([stBaseDir filesep stTestSubject filesep 'Questionnaires_*.mat']);
@@ -233,7 +236,8 @@ axCoher = axes('Position',[GUI_xStart 0.6 GUI_xAxesWidth 0.18]);
 
 timeVecShort = datenum(FinaltimeVecPSD);
 freqVecShort = 1:size(FinalDataPxx2,2);
-DataMatrixShort = real(FinalDataCohe2);
+% DataMatrixShort = real(FinalDataCohe2);
+DataMatrixShort = real(FinalDataCohe2(:,:))';
 imagesc(timeVecShort,freqVecShort,DataMatrixShort);
 axis xy;
 colorbar;
@@ -242,18 +246,18 @@ reText=text(timeVecShort(5),freqVecShort(end-1),'Re\{Coherence\}','Color',[1 1 1
 reText.FontSize = 12;
 yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
 yaxisLables = strrep(yaxisLables,'000', 'k');
-set (axCoher,'YTick',1:3:size(FinalDataPxx2,2));
-set (axCoher,'YTickLabel',yaxisLables);
+set(axCoher,'YTick',1:3:size(FinalDataPxx2,2));
+set(axCoher,'YTickLabel',yaxisLables);
 set(axCoher ,'ylabel', ylabel('frequency in Hz'))
-set (axCoher,'XTick',[]);
+set(axCoher,'XTick',[]);
 
 PosVecCoher = get(axCoher,'Position');
+drawnow;
 
 
 %% RMS
 Calib_RMS = 104;
 axRMS = axes('Position',[GUI_xStart 0.09 PosVecCoher(3) 0.09]);
-hold on;
 % hRMS = plot(TimeVecRMS,20*log10(DataRMS)+Calib_RMS);
 hRMS = plot(datenum(FinaltimeVecRMS),20*log10(FinalDataRMS)+Calib_RMS);
 
@@ -262,7 +266,6 @@ yticks([30 50 70 90])
 axRMS.YLabel = ylabel('dB SPL');
 datetickzoom(axRMS,'x','HH:MM:SS')
 xlim([datenum(FinaltimeVecRMS(1)) datenum(FinaltimeVecRMS(end))]);
-hold off;
 
 
 %% Results Voice Detection
@@ -274,7 +277,6 @@ vFVS(vFVS == 0) = NaN;
 
 axOVD = axes('Position',[GUI_xStart 0.8 PosVecCoher(3) 0.13]);
 hold on;
-% plot(datenum(TimeVecPSD), stDataOVD.meanCoh);
 hOVD = plot(datenum(FinaltimeVecPSD),FinalDataMeanCohe);
 hOVD.Color = [0 0 0];
 
@@ -551,22 +553,22 @@ if hasSubjectiveData && ~isempty(FinalTimeQ)
         axQ.YTickLabel{iTick} = ['\color[rgb]{0,0,0}' axQ.YTickLabel{iTick}];
     end
     
-    %     axQ.XTick =XTicksTime;
     axQ.XTickLabel = [];
     
     linkaxes([axOVD,axRMS,axPxx,axCoher,axQ],'x');
-    %     dynamicDateTicks([axOVD,axRMS,axPxx,axCoher,axCoherInvalid,axPxxInvalid,axQ],'linked','HH:mm');
+    % dynamicDateTicks([axOVD,axRMS,axPxx,axCoher,axCoherInvalid,axPxxInvalid,axQ],'linked','HH:mm');
 else
     linkaxes([axOVD,axRMS,axPxx,axCoher],'x');
-    %    dynamicDateTicks([axOVD,axRMS,axPxx,axCoher,axCoherInvalid,axPxxInvalid],'linked');
+    % dynamicDateTicks([axOVD,axRMS,axPxx,axCoher,axCoherInvalid,axPxxInvalid],'linked');
     
 end
 
 
 if bPrint
     set(0,'DefaultFigureColor','remove')
+%     datestr(stDesiredDay)% add date
     exportName = [stBaseDir filesep stTestSubject filesep ...
-        'Fingerprint_VD_' stTestSubject]; % add date
+        'Fingerprint_VD_' stTestSubject]; 
     
     savefig(exportName);
     saveas(gcf, exportName,'pdf')

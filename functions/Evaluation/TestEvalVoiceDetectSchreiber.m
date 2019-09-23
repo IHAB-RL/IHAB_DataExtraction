@@ -40,10 +40,10 @@ probIDIHABnoise = {'EL10AN18'; 'ER06NG15'; 'ER06RL07'; 'ER09LD07'; 'KI07NS22'; '
 gtFlag = 1;
 
 % flag whether to analyse FVD
-FVDFlag = 1;
+FVDFlag = 0;
 
 % choose calculation based on audio or features
-mode = 'features'; %'audio'; %
+mode = 'audio'; %'features'; %
 
 % specify subjects that have stored feature data
 if strcmp(mode,'features')
