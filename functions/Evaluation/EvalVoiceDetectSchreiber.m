@@ -196,12 +196,15 @@ end
 disp(['prob: ' probID ' conf' num2str(config) ':'])
 % fix
 [F1ScoreOVS_fix,stResults.precOVS_fix,stResults.recOVS_fix] = F1M(stDataBilert.vOVS_fix, stDataReal.vActivOVS);
+stResults.mConfusion_fix = getConfusionMatrix(stDataBilert.vOVS_fix, stDataReal.vActivOVS);
 
 % adaptiv Bilert
 [F1ScoreOVS_Bilert,stResults.precOVS_Bilert,stResults.recOVS_Bilert] = F1M(stDataBilert.vOVS_adap, stDataReal.vActivOVS);
+stResults.mConfusion_Bilert = getConfusionMatrix(stDataBilert.vOVS_adap, stDataReal.vActivOVS);
 
 % adaptiv Nils
 [F1ScoreOVS_Schreiber,stResults.precOVS_Schreiber,stResults.recOVS_Schreiber] = F1M(stDataOVD.vOVS, stDataReal.vActivOVS);
+stResults.mConfusion_Schreiber = getConfusionMatrix(stDataOVD.vOVS, stDataReal.vActivOVS);
 
 
 %% FVD

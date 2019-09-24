@@ -51,7 +51,7 @@ if strcmp(mode,'features')
 end
 
 % preallocation of the result struct
-stDATA = struct('subject', [], 'results', []);
+stDATA = struct('subject', [], 'results', [], 'mConfusion', []);
 pre = 2*ones(size(configNoise));
 stResults = struct('config',configNoise,'precOVS_fix',pre,'recOVS_fix',pre,...
     'precOVS_Bilert',pre,'recOVS_Bilert',pre,'precOVS_Schreiber',pre,'recOVS_Schreiber',pre,'precFVS',pre,'recFVS',pre);
@@ -59,6 +59,9 @@ stResults = struct('config',configNoise,'precOVS_fix',pre,'recOVS_fix',pre,...
 % loop for each subject over all noise configurations
 for subj = 1:length(probIDIHABnoise)
     stDATA(subj).subject = probIDIHABnoise{subj};
+    stDATA(subj).mConfusion_fix = zeros(2,2);
+    stDATA(subj).mConfusion_Bilert = zeros(2,2);
+    stDATA(subj).mConfusion_Schreiber = zeros(2,2);
     
     for config = 1:length(configNoise)
         
@@ -73,31 +76,38 @@ for subj = 1:length(probIDIHABnoise)
         stResults.precFVS(config) = stResultsProb.precFVS;
         stResults.recFVS(config) = stResultsProb.recFVS;
         
-        % for testing purpose
-        %         stResults.precOVS_fix(config) = rand(1);
-        %         stResults.recOVS_fix(config)= rand(1);
-        %         stResults.precOVS_Bilert(config) = rand(1);
-        %         stResults.recOVS_Bilert(config)= rand(1);
-        %         stResults.precOVS_Schreiber(config) = rand(1);
-        %         stResults.recOVS_Schreiber(config)= rand(1);
-        %         stResults.precFVS(config)= rand(1);
-        %         stResults.recFVS(config)= rand(1);
-        
         stDATA(subj).results = stResults;
+        
+        stDATA(subj).mConfusion_fix = stDATA(subj).mConfusion_fix + stResultsProb.mConfusion_fix;
+        stDATA(subj).mConfusion_Bilert = stDATA(subj).mConfusion_Bilert + stResultsProb.mConfusion_Bilert;
+        stDATA(subj).mConfusion_Schreiber = stDATA(subj).mConfusion_Schreiber + stResultsProb.mConfusion_Schreiber;
     end
 end
 
 % save results as mat file
-% save('Results_OVD_FVD_123456config_8Prob_VGL_092419', 'stDATA');
+save('Results_OVD_FVD_123456config_8Prob_mConfusion', 'stDATA');
 
 
 % load('Results_OVD_123456config_8Prob_VGL.mat');
 % subj = length(probIDIHABnoise);
 % config = length(configNoise);
 
-% call function to plot results
+% call function to plot results (F2-Score, precision, recall)
 plotResultsVoiceDetect(stDATA, subj, config, probIDIHABnoise, noiseLabel, FVDFlag);
 
+% call function to plot confusion matrix
+mConfusion_fix = zeros(2,2);
+mConfusion_Bilert = zeros(2,2);
+mConfusion_Schreiber = zeros(2,2);
+for subj = 1:length(probIDIHABnoise)
+    mConfusion_fix = mConfusion_fix + stDATA(subj).mConfusion_fix;
+    mConfusion_Bilert = mConfusion_Bilert + stDATA(subj).mConfusion_Bilert;
+    mConfusion_Schreiber = mConfusion_Schreiber + stDATA(subj).mConfusion_Schreiber;
+end
+vLabels = {'OVS', 'no OVS'};
+plotConfusionMatrix(mConfusion_fix, vLabels);
+plotConfusionMatrix(mConfusion_Bilert, vLabels);
+plotConfusionMatrix(mConfusion_Schreiber, vLabels);
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
