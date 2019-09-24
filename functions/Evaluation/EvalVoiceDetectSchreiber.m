@@ -55,16 +55,16 @@ stParam.vTime        = linspace(0,timeLen,sampleLen);
 
 % set parameters for processing audio data
 stParam.tFrame      = 0.025; % block length in sec (Sascha)
-% stParam.tFrame      = 0.0125; % frame shift Bitzer et al. 2016
 stParam.lFrame      = floor(stParam.tFrame*stParam.fs); % block length in samples
 stParam.lOverlap    = stParam.lFrame/2; % overlap adjacent blocks
 stParam.nFFT        = 1024; % number of fast Fourier transform points
 stParam.vFreqRange  = [400 1000]; % frequency range of interest in Hz
 stParam.vFreqBins   = round(stParam.vFreqRange./stParam.fs*stParam.nFFT);
 stParam.tauCoh      = 1.0; % Sascha
-% stParam.tauCoh      = 0.125; % Bitzer et al. 2016
+stParam.tFrame      = 0.125; % Nils
+stParam.tauCoh      = 0.1; % Nils
 stParam.fixThresh   = 0.6; % fixed coherence threshold
-stParam.adapThresh  = 0.05; % window length of the adaptive threshold
+stParam.adapThreshWin  = 0.05*stParam.fs; % window length for the adaptive threshold
 stParam.winLen      = floor(stParam.nFFT/10); % normalized window length (Nils)
 
 

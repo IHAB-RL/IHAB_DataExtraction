@@ -87,7 +87,7 @@ vFreqIDX        = round(stParam.vFreqRange/stParam.fs*stParam.nFFT);
 vCohMeanReal    = mean(real(mCoherence(vFreqIDX(1):vFreqIDX(2),:)),1);
 
 % smoothed coherence
-alphaCoh            = exp(-(stParam.lFrame/stParam.fs)./(stParam.tauCoh));
+alphaCoh            = exp(-stParam.tFrame./stParam.tauCoh);
 vCohMeanRealSmooth  = filter(1-alphaCoh,[1 -alphaCoh],vCohMeanReal);
 
 stData.mCoherence           = mCoherence;

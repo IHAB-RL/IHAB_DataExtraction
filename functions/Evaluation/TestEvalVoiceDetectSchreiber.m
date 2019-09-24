@@ -40,7 +40,7 @@ probIDIHABnoise = {'EL10AN18'; 'ER06NG15'; 'ER06RL07'; 'ER09LD07'; 'KI07NS22'; '
 gtFlag = 1;
 
 % flag whether to analyse FVD
-FVDFlag = 0;
+FVDFlag = 1;
 
 % choose calculation based on audio or features
 mode = 'audio'; %'features'; %
@@ -88,7 +88,7 @@ for subj = 1:length(probIDIHABnoise)
 end
 
 % save results as mat file
-% save('Results_OVD_FVD_123456config_8Prob_VGL', 'stDATA');
+% save('Results_OVD_FVD_123456config_8Prob_VGL_092419', 'stDATA');
 
 
 % load('Results_OVD_123456config_8Prob_VGL.mat');

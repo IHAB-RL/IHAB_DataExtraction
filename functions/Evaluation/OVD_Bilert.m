@@ -15,8 +15,8 @@ function [stData] = OVD_Bilert(stParam, stData)
 
 % Zur Berechnung der neuen adaptiven Schwelle wurden blockweise jeweils das 
 % Maximum und das Minimum der berechneten zeitlichen Kohärenzen verwendet
-stData.adapThreshMax = movmax(stData.vCohMeanRealSmooth,floor(stParam.adapThresh*stParam.fs));
-stData.adapThreshMin = movmin(stData.vCohMeanRealSmooth,floor(stParam.adapThresh*stParam.fs));
+stData.adapThreshMax = movmax(stData.vCohMeanRealSmooth,floor(stParam.adapThreshWin));
+stData.adapThreshMin = movmin(stData.vCohMeanRealSmooth,floor(stParam.adapThreshWin));
 % arithmetischer Mittelwert der maximalen und minimalen Kohärenz + 25%
 stData.offset = 1.25;
 % stData.offset = 1;
@@ -28,7 +28,7 @@ vOVS_fix(stData.vCohMeanRealSmooth >= stParam.fixThresh) = 1;
 stData.vOVS_fix = vOVS_fix;
 
 vOVS_adap = zeros(size(stData.vCohMeanRealSmooth));
-vOVS_adap(stData.vCohMeanRealSmooth >= stParam.adapThresh) = 1;
+vOVS_adap(stData.vCohMeanRealSmooth >= stData.adapThresh) = 1;
 stData.vOVS_adap = vOVS_adap;
 
 debugPlot = 0;
