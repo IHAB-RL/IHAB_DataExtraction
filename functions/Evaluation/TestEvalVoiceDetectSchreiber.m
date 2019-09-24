@@ -8,7 +8,7 @@
 %   cafeteria noise levels [40, 50, 60, 65, 70 dB(A)] talking about Diapix
 % ground truth ovs are labeled with 0 (Schreiber) or not (Bilert used to
 % label ovs with increasing numbers >=1, i.e. counting ovs)
-% ground truth fvs are labeled with 1, 2, 3 (Schreiber) dependent of the
+% ground truth fvs are labeled with 1, 2, 3 (Schreiber) dependent on the
 % number of voices or with 0 (Jule)
 %
 % Version History:
@@ -85,7 +85,7 @@ for subj = 1:length(probIDIHABnoise)
 end
 
 % save results as mat file
-save('Results_OVD_FVD_123456config_8Prob_mConfusion', 'stDATA');
+save('Results_OVD_FVD_123456config_8Prob_feat_mConfusion', 'stDATA');
 
 
 % load('Results_OVD_123456config_8Prob_VGL.mat');

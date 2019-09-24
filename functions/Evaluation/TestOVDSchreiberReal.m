@@ -1,12 +1,15 @@
-%% test script to evaluate the Own Voice Detection (OVD)
+% test script to evaluate the Own Voice Detection (OVD)
 % by Nils Schreiber (Master 2019)
-% 18.09.2019 JP
+% Author: J. Pohlhausen (c) IHA @ Jade Hochschule applied licence see EOF
+%
 % contains mainTest.m and main.m by Nils Schreiber (IHAB_DB)
 % make use of daily recordings from Nils Schreiber
 % ground truth ovs are labeled with 0 (Schreiber)
-% ground truth fvs are labeled with 1, 2, 3 (Schreiber) dependent of the
+% ground truth fvs are labeled with 1, 2, 3 (Schreiber) dependent on the
 % number of voices
-% config list
+%
+% Version History:
+% Ver. 0.01 initial create 18-Sep-2019 	JP
 
 clear; close all;
 
@@ -40,16 +43,18 @@ timeLen             = sampleLen/stParam.fs;
 stTime.vTime        = linspace(0,timeLen,sampleLen);
 
 
-stParam.tFrame      = 0.025; % Blockgröße in sec
-stParam.lFrame      = floor(stParam.tFrame*stParam.fs); % Blockgröße in samples
-stParam.lOverlap    = stParam.lFrame/2; % Overlap aufeinanderfolgender Blöcke
-stParam.nFFT        = 2^10;
-stParam.vFreqRange  = [400 1000]; % auszuwertender Frequenzbereich
-stParam.vFreqBins   = [17 43];
-stParam.tauCoh      = 1.0; %0.125;
-stParam.fixThresh   = 0.6; % fixe Detektions-Schwelle
-stParam.adapThresh  = 0.05; % gleitendes Fenster über 0.5fs Zeitframes
-stParam.winLen      = floor(stParam.nFFT/10); % Nils
+
+stParam.tFrame      = 0.025; % block length in sec (Sascha)
+stParam.lFrame      = floor(stParam.tFrame*stParam.fs); % block length in samples
+stParam.lOverlap    = stParam.lFrame/2; % overlap adjacent blocks
+stParam.nFFT        = 1024; % number of fast Fourier transform points
+stParam.vFreqRange  = [400 1000]; % frequency range of interest in Hz
+stParam.vFreqBins   = round(stParam.vFreqRange./stParam.fs*stParam.nFFT);
+stParam.tFrame      = 0.125; % Nils
+stParam.tauCoh      = 0.1; % Nils
+stParam.fixThresh   = 0.6; % fixed coherence threshold
+stParam.adapThreshWin  = 0.05*stParam.fs; % window length for the adaptive threshold
+stParam.winLen      = floor(stParam.nFFT/10); % normalized window length (Nils)
 
 % [stDataReal] = computeSpectraAndCoherence(stParam);
 [stDataReal] = detectOVSRealCoherence(stParam);
@@ -109,6 +114,20 @@ for ll = 1:size(startIdxOVS,1)
     stDataReal.vActivOVS(startIdxOVS(ll):endIdxOVS(ll)) = 1;
 end
 
+%% evaluate performace OVD
+disp(['prob: ' subject ' conf' num2str(config) ':'])
+% fix
+[stResults.F2ScoreOVS_fix,stResults.precOVS_fix,stResults.recOVS_fix] = F1M(stDataBilert.vOVS_fix, stDataReal.vActivOVS);
+stResults.mConfusion_fix = getConfusionMatrix(stDataBilert.vOVS_fix, stDataReal.vActivOVS);
+
+% adaptiv Bilert
+[stResults.F2ScoreOVS_Bilert,stResults.precOVS_Bilert,stResults.recOVS_Bilert] = F1M(stDataBilert.vOVS_adap, stDataReal.vActivOVS);
+stResults.mConfusion_Bilert = getConfusionMatrix(stDataBilert.vOVS_adap, stDataReal.vActivOVS);
+
+% adaptiv Nils
+[stResults.F2ScoreOVS_Schreiber,stResults.precOVS_Schreiber,stResults.recOVS_Schreiber] = F1M(stDataOVD.vOVS, stDataReal.vActivOVS);
+stResults.mConfusion_Schreiber = getConfusionMatrix(stDataOVD.vOVS, stDataReal.vActivOVS);
+
 
 %% FVS
 fvsIndicator = [1 2 3]; 
@@ -138,25 +157,9 @@ for ll = 1:size(startIdxFVS,1)
     stDataReal.vActivFVS(startIdxFVS(ll):endIdxFVS(ll)) = 1;
 end
 
-
-%% evaluate performace OVD
-disp(['prob: ' subject ' conf' num2str(config) ':'])
-% fix
-[stResults.F2ScoreOVS_fix,stResults.precOVS_fix,stResults.recOVS_fix] = F1M(stDataBilert.vOVS_fix, stDataReal.vActivOVS);
-disp(['FIX: F2ScoreOVS:' num2str(stResults.F2ScoreOVS_fix,'%1.4f') ' prec: ' num2str(stResults.precOVS_fix,'%1.4f') ' rec: ' num2str(stResults.recOVS_fix,'%1.4f')])
-
-% adaptiv Bilert
-[stResults.F2ScoreOVS_Bilert,stResults.precOVS_Bilert,stResults.recOVS_Bilert] = F1M(stDataBilert.vOVS_adap, stDataReal.vActivOVS);
-disp(['Bilert: F2ScoreOVS:' num2str(stResults.F2ScoreOVS_Bilert,'%1.4f') ' prec: ' num2str(stResults.precOVS_Bilert,'%1.4f') ' rec: ' num2str(stResults.recOVS_Bilert,'%1.4f')])
-
-% adaptiv Nils
-[stResults.F2ScoreOVS_Schreiber,stResults.precOVS_Schreiber,stResults.recOVS_Schreiber] = F1M(stDataOVD.vOVS, stDataReal.vActivOVS);
-disp(['Schreiber: F2ScoreOVS:' num2str(stResults.F2ScoreOVS_Schreiber,'%1.4f') ' prec: ' num2str(stResults.precOVS_Schreiber,'%1.4f') ' rec: ' num2str(stResults.recOVS_Schreiber,'%1.4f')])
-
-
 %% evaluate performace FVD
 [stResults.F2ScoreFVS,stResults.precFVS,stResults.recFVS] = F1M(stDataFVD.vFVS, stDataReal.vActivFVS);
-disp(['F2ScoreFVS:' num2str(stResults.F2ScoreFVS,'%1.4f') ' prec: ' num2str(stResults.precFVS,'%1.4f') ' rec: ' num2str(stResults.recFVS,'%1.4f')])
+stResults.mConfusion_FVD = getConfusionMatrix(stDataFVD.vFVS, stDataReal.vActivFVS);
 
 
 plot_time = 1;
@@ -254,16 +257,48 @@ if plot_time
     xlabel('time in s \rightarrow');
     ylabel('amplitude \rightarrow');
     ylim([-1.3 1.3]);
+    
+    exportName = [path filesep 'Results_FVD_' subject '_config' num2str(config)];
+    savefig(exportName);
 end
 
 % save results as mat file
-% save(['Results_OVD_FVD_Real_' subject], 'stResults');
+save(['Results_OVD_FVD_Real_' subject], 'stResults');
 
 
-F2 = [stResults.F2ScoreOVS_fix stResults.F2ScoreOVS_Bilert stResults.F2ScoreOVS_Schreiber]';
-prec = [stResults.precOVS_fix stResults.precOVS_Bilert stResults.precOVS_Schreiber]';
-rec = [stResults.recOVS_fix stResults.recOVS_Bilert stResults.recOVS_Schreiber]';
+% % display results as table
+% F2 = [stResults.F2ScoreOVS_fix stResults.F2ScoreOVS_Bilert stResults.F2ScoreOVS_Schreiber]';
+% prec = [stResults.precOVS_fix stResults.precOVS_Bilert stResults.precOVS_Schreiber]';
+% rec = [stResults.recOVS_fix stResults.recOVS_Bilert stResults.recOVS_Schreiber]';
+% 
+% T = table(F2,prec,rec,'VariableNames',{'F2Score' 'precision' 'recall'},'RowNames',{'Bitzer et al. 2016' 'Bilert 2018' 'Schreiber 2019'});
 
-T = table(F2,prec,rec,'VariableNames',{'F2Score' 'precision' 'recall'},'RowNames',{'Bitzer et al. 2016' 'Bilert 2018' 'Schreiber 2019'})
+
+% plot confusion matrix
+vLabels = {'OVS', 'no OVS'};
+plotConfusionMatrix(stResults.mConfusion_fix, vLabels);
+plotConfusionMatrix(stResults.mConfusion_Bilert, vLabels);
+plotConfusionMatrix(stResults.mConfusion_Schreiber, vLabels);
+
+%--------------------Licence ---------------------------------------------
+% Copyright (c) <2019> J. Pohlhausen
+% Jade University of Applied Sciences
+% Permission is hereby granted, free of charge, to any person obtaining
+% a copy of this software and associated documentation files
+% (the "Software"), to deal in the Software without restriction, including
+% without limitation the rights to use, copy, modify, merge, publish,
+% distribute, sublicense, and/or sell copies of the Software, and to
+% permit persons to whom the Software is furnished to do so, subject
+% to the following conditions:
+% The above copyright notice and this permission notice shall be included
+% in all copies or substantial portions of the Software.
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+% EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+% OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+% IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+% CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+% TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+% SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 
 % eof

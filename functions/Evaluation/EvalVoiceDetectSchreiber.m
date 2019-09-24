@@ -11,7 +11,6 @@ function [stResults]=EvalVoiceDetectSchreiber(dataPath, probID, config, gtFlag, 
 % -------
 % outParam :  stResults - struct, containing the calculated results
 %
-
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Source: If the function is based on a scientific paper or a web site,
 %         provide the citation detail here (with equation no. if applicable)
