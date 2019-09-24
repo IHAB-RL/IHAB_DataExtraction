@@ -12,7 +12,7 @@ function [Data,TimeVec,NrOfParts,stInfo]=getObjectiveDataOneDay(szBaseDir,szTest
 %	 the day of the desired data
 % szFeature :  string
 %	 name of the desired Feature default = 'PSD'
-% PartNumberToLoad : number 
+% PartNumberToLoad : number
 %    the number of the part to load
 % AllParts : logical
 %    if 0 PartNumberToLoad acts, if 1 all parts of the desired day
@@ -22,7 +22,7 @@ function [Data,TimeVec,NrOfParts,stInfo]=getObjectiveDataOneDay(szBaseDir,szTest
 % Data :  a matrix containg the feature data
 %
 % TimeVec :  a date/time vector with the corresponding time information
-% 
+%
 % NrOfParts : number of parts at desired day
 %
 % stInfo : a struct containg infos about the feature files, e.g. fs, sample
@@ -54,7 +54,7 @@ if isempty(stSubject)
     Data = [];
     TimeVec = [];
     NrOfParts = [];
-    return;  
+    return;
 end
 
 
@@ -104,46 +104,46 @@ if ~isempty(idx)
     dateVecAll(FinalNonDataIdx) = [];
     featFilesWithoutCorrupt(FinalNonDataIdx) = [];
     
-    if ~AllParts 
-    % Analysis how many parts are there at this day
-    dtMinutes = minutes(diff(dateVecAll));
-    idxPartBorders = find (dtMinutes> 1.1);
-    idxPartBorders = [0; idxPartBorders; length(dtMinutes)];
-    NrOfParts = length(idxPartBorders)-1;
-    
-    % Added by Nils 06-Nov-2017
-    % Only get the number of available parts for one day and return
-    if PartNumberToLoad < 1
-        Data = [];
-        TimeVec = [];
-        return;
-    end
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    if (PartNumberToLoad<=NrOfParts)
-        PartStartIdx =  idxPartBorders(PartNumberToLoad)+1;
-        PartEndIdx = idxPartBorders(PartNumberToLoad+1);
+    if ~AllParts
+        % Analysis how many parts are there at this day
+        dtMinutes = minutes(diff(dateVecAll));
+        idxPartBorders = find (dtMinutes> 1.1);
+        idxPartBorders = [0; idxPartBorders; length(dtMinutes)];
+        NrOfParts = length(idxPartBorders)-1;
         
-    else
-        PartStartIdx =  idxPartBorders(1)+1;
-        PartEndIdx = idxPartBorders(2);
-    end
-    
-    if PartStartIdx > PartEndIdx
-        Data = [];
-        TimeVec = [];
-        stInfo = [];
-        warning('Start index is greater than end index')
-        return;
-    end
-    dateVecAll = dateVecAll(PartStartIdx:PartEndIdx);
-    featFilesWithoutCorrupt=featFilesWithoutCorrupt(PartStartIdx:PartEndIdx);
+        % Added by Nils 06-Nov-2017
+        % Only get the number of available parts for one day and return
+        if PartNumberToLoad < 1
+            Data = [];
+            TimeVec = [];
+            return;
+        end
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        if (PartNumberToLoad<=NrOfParts)
+            PartStartIdx =  idxPartBorders(PartNumberToLoad)+1;
+            PartEndIdx = idxPartBorders(PartNumberToLoad+1);
+            
+        else
+            PartStartIdx =  idxPartBorders(1)+1;
+            PartEndIdx = idxPartBorders(2);
+        end
+        
+        if PartStartIdx > PartEndIdx
+            Data = [];
+            TimeVec = [];
+            stInfo = [];
+            warning('Start index is greater than end index')
+            return;
+        end
+        dateVecAll = dateVecAll(PartStartIdx:PartEndIdx);
+        featFilesWithoutCorrupt=featFilesWithoutCorrupt(PartStartIdx:PartEndIdx);
     end
     
     % pre-allocation
     [FeatData, ~,stInfo]= LoadFeatureFileDroidAlloc([szDir filesep featFilesWithoutCorrupt{1}]);
     AssumedBlockSize = size(FeatData,1);
-
+    
     Data = repmat(zeros(AssumedBlockSize,size(FeatData,2)),length(dateVecAll),1);
     TimeVec = datetime(zeros(length(dateVecAll)*(AssumedBlockSize),1),...
         zeros(length(dateVecAll)*(AssumedBlockSize),1),...
