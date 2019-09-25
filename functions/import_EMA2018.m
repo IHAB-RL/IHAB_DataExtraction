@@ -12,13 +12,6 @@ function [] = import_EMA2018(obj, folder_idx)
 %
 % Author: AGA (c) TGM @ Jade Hochschule applied licence see EOF
 
-%     if nargin < 2
-%
-%         folder_idx = 1;
-%
-%     end
-
-
 % load answers and codes
 load('Answers_EMA2018.mat', 'PossibleAnswers')
 
@@ -40,32 +33,26 @@ Questionnaires = struct(...
 % .csv and .mat file name
 csv_mat_file_name = ['Questionnaires_' obj.stSubject.Name];
 
-%     folder_path = dir([obj.stSubject.Folder, '*']);
-
-%
-%     % for subjects with multiple days
-%     if length(folder_path) > 1 && nargin < 2
-%
-%         input_string = {folder_path.name};
-%         [folder_idx, cancel_button] = listdlg('PromptString','Select a directory:',...
-%             'SelectionMode','single',...
-%             'ListString', input_string);
-%
-%         if cancel_button ~= 0
-%             folder_path = folder_path(folder_idx);
-%         else
-%             return
-%         end
-%     else
-%         folder_path = folder_path(folder_idx);
-%     end
-
-% ... another path
-%     fullpath = [main_path filesep folder_path.name filesep obj.stSubject.Name '_Quest'];
-
-fullpath = [obj.stSubject.Folder, filesep, obj.stSubject.Name '_Quest'];
+if obj.isHallo
+    sFolderQuest = [obj.stSubject.Folder, filesep, obj.stSubject.Name,'_Mobeval'];
+    
+    % Two different structures exist in HALLO - this tackles both of them
+    stDir = rdir([sFolderQuest, filesep, '**\*.xml']);
+    sProfile = '(\w){8}-(\w){4}-(\w){4}-(\w){4}-(\w){12}.xml';
+    
+    for iDir = 1:length(stDir)
+        
+        cContents = regexp(stDir(iDir).name, sProfile, 'tokens');
+        if ~isempty(cContents)
+            sFolderQuest = stDir(iDir).folder;
+            continue;
+        end
+    end
+else
+    sFolderQuest = [obj.stSubject.Folder, filesep, obj.stSubject.Name '_Quest'];
+end
 % list of all questionnaires
-quests_list = dir([fullpath, '/*.xml']);
+quests_list = dir([sFolderQuest, '/*.xml']);
 
 Questionnaires_idx = 1;
 source_number = 1;
@@ -82,25 +69,41 @@ for quests_idx = 1 : length(quests_list)
     Questionnaires(Questionnaires_idx).FileName = quest_name;
     
     % parse questionnaire
-    xml = xmlread([fullpath filesep quests_list(quests_idx).name]);
+    xml = xmlread([sFolderQuest filesep quests_list(quests_idx).name]);
     document = parse_xml(xml);
-    record = document.children{1}.children{2};
+    if obj.isHallo
+        record = document.children{1}.children{1};
+    else
+        record = document.children{1}.children{2};
+    end
+    
+    
+    if obj.isHallo
+        quest_date_1 = datestr(record.children{2}.children{1}(1:10), 'yyyy-mm-dd');
+        quest_time_1 = datestr(record.children{2}.children{1}(12:end), 'HH:MM:SS');
+        % Using Local Time! If UTC: record.children{3} and
+        % record.children{end}
+        quest_date_2 = datestr(record.children{end-1}.children{1}(1:10), 'yyyy-mm-dd');
+        quest_time_2 = datestr(record.children{end-1}.children{1}(12:end), 'HH:MM:SS');
+    else
+        quest_date_1 = record.children{2}.attributes.start_date(1:10); % yyyy-mm-dd
+        quest_time_1 = record.children{2}.attributes.start_date(end-7:end); % HH:MM:SS
+        quest_date_2 = record.children{31}.attributes.end_date(1:10); % yyyy-mm-dd
+        quest_time_2 = record.children{31}.attributes.end_date(end-7:end); % HH:MM:SS
+    end
     
     % starting date and time
-    quest_date_1 = record.children{2}.attributes.start_date(1:10);
     Questionnaires(Questionnaires_idx).Date = quest_date_1;
-    quest_time_1 = record.children{2}.attributes.start_date(end-7:end);
     Questionnaires(Questionnaires_idx).Start = quest_time_1;
     
     % ending date and time
-    quest_time_2 = record.children{31}.attributes.end_date(end-7:end);
     Questionnaires(Questionnaires_idx).End = quest_time_2;
-    quest_date_2 = record.children{31}.attributes.end_date(1:10);
+    
     start_time = strcat(quest_time_1(1:2), quest_time_1(4:5), quest_time_1(7:8));
     end_time = strcat(quest_time_2(1:2), quest_time_2(4:5), quest_time_2(7:8));
     start_end_time(1, 1) = datetime(start_time, 'InputFormat', 'HHmmss');
     start_end_time(1, 2) = datetime(end_time, 'InputFormat', 'HHmmss');
-    time_interval = diff(start_end_time);
+    time_interval = diff(start_end_time); % HH:MM:SS
     
     % if recording took place over night...
     if time_interval < 0

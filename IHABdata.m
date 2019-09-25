@@ -19,6 +19,8 @@ classdef IHABdata < handle
         
         isParallel = true;
         isBatch = false;
+        isHallo = false;
+        isCommandLine = false;
         
         sTitleFig1 = 'IHAB data';
         sTitleFig2 = 'Legend';
@@ -56,7 +58,8 @@ classdef IHABdata < handle
         cStates = {'Charging', 'Error', 'Proposing',...
             'Connecting', 'Running', 'Quest'};
         
-        sMessage_Calculating = 'calculating';
+        sMessage_Calculating = 'Calculating';
+        sMessage_DataFormat = 'Unsupported data format';
         
         sLabelButton_Legend_Close = 'Close';
         sLabelButton_PartLength_Close = 'Enter';
@@ -73,7 +76,7 @@ classdef IHABdata < handle
         nPatchWidth = 40;
         nLegendLabelWidth = 140;
         nLegendLabelHeight = 28;
-        nCalculatingWidth = 60;
+        nCalculatingWidth = 160;
         nCalculatingHeight = 20;
         
         mColors;
@@ -185,6 +188,8 @@ classdef IHABdata < handle
     methods
         function [obj] = IHABdata(varargin)
             
+            addpath(genpath('functions'));
+            
             checkPrerequisites();
             
             if obj.isParallel && isempty(gcp('nocreate'))
@@ -195,9 +200,7 @@ classdef IHABdata < handle
             
             obj.nHeight_PartLength = 3*obj.nDivision_Vertical + 2*obj.nButtonHeight;
             obj.nWidth_PartLength = 3*obj.nDivision_Horizontal + 2*obj.nButtonWidth;
-            
-            addpath(genpath('functions'));
-            
+         
             if ismac
                 obj.prefix = '/usr/local/bin/';
             else
@@ -258,32 +261,39 @@ classdef IHABdata < handle
             
             obj.mColors = getColors();
             
-            
-            
             obj.getPreferencesFromFile();
             
             if nargin > 0
                 
-                obj.hProgressCommandLine = BlindProgressCommandLine();
+
+                try 
+                    
+                    obj.isCommandLine = true;
+                    
+                    obj.hProgressCommandLine = BlindProgressCommandLine();
+
+                    openSubjectFolder(obj, varargin{1});
+
+                    examineObjectiveData(obj);
+
+                    generateOverviewCommandLine(obj);
+
+                    if (nargin == 2)
+                        iEMA = varargin{2};
+                        readDeviceParameters(obj, iEMA);
+                    else
+                        readDeviceParameters(obj);
+                    end
+
+                    fprintf('\nFinished\n\n');
+                    fprintf(['Information on available objective data is ',...
+                        'found in {obj}.stAnalysis\n\n']);
                 
-                sFolder = varargin{1};
-                
-                openSubjectFolderCommandLine(obj, sFolder);
-                
-                examineObjectiveData(obj);
-                
-                generateOverviewCommandLine(obj);
-                
-                if (nargin == 2)
-                    iEMA = varargin{2};
-                    readDeviceParameters(obj, iEMA);
-                else
-                    readDeviceParameters(obj);
+                catch MException
+                    obj.hProgressCommandLine.killTimer();
+                    %TODO: Add more info
+                    error('%s', MException.message);
                 end
-                
-                fprintf('\nFinished\n\n');
-                fprintf(['Information on available objective data is ',...
-                    'found in {obj}.stAnalysis\n']);
                 
                 obj.hProgressCommandLine.killTimer();
                 
@@ -704,18 +714,51 @@ classdef IHABdata < handle
         function [] = transferSubjectFolder(obj, ~, ~)
             
             [sFolder] = uigetdir();
+            if sFolder == 0
+               return; 
+            end
             
-            cSubjectData = regexp(sFolder, ...
+            tmp = regexp(sFolder, ...
                 '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
+            
+            if ~isempty(tmp)
+                
+                cSubjectData{1} = tmp{1}{2};
+                cSubjectData{2} = tmp{1}{3};
+                cSubjectData{3} = tmp{1}{4};
+                
+            else
+                
+               tmp = regexp(sFolder, ...
+                '(\w)*(\w){8}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
+            
+                if ~isempty(tmp)
+                    
+                    cSubjectData{1} = tmp{1}{2};
+                    cSubjectData{2} = '000000'; %datestr(now, 'yymmdd')
+                    cSubjectData{3} = tmp{1}{3};
+                    
+                end
+                
+            end
             
             if isempty(cSubjectData)
                 obj.isBatch = true;
                 obj.openBatchSubjectFolder(sFolder);
             else
                 obj.isBatch = false;
+                
+                % Check if data results from IHAB or HALLO (different
+                % folder structure)
+                if exist([sFolder, filesep, cSubjectData{1}, '_Mobeval'], 'dir') == 7
+                    obj.isHallo = true;
+                else
+                    obj.isHallo = false; 
+                end
+             
                 obj.openSubjectFolder(sFolder);
             end
-            
+           
         end
         
         function [] = openBatchSubjectFolder(obj, sFolder)
@@ -754,11 +797,24 @@ classdef IHABdata < handle
             cSubjectData = regexp(sInfo, ...
                 '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
             
-            if isempty(cSubjectData{1}{5})
-                cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
-            else
-                obj.stSubject.Appendix = cSubjectData{1}{6};
-                cSubjectData = {cSubjectData{1}{2:4}};
+            
+            if isempty(cSubjectData)
+            
+               tmp = regexp(sInfo, ...
+                '(\w)*(\w){8}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
+                cSubjectData{1} = tmp{1}{2};
+                cSubjectData{2} = '000000'; %datestr(now, 'yymmdd')
+                cSubjectData{3} = tmp{1}{3};
+            
+            else 
+                
+                if isempty(cSubjectData{1}{5})
+                    cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
+                else
+                    obj.stSubject.Appendix = cSubjectData{1}{6};
+                    cSubjectData = {cSubjectData{1}{2:4}};
+                end
+            
             end
             
             if isValidSubjectData(cSubjectData)
@@ -772,6 +828,7 @@ classdef IHABdata < handle
             else
                 fprintf('Cannot read folder.\n');
                 return;
+            
             end
             
             % check for Log
@@ -784,11 +841,31 @@ classdef IHABdata < handle
                 fprintf('[ ] No Log data was found.\n');
             end
             
-            % check for questionnaires
+            % Check for Questionnaires
             
-            stQuestionnaires = dir([sFolder, filesep, cSubjectData{1}, '_Quest']);
+            if obj.isHallo
+                
+                sFolderQuest = [sFolder, filesep, cSubjectData{1}, '_Mobeval'];
+                stDir = rdir([sFolderQuest, filesep, '**\*.xml']);
+                sProfile = '(\w){8}-(\w){4}-(\w){4}-(\w){4}-(\w){12}.xml';
+
+                for iDir = 1:length(stDir)
+
+                    cContents = regexp(stDir(iDir).name, sProfile, 'tokens');
+                    if ~isempty(cContents)
+                        sQuestName = stDir(iDir).folder;
+                        continue;
+                    end
+                end
+                
+            else
+                sQuestName = [sFolder, filesep, cSubjectData{1}, '_Quest'];
+            end
+            
+            stQuestionnaires = dir(sQuestName);
             stQuestionnaires(1:2) = [];
             nQuestionnaires = length(stQuestionnaires);
+            obj.stAnalysis.NumberOfQuestionnaires = nQuestionnaires;
             if nQuestionnaires >= 0
                 fprintf('[x] Questionnaire data found.\n');
                 obj.bQuest = 1;
@@ -820,9 +897,11 @@ classdef IHABdata < handle
                 return;
             end
             
-            obj.clearEntries();
+            if ~obj.isCommandLine
+                obj.clearEntries();
+            end
             
-            if obj.isBatch
+            if obj.isBatch && ~obj.isCommandLine
                 obj.cListQuestionnaire{end} = '::: Batch processing. :::';
                 obj.hListBox.Value = obj.cListQuestionnaire;
             end
@@ -835,11 +914,20 @@ classdef IHABdata < handle
             cSubjectData = regexp(sInfo, ...
                 '(\w)*(\w){8}_(\w){6}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
             
-            if isempty(cSubjectData{1}{5})
-                cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
-            else
-                obj.stSubject.Appendix = cSubjectData{1}{6};
-                cSubjectData = {cSubjectData{1}{2:4}};
+            if isempty(cSubjectData)
+            
+               tmp = regexp(sInfo, ...
+                '(\w)*(\w){8}_(\w){2}(_)*(\w)*(_\w)*', 'tokens');
+                cSubjectData{1} = tmp{1}{2};
+                cSubjectData{2} = '000000'; %datestr(now, 'yymmdd')
+                cSubjectData{3} = tmp{1}{3};
+            else 
+                if isempty(cSubjectData{1}{5})
+                    cSubjectData = cSubjectData{1}(~cellfun('isempty',cSubjectData{1}));
+                else
+                    obj.stSubject.Appendix = cSubjectData{1}{6};
+                    cSubjectData = {cSubjectData{1}{2:4}};
+                end
             end
             
             if isValidSubjectData(cSubjectData)
@@ -849,75 +937,114 @@ classdef IHABdata < handle
                 obj.stSubject.Experimenter = cSubjectData{3};
                 obj.stSubject.Folder = sFolder;
                 obj.stSubject.Code = sInfo;
-                
-                obj.hEditSubject.Value = obj.stSubject.Name;
-                obj.hEditDate.Value = obj.stSubject.Date;
-                obj.hEditExperimenter.Value = obj.stSubject.Experimenter;
-                
-                obj.hEditSubject.Editable = 'Off';
-                obj.hEditDate.Editable = 'Off';
-                obj.hEditExperimenter.Editable = 'Off';
-                
-                obj.hButton_Create.Enable = 'Off';
+
+                if ~obj.isCommandLine
+                    obj.hEditSubject.Value = obj.stSubject.Name;
+                    obj.hEditDate.Value = obj.stSubject.Date;
+                    obj.hEditExperimenter.Value = obj.stSubject.Experimenter;
+
+                    obj.hEditSubject.Editable = 'Off';
+                    obj.hEditDate.Editable = 'Off';
+                    obj.hEditExperimenter.Editable = 'Off';
+
+                    obj.hButton_Create.Enable = 'Off';
+                end
                 
             else
-                obj.cListQuestionnaire{end} = 'Cannot read folder.';
-                obj.hListBox.Value = obj.cListQuestionnaire;
+                if ~obj.isCommandLine
+                    obj.cListQuestionnaire{end} = 'Cannot read folder.';
+                    obj.hListBox.Value = obj.cListQuestionnaire;
+                end
                 return;
             end
             
             % check for Log
             
-            nLog = exist(fullfile(sFolder,'log2.txt'), 'file') == 2;
-            if nLog
-                obj.hStat_Log.Value = 'present';
-                obj.cListQuestionnaire{end+1} = '[x] Log data found.';
-                obj.bLog = 1;
-            else
-                obj.cListQuestionnaire{end+1} = '[  ] No Log data was found.';
+            if ~obj.isCommandLine
+                nLog = exist(fullfile(sFolder,'log2.txt'), 'file') == 2;
+                if nLog
+                    obj.hStat_Log.Value = 'present';
+                    obj.cListQuestionnaire{end+1} = '[x] Log data found.';
+                    obj.bLog = 1;
+                else
+                    obj.cListQuestionnaire{end+1} = '[  ] No Log data was found.';
+                end
+                obj.hListBox.Value = obj.cListQuestionnaire;
             end
-            obj.hListBox.Value = obj.cListQuestionnaire;
             
             % check for questionnaires
             
-            stQuestionnaires = dir([sFolder, filesep, cSubjectData{1}, '_Quest']);
+            sQuestName = '_Quest';
+            
+            if exist([sFolder, filesep, cSubjectData{1}, '_Mobeval'], 'dir') == 7
+                
+                obj.isHallo = true;
+                sFolderQuest = [sFolder, filesep, cSubjectData{1}, '_Mobeval'];
+                stDir = rdir([sFolderQuest, filesep, '**\*.xml']);
+                sProfile = '(\w){8}-(\w){4}-(\w){4}-(\w){4}-(\w){12}.xml';
+
+                for iDir = 1:length(stDir)
+
+                    cContents = regexp(stDir(iDir).name, sProfile, 'tokens');
+                    if ~isempty(cContents)
+                        sQuestName = stDir(iDir).folder;
+                        continue;
+                    end
+                end
+                
+            else
+                sQuestName = [sFolder, filesep, cSubjectData{1}, sQuestName];
+            end
+            
+            stQuestionnaires = dir(sQuestName);
             stQuestionnaires(1:2) = [];
             nQuestionnaires = length(stQuestionnaires);
             if nQuestionnaires >= 0
-                obj.hStat_Quests.Value = num2str(nQuestionnaires);
-                obj.cListQuestionnaire{end+1} = '[x] Questionnaire data found.';
+                if ~obj.isCommandLine
+                    obj.hStat_Quests.Value = num2str(nQuestionnaires);
+                    obj.cListQuestionnaire{end+1} = '[x] Questionnaire data found.';
+                end
                 obj.bQuest = 1;
-            else
+            elseif ~obj.isCommandLine
                 obj.cListQuestionnaire{end+1} = '[  ] No Questionnaire data found.';
             end
-            obj.hListBox.Value = obj.cListQuestionnaire;
             
+            if ~obj.isCommandLine
+                obj.hListBox.Value = obj.cListQuestionnaire;
+            end
             % check for feature data
             
             stFeatures = dir([sFolder, filesep, cSubjectData{1}, '_AkuData']);
             stFeatures(1:2) = [];
             nFeatures = length(stFeatures);
             if nFeatures >= 0
-                obj.hStat_Features.Value = num2str(nFeatures);
-                obj.cListQuestionnaire{end+1} = '[x] Feature data found.';
+                if ~obj.isCommandLine
+                    obj.hStat_Features.Value = num2str(nFeatures);
+                    obj.cListQuestionnaire{end+1} = '[x] Feature data found.';
+                end
                 obj.bFeatures = 1;
-            else
+            elseif ~obj.isCommandLine
                 obj.cListQuestionnaire{end+1} = '[  ] No Feature data found.';
             end
-            obj.hListBox.Value = obj.cListQuestionnaire;
             
-            if obj.isDataCompleteEnoughForAnalysis()
+            if ~obj.isCommandLine
+                obj.hListBox.Value = obj.cListQuestionnaire;
+            end
+            
+            if obj.isDataCompleteEnoughForAnalysis() && ~obj.isCommandLine
                 obj.hButton_Analyse.Enable = 'On';
                 obj.hButton_Compare.Enable = 'On';
             end
             
-            if obj.bLog
+            if obj.bLog && ~obj.isCommandLine
                 obj.extractConnection();
             end
             
         end
         
         function [] = clearEntries(obj, ~, ~)
+            
+            obj.hLabel_Calculating.Visible = 'Off';
             
             if ~obj.bClear
                 try
@@ -926,6 +1053,7 @@ classdef IHABdata < handle
                 try
                     delete(obj.hAxes);
                 end
+                
                 obj.bClear = 1;
                 delete(timerfindall);
             end
@@ -1121,18 +1249,6 @@ classdef IHABdata < handle
             
             [~, cmdout] = system('adb shell ls /sdcard/ihab/features');
             vStatus = [vStatus, (~isempty(find(strfind(cmdout, 'No such file or directory'))) || ~isempty(cmdout))];
-            
-            %             [~, cmdout] = system('adb shell ls -l /sdcard/ihab');
-            
-            %             if contains(cmdout, obj.sLogFile)
-            %                 tmp = splitlines(cmdout);
-            %                 for iLine = 1:length(tmp)
-            %                     if contains(tmp{iLine}, obj.sLogFile)
-            %                         tmp2 = split(tmp{iLine});
-            %                         vStatus = [vStatus, tmp2{4}<100];
-            %                     end
-            %                 end
-            %             end
             
             if (mean(vStatus) == 0)
                 obj.cListQuestionnaire{end+1} = 'Data was erased from mobile device.';
@@ -1811,7 +1927,27 @@ classdef IHABdata < handle
             
         end
         
-        function [] = analyseData(obj, ~, ~)
+        function [] = analyseData(obj)
+            
+            if obj.isHallo
+                if ~obj.isCommandLine
+                    obj.hLabel_Calculating.Text = obj.sMessage_DataFormat;
+                    obj.hLabel_Calculating.Visible = 'On';
+                else
+                   fprintf('%s\n\n', obj.sMessage_DataFormat); 
+                end
+                return;
+            end
+            
+            if obj.isCommandLine
+                warning('off');
+            end
+            
+            if obj.isCommandLine
+                fprintf('Performing analysis and generating PDF output -'); 
+                obj.hProgressCommandLine = BlindProgressCommandLine();
+                obj.hProgressCommandLine.startTimer();
+            end
             
             if exist([obj.sFolderMain, filesep, 'cache', filesep, ...
                     obj.stSubject.Name, '.mat'], 'file') == 2
@@ -1886,10 +2022,16 @@ classdef IHABdata < handle
             obj.cListQuestionnaire{end-1} = sprintf('[x] Analysing subject: %s', obj.stSubject.Name);
             obj.cListQuestionnaire{end} = sprintf('     Finished in %s\n', formatSeconds(round(toc)));
             obj.hListBox.Value = obj.cListQuestionnaire;
-            
-            obj.hProgress.killTimer();
-            
+           
+            if obj.isCommandLine
+                obj.hProgressCommandLine.stopTimer();
+            else
+                obj.hProgress.killTimer();
+            end
+           
             delete(timerfindall);
+            
+            warning('on');
             
         end
         

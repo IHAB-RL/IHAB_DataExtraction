@@ -15,14 +15,14 @@ end
 if nargin < 2
     printMode = true;
 end
-% szBaseDir = fullfile(pwd,'IHAB_Rohdaten_EMA2018');
-% subjectPath = dir([szBaseDir filesep subjectID '*']);
-%szBaseDir = [obj.stSubject.Folder,filesep, '..'];
 
-obj.cListQuestionnaire{end} = sprintf('\t.analysing subject data -');
-obj.hListBox.Value = obj.cListQuestionnaire;
-obj.hProgress.startTimer();
+fclose all;
 
+if ~obj.isCommandLine
+    obj.cListQuestionnaire{end} = sprintf('\t.analysing subject data -');
+    obj.hListBox.Value = obj.cListQuestionnaire;
+    obj.hProgress.startTimer();
+end
 
 % Create directory for graphics
 szGraphicsDir = [obj.stSubject.Folder, filesep 'graphics'];
@@ -69,28 +69,9 @@ if hasSubjectiveData
     end
     % unique Dates of one subject
     dateVecDayOnlyQ = dateVecOneSubjectQ - timeofday(dateVecOneSubjectQ);
-    %     uniqueDaysQ = unique(dateVecDayOnlyQ);
-    
-    %     szSubjectName = TableOneSubject.SubjectID;
-else
-    %     szSubjectName = obj.stSubject.Name;
+
 end
 
-% subIndex = [];
-% for subjectIndex = 1:numel(allSubjects)
-%     if strcmpi(allSubjects{subjectIndex}.SubjectID, szSubjectName)
-%         subIndex = subjectIndex;
-%         break;
-%     end
-% end
-%
-% if isempty(subIndex)
-%     return;
-% end
-%
-% if isempty(subIndex)
-%     error('Subject not found')
-% end
 
 subjectMatFile = fullfile(obj.stSubject.Folder,...
     [obj.stSubject.Name '.mat']);
@@ -127,7 +108,7 @@ numInvalidDay = zeros(length(AllDates),1);
 percentInvalidDay = zeros(length(AllDates),1);
 txtFile = fullfile(obj.stSubject.Folder,[obj.stSubject.Name '.txt']);
 
-if exist(txtFile, 'file')
+if exist(txtFile, 'file') == 2
     delete(txtFile);
 end
 
@@ -136,12 +117,7 @@ fid = fopen(txtFile,'wt');
 % Plot all data
 hFig_Overview = figure();
 hFig_Overview.Visible = 'Off';
-% hFig_Overview.Units = 'centimeters';
-% hFig_Overview.PaperPositionMode = 'auto';
-% hFig_Overview.Position = [0 0 21 29.7];
-% hFig_Overview.PaperPosition = [0 0 21 29.7];
 set(hFig_Overview,'renderer','Painters')
-%orient(hFig_Overview,'landscape')
 box off
 yDistance = @(x) x;
 
@@ -306,11 +282,13 @@ for kk = 1:length(AllDates)
         end
     end
     
-    obj.hProgress.stopTimer();
-    obj.cListQuestionnaire{end} = sprintf('\t.building overview -');
-    obj.hListBox.Value = obj.cListQuestionnaire;
-    obj.hProgress.startTimer();
-   
+    if ~obj.isCommandLine
+        obj.hProgress.stopTimer();
+        obj.cListQuestionnaire{end} = sprintf('\t.building overview -');
+        obj.hListBox.Value = obj.cListQuestionnaire;
+        obj.hProgress.startTimer();
+    end
+    
     if hasSubjectiveData
         
         %% now plot questionaire info
@@ -651,14 +629,6 @@ hFig_Overview.PaperPosition = tmp_figuresize;
 export_fig([obj.stSubject.Folder, filesep, 'graphics', filesep, ...
     '17_' obj.stSubject.Name, '.pdf'], '-native');
 
-% Save the figure as PDF and EPS ('016_' for page numbering in PDF)
-% print(hFig_Overview,'-fillpage',fullfile(szGraphicsDir,...
-%     ['17_' obj.stSubject.Name]),'-dpdf');
-
-
-% saveas(hFig_Overview,fullfile(szGraphicsDir,...
-%     ['17_' obj.stSubject.Name]),'epsc')
-
 close(hFig_Overview);
 
 % Write information on validity per day to file
@@ -669,7 +639,9 @@ fprintf(fid,'Total hours: %s\n', totalHours);
 fprintf(fid,'Total validity: %s', strValidDataTotal);
 fclose(fid);
 
-obj.hProgress.stopTimer();
+if ~obj.isCommandLine
+    obj.hProgress.stopTimer();
+end
 
 end
 % EOF
