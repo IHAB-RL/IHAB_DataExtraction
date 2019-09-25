@@ -60,7 +60,7 @@ end
 
 % check if the day has objective data
 % build the full directory
-szDir = [szBaseDir filesep stSubject.FolderName filesep stSubject.SubjectID '_AkuData' ];
+szDir = [szBaseDir filesep stSubject.FolderName filesep stSubject.SubjectID '_AkuData'];
 
 % List all feat files
 AllFeatFiles = listFiles(szDir,'*.feat');
@@ -104,22 +104,22 @@ if ~isempty(idx)
     dateVecAll(FinalNonDataIdx) = [];
     featFilesWithoutCorrupt(FinalNonDataIdx) = [];
     
+    
+    % Analysis how many parts are there at this day
+    dtMinutes = minutes(diff(dateVecAll));
+    idxPartBorders = find (dtMinutes> 1.1);
+    idxPartBorders = [0; idxPartBorders; length(dtMinutes)];
+    NrOfParts = length(idxPartBorders)-1;
+    
+    % Added by Nils 06-Nov-2017
+    % Only get the number of available parts for one day and return
+    if PartNumberToLoad < 1
+        Data = [];
+        TimeVec = [];
+        return;
+    end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if ~AllParts
-        % Analysis how many parts are there at this day
-        dtMinutes = minutes(diff(dateVecAll));
-        idxPartBorders = find (dtMinutes> 1.1);
-        idxPartBorders = [0; idxPartBorders; length(dtMinutes)];
-        NrOfParts = length(idxPartBorders)-1;
-        
-        % Added by Nils 06-Nov-2017
-        % Only get the number of available parts for one day and return
-        if PartNumberToLoad < 1
-            Data = [];
-            TimeVec = [];
-            return;
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
         if (PartNumberToLoad<=NrOfParts)
             PartStartIdx =  idxPartBorders(PartNumberToLoad)+1;
             PartEndIdx = idxPartBorders(PartNumberToLoad+1);
