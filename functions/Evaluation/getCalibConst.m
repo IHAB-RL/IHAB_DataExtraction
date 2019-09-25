@@ -1,23 +1,41 @@
-function [outParam]=getCalibConst(inParam)
+function [vCalibConst]=getCalibConst(szSubjectID)
 % function to get the system specific calibration constant
-% Usage [outParam]=getCalibConst(inParam)
+% informations are based on calibration measurements (Aug-2019), the
+% returned calibration constant is channel (right+left) dependent
+%
+% Usage [vCalibConst]=getCalibConst(szSubjectID)
 %
 % Parameters
 % ----------
-% inParam :  type
-%	 explanation
+% inParam :  szSubjectID - string, contains subject ID, e.g. AA00BB11
 %
 % Returns
 % -------
-% outParam :  type
-%	 explanation
+% outParam :  vCalibConst - vector, contains system specific calibration
+%                           constants
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF 
 % Version History:
 % Ver. 0.01 initial create 25-Sep-2019 JP
 
+% load assignment of IHAB systems and subjects
+load('IdentificationProbandSystem.mat');
 
+% get all subject IDs
+stAllSubjects = {stSubject_1.ID};
 
+% find subject
+IdxSubj = find(strcmp(szSubjectID, stAllSubjects));
+
+% get used IHAB system
+szSystem = stSubject_1(IdxSubj).System;
+
+% get all IHAB system
+stAllSystems = {stSystem.System};
+
+% get system specific calibration constant
+IdxSys = find(strcmp(szSystem, stAllSystems));
+vCalibConst = stSystem(IdxSys).Calib;
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
