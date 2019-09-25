@@ -61,7 +61,7 @@ obj.stAnalysis.NumberOfDays = length(AllDates);
 obj.stAnalysis.Dates = AllDates;
 
 for kk = 1:length(AllDates)
-    PartCounter = -1;
+    PartCounter = 0;
     %         % first plot feature data
     idx = find(dateVecDayOnlyFeatPSD == AllDates(kk));
     if ~isempty(idx) && length(idx) > 1

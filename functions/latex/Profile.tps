@@ -17,7 +17,7 @@ Class=LaTeXView
 Document=Profile.tex
 
 [Frame0_View0,0]
-TopLine=81
+TopLine=80
 Cursor=1173
 
 [Frame1]
