@@ -1,11 +1,11 @@
-function [] = OneSubjectOneDayOVD(stBaseDir, stTestSubject, stDesiredDay, AllParts)
+function [] = OneSubjectOneDayOVD(obj)
 % function to evaluate the Own Voice Detection (OVD) and Futher Voice 
 % Detection (FVD) on real IHAB data
 % OVD and FVD by Nils Schreiber (Master 2019)
-% Usage: OneSubjectOneDayOVD(stBaseDir, stTestSubject, stDesiredDay, AllParts)
+% Usage: OneSubjectOneDayOVD(szBaseDir, stTestSubject, stDesiredDay, AllParts)
 %
 % input:
-%   stBaseDir     - string, path to data folder (needs to be customized)
+%   szBaseDir     - string, path to data folder (needs to be customized)
 %   stTestSubject - string, name of subject folder, 
 %                   format <subject id>_yymmdd_<experimenter id>
 %   stDesiredDay  - datetime, desired day to be analysed
@@ -30,22 +30,9 @@ stControlOVD.szTimeCompressionMode = 'max';
 
 
 %% lets start with reading objective data
-% desired feature RMS
-stFeature = 'RMS';
-[DataRMS,TimeVecRMS] = getObjectiveDataOneDay(stBaseDir,stTestSubject,stDesiredDay,stFeature,[],AllParts);
-
-if compressData
-    [FinalDataRMS,FinaltimeVecRMS] = DataCompactor(DataRMS,TimeVecRMS,stControl);
-else
-    FinalDataRMS = DataRMS;
-    FinaltimeVecRMS = TimeVecRMS;
-end
-clear DataRMS TimeVecRMS;
-
-
 % desired feature PSD
 stFeature = 'PSD';
-[DataPSD,TimeVecPSD,~,stInfo] = getObjectiveDataOneDay(stBaseDir,stTestSubject,stDesiredDay, stFeature);
+[DataPSD,TimeVecPSD,~,stInfo] = getObjectiveDataOneDay(obj.szBaseDir,obj.stSubject.FolderName,obj.szDesiredDay,stFeature,[],obj.AllParts);
 
 version = 1; % JP modified get_psd
 [Cxy,Pxx,Pyy] = get_psd(DataPSD, version);
@@ -63,11 +50,12 @@ else
     FinalDataPyy = Pyy;
     FinalDataCohe = Cohe;
 end
+clear Cxy Pxx Pyy; 
 
 % set frequency specific parameters 
 stParam.fs = stInfo.fs;
 stParam.nFFT = 1024;
-stParam.vFreqRange  = [400 1000]; % auszuwertender Frequenzbereich
+stParam.vFreqRange  = [400 1000]; % frequency range in Hz
 stParam.vFreqIdx = round(stParam.nFFT*stParam.vFreqRange./stParam.fs);
 
 % averaged Coherence 
@@ -85,22 +73,35 @@ else
     FinalDataMeanCohe = MeanCoheTimeSmoothed;
     FinaltimeVecPSD = TimeVecPSD;
 end
-clear Cxy Pxx Pyy Cohe MeanCohe;
+clear Cohe MeanCohe MeanCoheTimeSmoothed TimeVecPSD;
 
 
-% limit to 125 ... 8000 Hz
+% limit to 125 ... 8000 Hz for optical reasons
 stBandDef.StartFreq = 125;
 stBandDef.EndFreq = 8000;
 stBandDef.Mode = 'onethird';
 stBandDef.fs = stInfo.fs;
-[stBandDef]=fftbin2freqband(stParam.nFFT/2+1,stBandDef);
+[stBandDef] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
 stBandDef.skipFrequencyNormalization = 1;
-[stBandDefCohe]=fftbin2freqband(stParam.nFFT/2+1,stBandDef);
+[stBandDefCohe] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
 
-FinalDataCxy2 = FinalDataCxy*stBandDefCohe.ReGroupMatrix;
+% FinalDataCxy2 = FinalDataCxy*stBandDefCohe.ReGroupMatrix;
 FinalDataPxx2 = FinalDataPxx*stBandDefCohe.ReGroupMatrix;
-FinalDataPyy2 = FinalDataPyy*stBandDefCohe.ReGroupMatrix;
+% FinalDataPyy2 = FinalDataPyy*stBandDefCohe.ReGroupMatrix;
 FinalDataCohe2 = FinalDataCohe*stBandDefCohe.ReGroupMatrix;
+clear FinalDataCohe;
+
+% desired feature RMS
+stFeature = 'RMS';
+[DataRMS,TimeVecRMS] = getObjectiveDataOneDay(obj.szBaseDir,obj.stSubject.FolderName,obj.szDesiredDay,stFeature,[],obj.AllParts);
+
+if compressData
+    [FinalDataRMS,FinaltimeVecRMS] = DataCompactor(DataRMS,TimeVecRMS,stControl);
+else
+    FinalDataRMS = DataRMS;
+    FinaltimeVecRMS = TimeVecRMS;
+end
+clear DataRMS TimeVecRMS;
 
 
 % logical to save figure
@@ -124,11 +125,11 @@ clear FinalDataCxy FinalDataPxx FinalDataPyy;
 
 
 %% subjective data
-quest = dir([stBaseDir filesep stTestSubject filesep 'Questionnaires_*.mat']);
+quest = dir([obj.szBaseDir filesep obj.stSubject.FolderName filesep 'Questionnaires_*.mat']);
 if ~isempty(quest)
-    load([stBaseDir filesep stTestSubject filesep quest.name]);
+    load([obj.szBaseDir filesep obj.stSubject.FolderName filesep quest.name]);
 else
-    import_EMA2018(stTestSubject,stBaseDir);
+    import_EMA2018(obj.stSubject.FolderName,obj.szBaseDir);
 end
 isPrintMode = 1;
 hasSubjectiveData = 1;
@@ -137,7 +138,7 @@ if hasSubjectiveData
     
     SubjectIDTable = QuestionnairesTable.SubjectID;
     
-    idx = strcmp(stTestSubject(1:8), SubjectIDTable);
+    idx = strcmp(obj.stSubject.SubjectID, SubjectIDTable);
     
     if all(idx == 0)
         error('Subject not found in questionnaire table')
@@ -163,7 +164,7 @@ if hasSubjectiveData
     %% reduce to data of one day
     
     dateVecDayOnlyQ = dateVecOneSubjectQ-timeofday(dateVecOneSubjectQ);
-    idxDate = find(dateVecDayOnlyQ == stDesiredDay);
+    idxDate = find(dateVecDayOnlyQ == obj.szDesiredDay);
     
     FinalIdxQ = find (dateVecOneSubjectQ(idxDate) > FinaltimeVecPSD(1));
     
@@ -228,7 +229,7 @@ figure('Units','centimeters','PaperPosition',[0 0 1 1],'Position',[0 0 18 29.7])
 GUI_xStart = 0.1300;
 GUI_xAxesWidth = 0.7750;
 mTextTitle = uicontrol(gcf,'style','text');
-set(mTextTitle,'Units','normalized','Position', [0.2 0.93 0.6 0.05], 'String',[stTestSubject ' ' datestr(stDesiredDay)],'FontSize',16);
+set(mTextTitle,'Units','normalized','Position', [0.2 0.93 0.6 0.05], 'String',[obj.stSubject.SubjectID ' ' datestr(obj.szDesiredDay)],'FontSize',16);
 
 
 %% Erst die Coherence
@@ -250,13 +251,12 @@ set(axCoher,'YTick',1:3:size(FinalDataPxx2,2));
 set(axCoher,'YTickLabel',yaxisLables);
 set(axCoher ,'ylabel', ylabel('frequency in Hz'))
 set(axCoher,'XTick',[]);
-
-PosVecCoher = get(axCoher,'Position');
 drawnow;
+PosVecCoher = get(axCoher,'Position');
 
 
 %% RMS
-Calib_RMS = 104;
+Calib_RMS = getCalibConst(obj.stSubject.SubjectID);
 axRMS = axes('Position',[GUI_xStart 0.09 PosVecCoher(3) 0.09]);
 % hRMS = plot(TimeVecRMS,20*log10(DataRMS)+Calib_RMS);
 hRMS = plot(datenum(FinaltimeVecRMS),20*log10(FinalDataRMS)+Calib_RMS);
@@ -566,9 +566,8 @@ end
 
 if bPrint
     set(0,'DefaultFigureColor','remove')
-%     datestr(stDesiredDay)% add date
-    exportName = [stBaseDir filesep stTestSubject filesep ...
-        'Fingerprint_VD_' stTestSubject]; 
+    exportName = [obj.szBaseDir filesep obj.stSubject.FolderName filesep ...
+        'Fingerprint_VD_' obj.stSubject.SubjectID '_' datestr(obj.szDesiredDay,'yymmdd')]; 
     
     savefig(exportName);
     saveas(gcf, exportName,'pdf')

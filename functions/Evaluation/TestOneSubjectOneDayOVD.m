@@ -10,20 +10,22 @@
 clear; close all;
 
 % path to data folder (needs to be customized)
-stBaseDir = 'K:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
+obj.szBaseDir = 'K:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
 
 % name of subject folder
-stTestSubject =  'HN06MA10_180613_aw';
-% stTestSubject = 'KE07IN22_180607_mh';
+szCurrentFolder =  'KL05ST30_180608_aw';
+obj.stSubject = getsubject(obj.szBaseDir, szCurrentFolder);
 
-% desired day
-dateDay = ['20' stTestSubject(10:15)];
-stDesiredDay = datetime(str2num(dateDay(1:4)), str2num(dateDay(5:6)), str2num(dateDay(7:8)));
+% get all dates of one subject
+caDates = getdatesonesubject(obj);
+
+% choose the desired day
+obj.szDesiredDay = caDates(5);
 
 % logical whether to select all (1) or just one (0) part of the desired day
-AllParts = 1;
+obj.AllParts = 1;
 
-OneSubjectOneDayOVD(stBaseDir, stTestSubject, stDesiredDay, AllParts);
+OneSubjectOneDayOVD(obj);
 
 
 %--------------------Licence ---------------------------------------------
