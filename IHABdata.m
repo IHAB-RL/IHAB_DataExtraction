@@ -190,10 +190,11 @@ classdef IHABdata < handle
             
             addpath(genpath(pwd));
             rmpath('legacy');
+            rmpath('.git');
             
             checkPrerequisites();
             
-            if obj.isParallel && isempty(gcp('nocreate'))
+            if obj.isParallel && isempty(gcp('nocreate')) && checkParallelToolBox
                 myCluster = parcluster();
                 myCluster.NumWorkers = 12;
                 myPool = parpool(myCluster);

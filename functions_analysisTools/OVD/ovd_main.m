@@ -1,4 +1,4 @@
-function [stDataReal,stParam,stTime,stDataOVD,stDataFVD] = main(probID,config,gtFlag)
+function [stDataReal,stParam,stTime,stDataOVD,stDataFVD] = ovd_main(probID,config,gtFlag)
 
 
 % preallocation of the foldername

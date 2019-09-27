@@ -15,12 +15,11 @@ function caDates = getdatesonesubject(obj)
 % Author:  (c) TGM @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create
-% Ver. 1.0 updated to actual version 25-Sep-2019 JP
+% Ver. 1.0 updated to actual version 25-Sep-2019 JP (Pizza?)
 
 
 % List the whole content in the subject directory
-stFeatFiles = dir([obj.szBaseDir filesep obj.stSubject.FolderName, filesep, ...
-    obj.stSubject.SubjectID  '_AkuData']);
+stFeatFiles = dir([obj.stSubject.Folder filesep, obj.stSubject.Name, '_AkuData']);
 
 % Get rid of '.' and '..'
 stFeatFiles(1:2) = [];
@@ -35,9 +34,9 @@ caFileNames = {stFeatFiles.name};
 
 % Delete filenames belonging to corrupt files ...
 % (see ../Tools/CheckDataIntegrety.m)
-corruptTxtFile = fullfile(obj.szBaseDir, obj.stSubject.FolderName,'corrupt_files.txt');
+corruptTxtFile = fullfile(obj.stSubject.Folder, 'corrupt_files.txt');
 if ~exist(corruptTxtFile,'file')
-    CheckDataIntegrety(obj.stSubject.FolderName, obj.szBaseDir);
+    CheckDataIntegrity(obj);
 end
 fid = fopen(corruptTxtFile,'r');
 corruptFiles = textscan(fid,'%s\n');
@@ -59,7 +58,7 @@ caUniqueDates = unique(caDatesWithoutTime);
 % Convert them to desired output format
 caDates = datetime(caUniqueDates,'InputFormat','yyyyMMdd');
 T = table();
-T.(obj.stSubject.SubjectID) = caDates;
+T.(obj.stSubject.Name) = caDates;
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <201x> 

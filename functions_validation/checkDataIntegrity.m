@@ -4,19 +4,18 @@
 %clear
 %close all
 
-function checkDataIntegrity(obj, szSubjectID)
+function checkDataIntegrity(obj)
 
-szTestSubjectName = struct('FolderName', obj.stSubject.Folder, 'SubjectID', obj.stSubject.Name);
+%szTestSubjectName = struct('FolderName', obj.stSubject.Folder, 'SubjectID', obj.stSubject.Name);
 
-szCurrentDir = [szTestSubjectName.FolderName filesep szSubjectID '_AkuData' ];
+szCurrentDir = [obj.Folder, filesep, obj.stSubject.Name, '_AkuData' ];
 
 AllDataEntries = listFiles(szCurrentDir,'*.feat');
 SizeOfData = cell2mat({AllDataEntries.bytes});
 [NrOfOccurances,Values] = hist(SizeOfData,unique(SizeOfData));
 [~,idxSort] = sort(NrOfOccurances,'descend');
 TrueValues = Values(idxSort(1:3));
-fid = fopen(fullfile(szTestSubjectName.FolderName,...
-    'corrupt_files.txt'), 'w');
+fid = fopen(fullfile(obj.Folder, 'corrupt_files.txt'), 'w');
 
 corruptFileCounter = 0;
 
@@ -24,7 +23,7 @@ for nn = 1:length(AllDataEntries)
     
     if all(TrueValues ~= AllDataEntries(nn).bytes)
         [~,szNameofFile] = fileparts(AllDataEntries(nn).name);
-        fprintf(fid,'%s.feat\n',szNameofFile);
+        fprintf(fid,'%s.feat\n', szNameofFile);
         corruptFileCounter = corruptFileCounter + 1;
     end
     
