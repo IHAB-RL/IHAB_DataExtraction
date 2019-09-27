@@ -22,15 +22,16 @@ IHABdata()
 [obj] = IHABdata([Path to data folder], [#EMA run]);
 ```
 
-<<<<<<< HEAD
-=======
 * For complete analysis and PDF outptut:
+
 ```matlab
 [obj].analyseData();
 ```
->>>>>>> ICA_DataAnalysis
+
+ICA_DataAnalysis
 
 * For information on Device Parameters and/or objective Data, use:
+
 ```matlab
 [obj].stAnalysis
 ```

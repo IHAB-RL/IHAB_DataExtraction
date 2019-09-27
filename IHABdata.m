@@ -188,7 +188,8 @@ classdef IHABdata < handle
     methods
         function [obj] = IHABdata(varargin)
             
-            addpath(genpath('functions'));
+            addpath(genpath(pwd));
+            rmpath('legacy');
             
             checkPrerequisites();
             
@@ -1624,7 +1625,7 @@ classdef IHABdata < handle
         end
         
         function [] = getPreferencesFromFile(obj)
-            hFid = fopen(['functions', filesep, obj.sFileName_Preferences]);
+            hFid = fopen(['preferences', filesep, obj.sFileName_Preferences]);
             cTemp = textscan(hFid, '%s%f');
             
             obj.stPreferences.MinPartLength = cTemp{2}(1);
@@ -1644,7 +1645,7 @@ classdef IHABdata < handle
         end
         
         function [] = writePreferencesToFile(obj)
-            hFid = fopen(['functions', filesep, obj.sFileName_Preferences], 'w');
+            hFid = fopen(['preferences', filesep, obj.sFileName_Preferences], 'w');
             
             fprintf(hFid, 'MinPartLength[min]: %d\n', obj.stPreferences.MinPartLength);
             fprintf(hFid, 'Test: %d\n', obj.stPreferences.Test);
