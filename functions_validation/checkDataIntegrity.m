@@ -8,14 +8,14 @@ function checkDataIntegrity(obj)
 
 %szTestSubjectName = struct('FolderName', obj.stSubject.Folder, 'SubjectID', obj.stSubject.Name);
 
-szCurrentDir = [obj.Folder, filesep, obj.stSubject.Name, '_AkuData' ];
+szCurrentDir = [obj.stSubject.Folder, filesep, obj.stSubject.Name, '_AkuData' ];
 
 AllDataEntries = listFiles(szCurrentDir,'*.feat');
 SizeOfData = cell2mat({AllDataEntries.bytes});
 [NrOfOccurances,Values] = hist(SizeOfData,unique(SizeOfData));
 [~,idxSort] = sort(NrOfOccurances,'descend');
 TrueValues = Values(idxSort(1:3));
-fid = fopen(fullfile(obj.Folder, 'corrupt_files.txt'), 'w');
+fid = fopen(fullfile(obj.stSubject.Folder, 'corrupt_files.txt'), 'w');
 
 corruptFileCounter = 0;
 

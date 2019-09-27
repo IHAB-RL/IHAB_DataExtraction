@@ -24,7 +24,7 @@ fprintf('\t.checking data integrity -');
 
 % First: Check for broken data
 obj.hProgressCommandLine.startTimer();
-checkDataIntegrity(obj, obj.stSubject.Name);
+checkDataIntegrity(obj);
 obj.hProgressCommandLine.stopTimer();
 
 

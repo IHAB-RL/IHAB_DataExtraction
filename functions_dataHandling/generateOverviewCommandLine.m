@@ -33,7 +33,6 @@ end
 
 dateVecDayOnlyFeatPSD = dateVecAllFeatPSD-timeofday(dateVecAllFeatPSD);
 AllDates = getdatesonesubject(obj);
-AllDates = AllDates.(obj.stSubject.Name)(:);
 
 
     % Feature Data RMS

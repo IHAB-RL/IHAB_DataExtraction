@@ -58,9 +58,8 @@ function stSubject = validatesubject(obj, configStruct)
 %monthNewData = 4;
 
 % Get name of subject without any postfix
-% [szFilePath, szName] = fileparts(szSubjectDir);
-% szSubjectID = split(szName,'_');
 stSubject.FolderName = obj.stSubject.Folder;
+
 % szSubjectID = szSubjectID{1};
 stSubject.SubjectID = obj.stSubject.Name;
 
