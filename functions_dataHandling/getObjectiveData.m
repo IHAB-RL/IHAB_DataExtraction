@@ -1,4 +1,4 @@
-function [Data,TimeVec,stInfo]=getObjectiveData(obj,szFeature,varargin)
+function [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
 % function to load objective data of one day for one test subject
 % Usage [Data,TimeVec]=getObjectiveDataOneDay(szTestSubject,desiredDay, szFeature)
 %
@@ -56,15 +56,19 @@ p.addParameter('StartTime', 0, @(x) isduration(x) || isnumeric(x));
 p.addParameter('EndTime', 24, @(x) isduration(x) || isnumeric(x));
 p.addParameter('StartDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x));
 p.addParameter('EndDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x));
+p.addParameter('stInfo', [], @(x) isstruct(x));
 p.addParameter('PlotWidth', iDefaultPlotWidth, @(x) isnumeric(x));
 p.parse(obj,varargin{:});
 
 % Re-assign values
+stInfo = p.Results.stInfo;
 iPlotWidth = p.Results.PlotWidth;
 
-% call function to check input date format and plausibility
-stInfo = checkInputFormat(obj, p.Results.StartTime, p.Results.EndTime, ...
-    p.Results.StartDay, p.Results.EndDay);
+if isempty(stInfo)
+    % call function to check input date format and plausibility
+    stInfo = checkInputFormat(obj, p.Results.StartTime, p.Results.EndTime, ...
+        p.Results.StartDay, p.Results.EndDay);
+end
 
 % check if the day has objective data
 % build the full directory
