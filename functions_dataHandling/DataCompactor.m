@@ -1,4 +1,4 @@
-function [DataVecOut,TimeVecOut]=DataCompactor(DataVec,TimeVec,stControl)
+function [DataVecOut,TimeVecOut,NrOfDataPoints]=DataCompactor(DataVec,TimeVec,stControl)
 % function to compact feature data by different methods
 % Usage [DataVec,TimeVec]=DataCompactor(DataVec,TimeVec,stControl)
 %
@@ -28,11 +28,18 @@ function [DataVecOut,TimeVecOut]=DataCompactor(DataVec,TimeVec,stControl)
 %         provide the citation detail here (with equation no. if applicable)  
 % Version History:
 % Ver. 0.01 initial create (empty) 18-May-2017  Initials (eg. JB)
+% Ver. 0.02 add nargout == 3 29-Sept-2019 JP
 
-%------------Your function implementation here--------------------------- 
 
 DataLen_s = seconds(TimeVec(end)-TimeVec(1));
 NrOfDataPoints = ceil(DataLen_s/(stControl.DataPointRepresentation_s*(1-stControl.DataPointOverlap_percent)));
+
+if nargout == 3
+    % just get number of data points and return
+    DataVecOut = [];
+    TimeVecOut = [];
+    return;
+end
 
 if strcmpi(stControl.szTimeCompressionMode,'subsample')
 % Subsamplin only
