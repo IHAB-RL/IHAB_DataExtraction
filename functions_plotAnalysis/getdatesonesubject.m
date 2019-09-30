@@ -15,7 +15,7 @@ function caDates = getdatesonesubject(obj)
 % Author:  (c) TGM @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create
-% Ver. 1.0 updated to actual version 25-Sep-2019 JP (Pizza?)
+% Ver. 1.0 updated to actual version 25-Sep-2019 JP 
 
 
 % List the whole content in the subject directory
