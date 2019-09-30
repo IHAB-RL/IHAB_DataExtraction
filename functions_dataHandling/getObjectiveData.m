@@ -41,8 +41,10 @@ function [Data,TimeVec,stInfo]=getObjectiveData(obj,szFeature,varargin)
 Data = [];
 TimeVec = [];
 
+% default plot width in pixels
+iDefaultPlotWidth = 560;
+
 % set parameters for data compression
-stControl.DataPointRepresentation_s = 10; % variable
 stControl.DataPointOverlap_percent = 0;
 stControl.szTimeCompressionMode = 'mean';
 
@@ -54,120 +56,15 @@ p.addParameter('StartTime', 0, @(x) isduration(x) || isnumeric(x));
 p.addParameter('EndTime', 24, @(x) isduration(x) || isnumeric(x));
 p.addParameter('StartDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x));
 p.addParameter('EndDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x));
+p.addParameter('PlotWidth', iDefaultPlotWidth, @(x) isnumeric(x));
 p.parse(obj,varargin{:});
 
 % Re-assign values
-StartTime = p.Results.StartTime;
-EndTime = p.Results.EndTime;
-StartDay = p.Results.StartDay;
-EndDay = p.Results.EndDay;
+iPlotWidth = p.Results.PlotWidth;
 
-% preallocate struct for date values
-stInfo = struct('StartTime', [], 'EndTime', [], 'StartDay', [], 'EndDay', []);
-
-% check time input parameters format
-if ~isduration(StartTime) && StartTime >= 0 && StartTime <= 24
-    stInfo.StartTime = duration(StartTime,0,0);
-else
-    stInfo.StartTime = StartTime;
-end
-
-if ~isduration(EndTime) && EndTime >= 0 && EndTime <= 24
-    stInfo.EndTime = duration(EndTime,0,0);
-else
-    stInfo.EndTime = EndTime;
-end
-
-% check time input parameters plausibility
-if stInfo.StartTime > stInfo.EndTime
-    error('input EndTime must be greater than input StartTime');
-end
-
-
-% get all dates of one subject
-caDates = getdatesonesubject(obj);
-
-% check day input parameters format
-if isdatetime(StartDay)
-    if ~isnat(StartDay)
-        stInfo.StartDay = StartDay;
-    else
-        stInfo.StartDay = caDates(1);
-    end
-    
-elseif isnumeric(StartDay)
-    
-    if StartDay == -1 % i.e. get all days
-        stInfo.StartDay = caDates(1);
-        stInfo.EndDay = caDates(end);
-        
-    elseif StartDay <= length(caDates)
-        stInfo.StartDay = caDates(StartDay);
-        
-    else
-        error('input StartDay has an invalid value');
-    end
-    
-elseif ischar(StartDay)
-    
-    switch StartDay
-        case 'first'
-            stInfo.StartDay = caDates(1);
-        case 'last'
-            stInfo.StartDay = caDates(end);
-            stInfo.EndDay = caDates(end);
-        case 'all'
-            stInfo.StartDay = caDates(1);
-            stInfo.EndDay = caDates(end);
-    end
-end
-
-
-if isempty(stInfo.EndDay)
-    if isdatetime(EndDay)
-        if ~isnat(EndDay)
-            stInfo.EndDay = EndDay;
-        elseif isnat(EndDay) && isnat(StartDay)
-            % if EndDay and StartDay are not assigned, StartDay = first day
-            % EndDay = last day
-            stInfo.EndDay = caDates(end);
-        else
-            % if EndDay is not assigned, EndDay = StartDay
-            stInfo.EndDay = stInfo.StartDay;
-        end
-        
-    elseif isnumeric(EndDay)
-        
-        if EndDay == -1 % i.e. get all days
-            stInfo.StartDay = caDates(1);
-            stInfo.EndDay = caDates(end);
-            
-        elseif EndDay <= length(caDates)
-            stInfo.EndDay = caDates(EndDay);
-            
-        else
-            error('input EndDay has an invalid value');
-        end
-        
-    elseif ischar(EndDay)
-        
-        switch EndDay
-            case 'first'
-                stInfo.EndDay = caDates(1);
-            case 'last'
-                stInfo.EndDay = caDates(end);
-            case 'all'
-                stInfo.StartDay = caDates(1);
-                stInfo.EndDay = caDates(end);
-        end
-    end
-end
-
-% check day input parameters plausibility
-if stInfo.StartDay > stInfo.EndDay
-    error('input EndDay must be greater than input StartDay ');
-end
-
+% call function to check input date format and plausibility
+stInfo = checkInputFormat(obj, p.Results.StartTime, p.Results.EndTime, ...
+    p.Results.StartDay, p.Results.EndDay);
 
 % check if the day has objective data
 % build the full directory
@@ -224,44 +121,134 @@ if ~isempty(idxDay)
     % filter for desired start and end time
     featFilesWithoutCorrupt(~idxTime) = [];
     dateVecAll(~idxTime)= [];
+    timeVecAll(~idxTime)= [];
     
-
+    % get number of available feature files in current time frame
+    NrOfFiles = numel(featFilesWithoutCorrupt);
+    
     if ~isempty(featFilesWithoutCorrupt)
-        % pre-allocation
+        
+        % set static value for data resolution
+        iStaticSamplesPerPixel = 5;
+        iStaticNumSamples = ceil(iStaticSamplesPerPixel*iPlotWidth);
+        
+        % get infos about feature file for pre-allocation
         [FeatData, ~,stInfoFile]= LoadFeatureFileDroidAlloc([szDir filesep featFilesWithoutCorrupt{1}]);
         
-        % get compressed format
-%         [~,~,NrOfDataPoints] = DataCompactor([],TimeVec,stControl);
-        DataLen_s = (stInfoFile.nFrames-1) * stInfoFile.FrameSizeInSamples / stInfoFile.fs;
-        NrOfDataPoints = ceil(DataLen_s/(stControl.DataPointRepresentation_s*(1-stControl.DataPointOverlap_percent)));
+        % get duration in sec of one feature file (i.e. 60 sec)
+        LenOneFile_s = stInfoFile.nFrames * stInfoFile.FrameSizeInSamples / stInfoFile.fs;
+        LenOneFile_s = seconds(timeVecAll(end)-timeVecAll(end-1)); % equivalent
+        
+        % get duration in sec of all feature files
+        LenAllFiles_s = LenOneFile_s * NrOfFiles;
+        
+        % get length in samples of all feature files
+        LenAllFilesSamples = stInfoFile.nFrames * NrOfFiles;
+        
+        % calculate samples per pixels
+        iCurrentSamplesPerPixel = ceil(LenAllFilesSamples/iPlotWidth);
+        
+       
+        % adjust compression params
+        stControl.DataPointRepresentation_s = LenAllFiles_s/iStaticNumSamples;
+        
+        
+        %         % get size of one file in compressed format
+        %         NrOfDataPoints = ceil(LenOneFile_s/(stControl.DataPointRepresentation_s*(1-stControl.DataPointOverlap_percent)));
+        
 
+        % check whether to read in feature files file based or not
+        if stControl.DataPointRepresentation_s > LenOneFile_s
+            isFileBased = 0;
+            
+            % calculate number of needed files per loop
+            NrOfFilesPerLoop = ceil(stControl.DataPointRepresentation_s/LenOneFile_s);
+            NrOfLoops = ceil(NrOfFiles/NrOfFilesPerLoop);
+            
+            disp('Loops');
+        else
+            isFileBased = 1;
+        end
+        
+        
+        if isFileBased
+            % pre-allocation of output arguments
+            NrOfDataPoints = ceil(LenOneFile_s/(stControl.DataPointRepresentation_s*(1-stControl.DataPointOverlap_percent)));
 
-        Data = repmat(zeros(NrOfDataPoints,size(FeatData,2)),length(dateVecAll),1);
-        TimeVec = datetime(zeros(length(dateVecAll)*NrOfDataPoints,1),...
-            zeros(length(dateVecAll)*(NrOfDataPoints),1),...
-            zeros(length(dateVecAll)*(NrOfDataPoints),1));
+            Data = zeros(NrOfDataPoints,size(FeatData,2));
+            TimeVec = datetime(zeros(NrOfDataPoints,1),...
+                zeros(NrOfDataPoints,1),...
+                zeros(NrOfDataPoints,1));
+            
+            % loop over each feature file
+            Startindex = 1;
+            for fileIdx = 1:NrOfFiles
+                szFileName =  featFilesWithoutCorrupt{fileIdx};
+                
+                % load data from feature file
+                [FeatData, ~,~]= LoadFeatureFileDroidAlloc([szDir filesep szFileName]);
+                
+                ActBlockSize = size(FeatData,1);
+                
+                % calculate time vector
+                DateTimeValue = dateVecAll(fileIdx);
+                TimeVecIn = linspace(DateTimeValue,DateTimeValue+minutes(1-1/ActBlockSize),ActBlockSize);
+                
+                % compression
+                [DataVecComp,TimeVecComp] = DataCompactor(FeatData,TimeVecIn,stControl);
+                
+                ActBlockSize = size(DataVecComp,1);
+                
+                TimeVec(Startindex:Startindex+ActBlockSize-1) = TimeVecComp;
+                Data(Startindex:Startindex+ActBlockSize-1,:) = DataVecComp(1:ActBlockSize,:);
+                Startindex = Startindex + ActBlockSize;
+            end
+            
+        else
+            % pre-allocation of output arguments
+            Data = zeros(iStaticNumSamples,size(FeatData,2));
+            TimeVec = datetime(zeros(iStaticNumSamples,1),...
+                zeros(iStaticNumSamples,1),...
+                zeros(iStaticNumSamples,1));
+            
+            % loop over several feature files
+            StartindexComp = 1;
+            for LoopIdx = 1:NrOfLoops
+                Startindex = 1;
+                
+                % catch time gaps
+                DateTimeValues = dateVecAll(LoopIdx + (1:NrOfFilesPerLoop));
+                DateTimeGaps = DateTimeValues(2:end) - DateTimeValues(1:end-1);
+                
+                if any(DateTimeGaps > LenOneFile_s)
+                    disp('Achtung');
+                end
+                
+                for fileIdx = 1:NrOfFilesPerLoop
+                    szFileName =  featFilesWithoutCorrupt{LoopIdx+fileIdx-1};
 
-        Startindex = 1;
-        for fileIdx = 1:numel(featFilesWithoutCorrupt)
-            szFileName =  featFilesWithoutCorrupt{fileIdx};
-            
-            % load data from feature file
-            [FeatData, ~,~]= LoadFeatureFileDroidAlloc([szDir filesep szFileName]);
-            
-            ActBlockSize = size(FeatData,1);
-            
-            % calculate time vector
-            DateTimeValue = dateVecAll(fileIdx);
-            TimeVecIn = linspace(DateTimeValue,DateTimeValue+minutes(1-1/ActBlockSize),ActBlockSize);
-            
-            % compression
-            [DataVecOut,TimeVecOut] = DataCompactor(FeatData,TimeVecIn,stControl);
-            
-            ActBlockSize = size(DataVecOut,1);
-            
-            TimeVec(Startindex:Startindex+ActBlockSize-1) = TimeVecOut;
-            Data(Startindex:Startindex+ActBlockSize-1,:) = DataVecOut(1:ActBlockSize,:);
-            Startindex = Startindex + ActBlockSize;
+                    % load data from feature file
+                    [FeatData, ~,~]= LoadFeatureFileDroidAlloc([szDir filesep szFileName]);
+
+                    ActBlockSize = size(FeatData,1);
+                    
+                    FeatDataTemp(Startindex:Startindex+ActBlockSize-1,:) = FeatData;
+
+                    % calculate time vector
+                    DateTimeValue = DateTimeValues(fileIdx);
+                    TimeVecTemp(Startindex:Startindex+ActBlockSize-1) = linspace(DateTimeValue,DateTimeValue+minutes(1-1/ActBlockSize),ActBlockSize);
+                    
+                    Startindex = Startindex + ActBlockSize;
+                end
+                    % compression
+                    [DataVecComp,TimeVecComp] = DataCompactor(FeatDataTemp,TimeVecTemp,stControl);
+
+                    ActBlockSize = size(DataVecComp,1);
+
+                    TimeVec(StartindexComp:StartindexComp+ActBlockSize-1) = TimeVecComp;
+                    Data(StartindexComp:StartindexComp+ActBlockSize-1,:) = DataVecComp(1:ActBlockSize,:);
+                    StartindexComp = StartindexComp + ActBlockSize;
+            end
         end
         
     else
