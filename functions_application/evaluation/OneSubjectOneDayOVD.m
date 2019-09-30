@@ -1,38 +1,55 @@
-function [] = OneSubjectOneDayOVD(obj)
-% function to evaluate the Own Voice Detection (OVD) and Futher Voice 
+function [] = OneSubjectOneDayOVD(obj, varargin)
+% function to evaluate the Own Voice Detection (OVD) and Futher Voice
 % Detection (FVD) on real IHAB data
 % OVD and FVD by Nils Schreiber (Master 2019)
 % Usage: OneSubjectOneDayOVD(szBaseDir, stTestSubject, stDesiredDay, AllParts)
 %
 % input:
 %   szBaseDir     - string, path to data folder (needs to be customized)
-%   stTestSubject - string, name of subject folder, 
+%   stTestSubject - string, name of subject folder,
 %                   format <subject id>_yymmdd_<experimenter id>
 %   stDesiredDay  - datetime, desired day to be analysed
-%   AllParts      - logical whether to select all (1) or just one (0) part  
+%   AllParts      - logical whether to select all (1) or just one (0) part
 %                   of the desired day
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
-% contains main.m and plotAllDayFingerprints.m 
+% contains main.m and plotAllDayFingerprints.m
 % mainly computeDayFingerprintData.m by Nils Schreiber
 % Version History:
 % Ver. 0.01 initial create 10-Sep-2019  JP
 
+% default plot width in pixels
+iDefaultPlotWidth = 560;
 
-% set parameters for data compression
-compressData = 1;
-stControl.DataPointRepresentation_s = 5;
-stControl.DataPointOverlap_percent = 0;
-stControl.szTimeCompressionMode = 'mean';
-stControlOVD.DataPointRepresentation_s = stControl.DataPointRepresentation_s;
-stControlOVD.DataPointOverlap_percent = 0;
-stControlOVD.szTimeCompressionMode = 'max';
+p = inputParser;
+p.KeepUnmatched = true;
+p.addRequired('obj', @(x) isa(x,'IHABdata') && ~isempty(x));
+
+p.addParameter('StartTime', 0, @(x) isduration(x) || isnumeric(x));
+p.addParameter('EndTime', 24, @(x) isduration(x) || isnumeric(x));
+p.addParameter('StartDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x));
+p.addParameter('EndDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x));
+p.addParameter('PlotWidth', iDefaultPlotWidth, @(x) isnumeric(x));
+p.parse(obj,varargin{:});
+
+% Re-assign values
+iPlotWidth = p.Results.PlotWidth;
+
+% call function to check input date format and plausibility
+stInfo = checkInputFormat(obj, p.Results.StartTime, p.Results.EndTime, ...
+    p.Results.StartDay, p.Results.EndDay);
+
+% flag to use compression or not
+compressData = 0; % because of new structure of getObjectiveData.m
 
 
 %% lets start with reading objective data
 % desired feature PSD
-stFeature = 'PSD';
-[DataPSD,TimeVecPSD,~,stInfo] = getObjectiveDataOneDay(obj.szBaseDir,obj.stSubject.FolderName,obj.szDesiredDay,stFeature,[],obj.AllParts);
+szFeature = 'PSD';
+
+% get all available feature file data
+[DataPSD,TimeVecPSD,stInfoFile] = getObjectiveData(obj, szFeature, 'stInfo', stInfo, 'PlotWidth',iPlotWidth);
+
 
 version = 1; % JP modified get_psd
 [Cxy,Pxx,Pyy] = get_psd(DataPSD, version);
@@ -50,15 +67,15 @@ else
     FinalDataPyy = Pyy;
     FinalDataCohe = Cohe;
 end
-clear Cxy Pxx Pyy; 
+clear Cxy Pxx Pyy;
 
-% set frequency specific parameters 
-stParam.fs = stInfo.fs;
+% set frequency specific parameters
+stParam.fs = stInfoFile.fs;
 stParam.nFFT = 1024;
 stParam.vFreqRange  = [400 1000]; % frequency range in Hz
 stParam.vFreqIdx = round(stParam.nFFT*stParam.vFreqRange./stParam.fs);
 
-% averaged Coherence 
+% averaged Coherence
 MeanCohe = mean(real(Cohe(:,stParam.vFreqIdx(1):stParam.vFreqIdx(2))),2);
 
 CohTimeSmoothing_s = 0.1;
@@ -80,7 +97,7 @@ clear Cohe MeanCohe MeanCoheTimeSmoothed TimeVecPSD;
 stBandDef.StartFreq = 125;
 stBandDef.EndFreq = 8000;
 stBandDef.Mode = 'onethird';
-stBandDef.fs = stInfo.fs;
+stBandDef.fs = stInfoFile.fs;
 [stBandDef] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
 stBandDef.skipFrequencyNormalization = 1;
 [stBandDefCohe] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
@@ -91,9 +108,12 @@ FinalDataPxx2 = FinalDataPxx*stBandDefCohe.ReGroupMatrix;
 FinalDataCohe2 = FinalDataCohe*stBandDefCohe.ReGroupMatrix;
 clear FinalDataCohe;
 
+
 % desired feature RMS
-stFeature = 'RMS';
-[DataRMS,TimeVecRMS] = getObjectiveDataOneDay(obj.szBaseDir,obj.stSubject.FolderName,obj.szDesiredDay,stFeature,[],obj.AllParts);
+szFeature = 'RMS';
+
+% get all available feature file data
+[DataRMS,TimeVecRMS,~] = getObjectiveData(obj, szFeature, 'stInfo', stInfo, 'PlotWidth',iPlotWidth);
 
 if compressData
     [FinalDataRMS,FinaltimeVecRMS] = DataCompactor(DataRMS,TimeVecRMS,stControl);
@@ -125,11 +145,11 @@ clear FinalDataCxy FinalDataPxx FinalDataPyy;
 
 
 %% subjective data
-quest = dir([obj.szBaseDir filesep obj.stSubject.FolderName filesep 'Questionnaires_*.mat']);
+quest = dir([obj.stSubject.Folder filesep 'Questionnaires_*.mat']);
 if ~isempty(quest)
-    load([obj.szBaseDir filesep obj.stSubject.FolderName filesep quest.name]);
+    load([obj.stSubject.Folder filesep quest.name]);
 else
-    import_EMA2018(obj.stSubject.FolderName,obj.szBaseDir);
+    import_EMA2018(obj);
 end
 isPrintMode = 1;
 hasSubjectiveData = 1;
@@ -138,7 +158,7 @@ if hasSubjectiveData
     
     SubjectIDTable = QuestionnairesTable.SubjectID;
     
-    idx = strcmp(obj.stSubject.SubjectID, SubjectIDTable);
+    idx = strcmp(obj.stSubject.Name, SubjectIDTable);
     
     if all(idx == 0)
         error('Subject not found in questionnaire table')
@@ -164,72 +184,83 @@ if hasSubjectiveData
     %% reduce to data of one day
     
     dateVecDayOnlyQ = dateVecOneSubjectQ-timeofday(dateVecOneSubjectQ);
-    idxDate = find(dateVecDayOnlyQ == obj.szDesiredDay);
+    idxDate = find(dateVecDayOnlyQ >= stInfo.StartDay & dateVecDayOnlyQ <= stInfo.EndDay);
     
-    FinalIdxQ = find (dateVecOneSubjectQ(idxDate) > FinaltimeVecPSD(1));
-    
-    FinalTimeQ = dateVecOneSubjectQ(idxDate(FinalIdxQ));
-    FinalTableOneSubject = TableOneSubject(idxDate(FinalIdxQ),:);
-    ReportedDelay = zeros(height(FinalTableOneSubject),1);
-    if str2double(szYear) < 2017
-        for kk = 1:height(FinalTableOneSubject)
-            if iscell(FinalTableOneSubject.AssessDelay)
-                AssessDelay = FinalTableOneSubject.AssessDelay{kk};
-            elseif isnumeric(FinalTableOneSubject.AssessDelay)
-                AssessDelay = FinalTableOneSubject.AssessDelay(kk);
-            end
-            if (~ischar(AssessDelay))
-                if (AssessDelay <= 5)
-                    ReportedDelay(kk) = (AssessDelay-1)*5;
-                elseif (AssessDelay == 5)
-                    ReportedDelay(kk) = 30;
-                elseif (AssessDelay >= 6)
-                    ReportedDelay(kk) = 40; % Could be everything
+    if ~isempty(idxDate)
+        FinalIdxQ = find (dateVecOneSubjectQ(idxDate) > FinaltimeVecPSD(1));
+        
+        FinalTimeQ = dateVecOneSubjectQ(idxDate(FinalIdxQ));
+        FinalTableOneSubject = TableOneSubject(idxDate(FinalIdxQ),:);
+        ReportedDelay = zeros(height(FinalTableOneSubject),1);
+        if str2double(szYear) < 2017
+            for kk = 1:height(FinalTableOneSubject)
+                if iscell(FinalTableOneSubject.AssessDelay)
+                    AssessDelay = FinalTableOneSubject.AssessDelay{kk};
+                elseif isnumeric(FinalTableOneSubject.AssessDelay)
+                    AssessDelay = FinalTableOneSubject.AssessDelay(kk);
                 end
-            else
-                ReportedDelay(kk) = 0;
-            end
-        end
-    else
-        for kk = 1:height(FinalTableOneSubject)
-            if iscell(FinalTableOneSubject.AssessDelay)
-                AssessDelay = FinalTableOneSubject.AssessDelay{kk};
-            elseif isnumeric(FinalTableOneSubject.AssessDelay)
-                AssessDelay = FinalTableOneSubject.AssessDelay(kk);
-            end
-            if (~ischar(AssessDelay))
-                switch AssessDelay
-                    case 1
-                        ReportedDelay(kk) = 0;
-                    case 2
-                        ReportedDelay(kk) = 2.5;
-                    case 3
-                        ReportedDelay(kk) = 5;
-                    case 4
-                        ReportedDelay(kk) = 10;
-                    case 5
-                        ReportedDelay(kk) = 15;
-                    case 6
-                        ReportedDelay(kk) = 20;
-                    case 7
+                if (~ischar(AssessDelay))
+                    if (AssessDelay <= 5)
+                        ReportedDelay(kk) = (AssessDelay-1)*5;
+                    elseif (AssessDelay == 5)
                         ReportedDelay(kk) = 30;
-                    otherwise
+                    elseif (AssessDelay >= 6)
+                        ReportedDelay(kk) = 40; % Could be everything
+                    end
+                else
+                    ReportedDelay(kk) = 0;
+                end
+            end
+        else
+            for kk = 1:height(FinalTableOneSubject)
+                if iscell(FinalTableOneSubject.AssessDelay)
+                    AssessDelay = FinalTableOneSubject.AssessDelay{kk};
+                elseif isnumeric(FinalTableOneSubject.AssessDelay)
+                    AssessDelay = FinalTableOneSubject.AssessDelay(kk);
+                end
+                if (~ischar(AssessDelay))
+                    switch AssessDelay
+                        case 1
+                            ReportedDelay(kk) = 0;
+                        case 2
+                            ReportedDelay(kk) = 2.5;
+                        case 3
+                            ReportedDelay(kk) = 5;
+                        case 4
+                            ReportedDelay(kk) = 10;
+                        case 5
+                            ReportedDelay(kk) = 15;
+                        case 6
+                            ReportedDelay(kk) = 20;
+                        case 7
+                            ReportedDelay(kk) = 30;
+                        otherwise
+                    end
                 end
             end
         end
+        
+    else
+        hasSubjectiveData = 0;
     end
-    
 end
 
 
 
 %% plot objective Data
 
-figure('Units','centimeters','PaperPosition',[0 0 1 1],'Position',[0 0 18 29.7]);
+iPlotHeight = 1122.5;
+
+figure('PaperPosition',[0 0 1 1],'Position',[0 0 iPlotWidth iPlotHeight]);
 GUI_xStart = 0.1300;
 GUI_xAxesWidth = 0.7750;
 mTextTitle = uicontrol(gcf,'style','text');
-set(mTextTitle,'Units','normalized','Position', [0.2 0.93 0.6 0.05], 'String',[obj.stSubject.SubjectID ' ' datestr(obj.szDesiredDay)],'FontSize',16);
+if stInfo.StartDay ~= stInfo.StartDay
+    szTitle = [obj.stSubject.Name ' ' datestr(stInfo.StartDay) ' : ' datestr(stInfo.EndDay)];
+else
+    szTitle = [obj.stSubject.Name ' ' datestr(stInfo.StartDay)];
+end
+set(mTextTitle,'Units','normalized','Position', [0.2 0.93 0.6 0.05], 'String', szTitle,'FontSize',16);
 
 
 %% Erst die Coherence
@@ -256,7 +287,7 @@ PosVecCoher = get(axCoher,'Position');
 
 
 %% RMS
-Calib_RMS = getCalibConst(obj.stSubject.SubjectID);
+Calib_RMS = getCalibConst(obj.stSubject.Name);
 axRMS = axes('Position',[GUI_xStart 0.09 PosVecCoher(3) 0.09]);
 % hRMS = plot(TimeVecRMS,20*log10(DataRMS)+Calib_RMS);
 hRMS = plot(datenum(FinaltimeVecRMS),20*log10(FinalDataRMS)+Calib_RMS);
@@ -280,7 +311,7 @@ hold on;
 hOVD = plot(datenum(FinaltimeVecPSD),FinalDataMeanCohe);
 hOVD.Color = [0 0 0];
 
-% Einbinden OVD: 
+% Einbinden OVD:
 plot(datenum(FinaltimeVecPSD),1.25*vOVS,'rx');
 % Einbinden FVD:
 plot(datenum(FinaltimeVecPSD),1.25*vFVS,'bx');
@@ -566,11 +597,11 @@ end
 
 if bPrint
     set(0,'DefaultFigureColor','remove')
-    exportName = [obj.szBaseDir filesep obj.stSubject.FolderName filesep ...
-        'Fingerprint_VD_' obj.stSubject.SubjectID '_' datestr(obj.szDesiredDay,'yymmdd')]; 
+    exportName = [obj.stSubject.Folder filesep ...
+        'Fingerprint_VD_Comp_' obj.stSubject.Name '_' datestr(stInfo.StartDay,'yymmdd')];
     
     savefig(exportName);
-    saveas(gcf, exportName,'pdf')
+%     saveas(gcf, exportName,'pdf')
 end
 
 

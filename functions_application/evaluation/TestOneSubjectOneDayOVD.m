@@ -7,26 +7,30 @@
 % Ver. 0.01 initial create 10-Sep-2019 	JP
 
 
-clear; close all;
+% clear; 
+close all;
 
 % path to data folder (needs to be customized)
-obj.szBaseDir = 'K:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
+szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
 
-% name of subject folder
-szCurrentFolder =  'KL05ST30_180608_aw';
-obj.stSubject = getsubject(obj.szBaseDir, szCurrentFolder);
+% get all subject directories
+subjectDirectories = dir(szBaseDir);
+
+% get one subject directoy
+szCurrentFolder = subjectDirectories(4).name;
+
+% get object
+[obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
 
 % get all dates of one subject
 caDates = getdatesonesubject(obj);
 
 % choose the desired day
-obj.szDesiredDay = caDates(5);
+szDesiredDay = caDates(1);
 
-% logical whether to select all (1) or just one (0) part of the desired day
-obj.AllParts = 1;
-
-OneSubjectOneDayOVD(obj);
-
+tic
+OneSubjectOneDayOVD(obj,'startDay',szDesiredDay);
+toc
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> Jule Pohlhausen
