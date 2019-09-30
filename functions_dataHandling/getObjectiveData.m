@@ -41,6 +41,11 @@ function [Data,TimeVec,stInfo]=getObjectiveData(obj,szFeature,varargin)
 Data = [];
 TimeVec = [];
 
+% set parameters for data compression
+stControl.DataPointRepresentation_s = 10; % variable
+stControl.DataPointOverlap_percent = 0;
+stControl.szTimeCompressionMode = 'mean';
+
 p = inputParser;
 p.KeepUnmatched = true;
 p.addRequired('obj', @(x) isa(x,'IHABdata') && ~isempty(x));
@@ -110,6 +115,7 @@ elseif ischar(StartDay)
             stInfo.StartDay = caDates(1);
         case 'last'
             stInfo.StartDay = caDates(end);
+            stInfo.EndDay = caDates(end);
         case 'all'
             stInfo.StartDay = caDates(1);
             stInfo.EndDay = caDates(end);
@@ -217,25 +223,44 @@ if ~isempty(idxDay)
     
     % filter for desired start and end time
     featFilesWithoutCorrupt(~idxTime) = [];
+    dateVecAll(~idxTime)= [];
     
-    % pre-allocation
-    if ~isempty(featFilesWithoutCorrupt)
-        [FeatData, ~,stInfo]= LoadFeatureFileDroidAlloc([szDir filesep featFilesWithoutCorrupt{1}]);
-        AssumedBlockSize = size(FeatData,1);
 
-        Data = repmat(zeros(AssumedBlockSize,size(FeatData,2)),length(dateVecAll),1);
-        TimeVec = datetime(zeros(length(dateVecAll)*(AssumedBlockSize),1),...
-            zeros(length(dateVecAll)*(AssumedBlockSize),1),...
-            zeros(length(dateVecAll)*(AssumedBlockSize),1));
+    if ~isempty(featFilesWithoutCorrupt)
+        % pre-allocation
+        [FeatData, ~,stInfoFile]= LoadFeatureFileDroidAlloc([szDir filesep featFilesWithoutCorrupt{1}]);
+        
+        % get compressed format
+%         [~,~,NrOfDataPoints] = DataCompactor([],TimeVec,stControl);
+        DataLen_s = (stInfoFile.nFrames-1) * stInfoFile.FrameSizeInSamples / stInfoFile.fs;
+        NrOfDataPoints = ceil(DataLen_s/(stControl.DataPointRepresentation_s*(1-stControl.DataPointOverlap_percent)));
+
+
+        Data = repmat(zeros(NrOfDataPoints,size(FeatData,2)),length(dateVecAll),1);
+        TimeVec = datetime(zeros(length(dateVecAll)*NrOfDataPoints,1),...
+            zeros(length(dateVecAll)*(NrOfDataPoints),1),...
+            zeros(length(dateVecAll)*(NrOfDataPoints),1));
 
         Startindex = 1;
         for fileIdx = 1:numel(featFilesWithoutCorrupt)
             szFileName =  featFilesWithoutCorrupt{fileIdx};
+            
+            % load data from feature file
             [FeatData, ~,~]= LoadFeatureFileDroidAlloc([szDir filesep szFileName]);
+            
             ActBlockSize = size(FeatData,1);
+            
+            % calculate time vector
             DateTimeValue = dateVecAll(fileIdx);
-            TimeVec(Startindex:Startindex+ActBlockSize-1) = linspace(DateTimeValue,DateTimeValue+minutes(1-1/ActBlockSize),ActBlockSize);
-            Data(Startindex:Startindex+ActBlockSize-1,:) = FeatData(1:ActBlockSize,:);
+            TimeVecIn = linspace(DateTimeValue,DateTimeValue+minutes(1-1/ActBlockSize),ActBlockSize);
+            
+            % compression
+            [DataVecOut,TimeVecOut] = DataCompactor(FeatData,TimeVecIn,stControl);
+            
+            ActBlockSize = size(DataVecOut,1);
+            
+            TimeVec(Startindex:Startindex+ActBlockSize-1) = TimeVecOut;
+            Data(Startindex:Startindex+ActBlockSize-1,:) = DataVecOut(1:ActBlockSize,:);
             Startindex = Startindex + ActBlockSize;
         end
         

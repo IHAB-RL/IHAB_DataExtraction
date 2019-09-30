@@ -4,11 +4,12 @@
 % Version History:
 % Ver. 0.01 initial create 26-Sep-2019 	JP
 
-clear;
+% clear;
 close all;
 
 % path to data folder (needs to be customized)
 szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
+szBaseDir = '/Volumes/Samsung_T5/IHAB_1_EMA2018/IHAB_Rohdaten_EMA2018';
 
 % get all subject directories
 subjectDirectories = dir(szBaseDir);
@@ -25,12 +26,13 @@ szFeature = 'PSD';
 %     'startDay',datetime(2018,9,10),'ENdDay',datetime(2018,9,12), ...
 %     'StartTime',duration(11,0,0),'EndTime',duration(18,0,0));
 
-% [Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
-%     'startDay','last', 'ENdDay', 'last', ...
-%     'StartTime',8,'EndTime',duration(18,0,0));
 
 [Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
-    'StartTime',22,'EndTime',23);
+    'startDay','last', 'ENdDay', 'last', ...
+    'StartTime',8,'EndTime',duration(10,0,0));
+
+% [Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
+%     'StartTime',22,'EndTime',23);
 
 
 %--------------------Licence ---------------------------------------------
