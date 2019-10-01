@@ -1,4 +1,4 @@
-function [DataVecOut,TimeVecOut,NrOfDataPoints]=DataCompactor(DataVec,TimeVec,stControl)
+function [DataVecOut,TimeVecOut,TimeVecRes,DataVecRes,NrOfDataPoints]=DataCompactor(DataVec,TimeVec,stControl)
 % function to compact feature data by different methods
 % Usage [DataVec,TimeVec]=DataCompactor(DataVec,TimeVec,stControl)
 %
@@ -29,6 +29,11 @@ function [DataVecOut,TimeVecOut,NrOfDataPoints]=DataCompactor(DataVec,TimeVec,st
 % Version History:
 % Ver. 0.01 initial create (empty) 18-May-2017  Initials (eg. JB)
 % Ver. 0.02 add nargout == 3 29-Sept-2019 JP
+% Ver. 0.03 save residuals 01-Oct-2019 JP
+
+% pre-allocate output params
+TimeVecRes = [];
+DataVecRes = [];
 
 if ~isfield(stControl, 'NrOfDataPoints')
     DataLen_s = seconds(TimeVec(end)-TimeVec(1) + TimeVec(end)-TimeVec(end-1));
@@ -37,7 +42,7 @@ else
     NrOfDataPoints = stControl.NrOfDataPoints;
 end
 
-if nargout == 3
+if nargout == 5
     % just get number of data points and return
     DataVecOut = [];
     TimeVecOut = [];
@@ -64,7 +69,7 @@ if strcmpi(stControl.szTimeCompressionMode,'mean')
     
     DataVecOut = zeros(NrOfDataPoints,size(DataVec,2));
     
-    while (BlockIndex(end) <= length(TimeVec) )
+    while (BlockIndex(end) <= length(TimeVec))
         % The block time is the middle of the block
         TimeVecOut(Counter) = TimeVec(BlockIndex(round(length(BlockIndex)/2)));
         DataVecOut(Counter,:) = mean(DataVec(BlockIndex,:));
@@ -72,16 +77,16 @@ if strcmpi(stControl.szTimeCompressionMode,'mean')
         BlockIndex = BlockIndex + BlockFeed;
         Counter = Counter + 1;
         
-        if BlockIndex(end) > length(TimeVec)
+        if BlockIndex(end) > length(TimeVec) 
             BlockIndex(BlockIndex > length(TimeVec)) = [];
             if ~isempty(BlockIndex) 
-                % calculate mean of residual values
-                TimeVecOut(Counter) = TimeVec(BlockIndex(round(length(BlockIndex)/2)));
-                DataVecOut(Counter,:) = mean(DataVec(BlockIndex,:));
-            else
-                DataVecOut(Counter:end,:) = [];
-                TimeVecOut(Counter:end,:) = [];
+                % save residuals
+                TimeVecRes = TimeVec(BlockIndex);
+                DataVecRes = DataVec(BlockIndex,:);
             end
+            
+            DataVecOut(Counter:end,:) = [];
+            TimeVecOut(Counter:end,:) = [];
             return;
         end
     end

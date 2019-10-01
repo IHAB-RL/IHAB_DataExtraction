@@ -4,7 +4,7 @@
 % Version History:
 % Ver. 0.01 initial create 26-Sep-2019 	JP
 
-clear;
+% clear;
 close all;
 
 % path to data folder (needs to be customized)
@@ -18,17 +18,15 @@ subjectDirectories = dir(szBaseDir);
 szCurrentFolder = subjectDirectories(4).name;
 
 % get object
-[obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
+% [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
 
 szFeature = 'PSD';
 
-% create figure
-f1 = figure('Units','centimeters','PaperPosition',[0 0 1 1],'Position',[0 0 18 29.7]);
-set(f1, 'units', 'Pixel');
-pos = get(f1, 'position');
+% define figure width full screen in pixels
+stRoots = get(0);
 
 % get plot width
-iPlotWidth = pos(3);
+iPlotWidth = stRoots.ScreenSize(3);
 
 [Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
     'startDay','first','ENdDay','last', ...

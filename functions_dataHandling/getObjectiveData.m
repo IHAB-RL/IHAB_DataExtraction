@@ -25,12 +25,12 @@ function [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
 %
 %     'StartDay'     to specify the start day of desired data, allowed
 %                    formats are datetime, numeric (i.e. 1 for day one),
-%                    char (i.e. 'last')
+%                    char (i.e. 'first', 'last')
 %
 %     'EndDay'      to specify the end day of desired data, allowed
 %                   formats are datetime, numeric (i.e. 1 for day one),
-%                   char (i.e. 'last'); obviously EndDay should be greater
-%                   than or equal to StartDay;
+%                   char (i.e. 'first', 'last'); obviously EndDay should be 
+%                   greater than or equal to StartDay;
 %
 %     'stInfo'      struct which contains valid date informations about the
 %                   aboved named 4 parameters; this struct results from
@@ -160,7 +160,7 @@ if ~isempty(idxDay)
     if ~isempty(featFilesWithoutCorrupt)
         
         % set static value for data resolution
-        iStaticSamplesPerPixel = 5;
+        iStaticSamplesPerPixel = 1; %input
         iStaticNumSamples = ceil(iStaticSamplesPerPixel*iPlotWidth);
         
         % get infos about feature file for pre-allocation
@@ -173,26 +173,17 @@ if ~isempty(idxDay)
         % get duration in sec of all feature files
         LenAllFiles_s = LenOneFile_s * NrOfFiles;
         
-        % get length in samples of all feature files
-        LenAllFilesSamples = stInfoFile.nFrames * NrOfFiles;
-        
-        % calculate samples per pixels
-        iCurrentSamplesPerPixel = ceil(LenAllFilesSamples/iPlotWidth);
-        
        
         % adjust compression params
         stControl.DataPointRepresentation_s = LenAllFiles_s/iStaticNumSamples;
-        
-        
-        %         % get size of one file in compressed format
-        %         NrOfDataPoints = ceil(LenOneFile_s/(stControl.DataPointRepresentation_s*(1-stControl.DataPointOverlap_percent)));
-        
+   
 
         % check whether to read in feature files file based or not
         if stControl.DataPointRepresentation_s > LenOneFile_s
             isFileBased = 0;
             
             % calculate number of needed files per loop
+            % to do 
             NrOfFilesPerLoop = ceil(stControl.DataPointRepresentation_s/LenOneFile_s);
             NrOfLoops = ceil(NrOfFiles/NrOfFilesPerLoop);
             
@@ -201,6 +192,9 @@ if ~isempty(idxDay)
             isFileBased = 1;
         end
         
+        % pre-allocate vectors for residual values
+        TimeVecRes = [];
+        DataVecRes = [];
         
         if isFileBased
             % pre-allocation of output arguments
@@ -214,6 +208,7 @@ if ~isempty(idxDay)
             % loop over each feature file
             Startindex = 1;
             for fileIdx = 1:NrOfFiles
+
                 szFileName =  featFilesWithoutCorrupt{fileIdx};
                 
                 % load data from feature file
@@ -225,8 +220,25 @@ if ~isempty(idxDay)
                 DateTimeValue = dateVecAll(fileIdx);
                 TimeVecIn = linspace(DateTimeValue,DateTimeValue+minutes(1-1/ActBlockSize),ActBlockSize);
                 
+                % find gaps between files
+                if fileIdx > 1
+                    if  seconds(abs(TimeVecIn(1) - iLastTime)) > LenOneFile_s
+                        TimeVecRes = [];
+                        DataVecRes = [];
+                    end
+                end
+                
+                % save last time value
+                iLastTime = TimeVecIn(end);
+                    
+                                    % add residual values
+                if ~isempty(DataVecRes)
+                    FeatData = [DataVecRes; FeatData];
+                    TimeVecIn = [TimeVecRes TimeVecIn];
+                end
+                
                 % compression
-                [DataVecComp,TimeVecComp] = DataCompactor(FeatData,TimeVecIn,stControl);
+                [DataVecComp,TimeVecComp,TimeVecRes,DataVecRes] = DataCompactor(FeatData,TimeVecIn,stControl);
                 
                 ActBlockSize = size(DataVecComp,1);
                 
@@ -271,8 +283,13 @@ if ~isempty(idxDay)
                     
                     Startindex = Startindex + ActBlockSize;
                 end
+                
+                    % add residual values
+                    FeatDataTemp = [DataVecRes FeatDataTemp];
+                    TimeVecTemp = [TimeVecRes TimeVecTemp];
+                
                     % compression
-                    [DataVecComp,TimeVecComp] = DataCompactor(FeatDataTemp,TimeVecTemp,stControl);
+                    [DataVecComp,TimeVecComp,TimeVecRes,DataVecRes] = DataCompactor(FeatDataTemp,TimeVecTemp,stControl);
 
                     ActBlockSize = size(DataVecComp,1);
 
