@@ -17,7 +17,7 @@ szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
 subjectDirectories = dir(szBaseDir);
 
 % get one subject directoy
-szCurrentFolder = subjectDirectories(4).name;
+szCurrentFolder = subjectDirectories(10).name;
 
 % get object
 [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
@@ -28,9 +28,7 @@ caDates = getdatesonesubject(obj);
 % choose the desired day
 szDesiredDay = caDates(1);
 
-tic
-OneSubjectOneDayOVD(obj,'startDay',szDesiredDay);
-toc
+OneSubjectOneDayOVD(obj,'startDay',1,'EndDay',1);
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> Jule Pohlhausen

@@ -21,6 +21,7 @@ function [] = OneSubjectOneDayOVD(obj, varargin)
 % default plot width in pixels
 iDefaultPlotWidth = 560;
 
+% parse input arguments
 p = inputParser;
 p.KeepUnmatched = true;
 p.addRequired('obj', @(x) isa(x,'IHABdata') && ~isempty(x));
@@ -144,111 +145,7 @@ stDataFVD.vFVS = [];
 clear FinalDataCxy FinalDataPxx FinalDataPyy;
 
 
-%% subjective data
-quest = dir([obj.stSubject.Folder filesep 'Questionnaires_*.mat']);
-if ~isempty(quest)
-    load([obj.stSubject.Folder filesep quest.name]);
-else
-    import_EMA2018(obj);
-end
-isPrintMode = 1;
-hasSubjectiveData = 1;
-
-if hasSubjectiveData
-    
-    SubjectIDTable = QuestionnairesTable.SubjectID;
-    
-    idx = strcmp(obj.stSubject.Name, SubjectIDTable);
-    
-    if all(idx == 0)
-        error('Subject not found in questionnaire table')
-        return;
-    end
-    
-    TableOneSubject = QuestionnairesTable(idx,:);
-    
-    for kk = 1:height(TableOneSubject)
-        szDate = TableOneSubject.Date{kk};
-        szTime = TableOneSubject.Start{kk};
-        szYear = szDate(1:4);
-        szMonth = szDate(6:7);
-        szDay = szDate(9:10);
-        szHour = szTime(1:2);
-        szMin = szTime(4:5);
-        szSec = szTime(7:8);
-        
-        dateVecOneSubjectQ(kk) = datetime(str2num(szYear),str2num(szMonth)...
-            ,str2num(szDay),str2num(szHour),str2num(szMin),str2num(szSec));
-    end
-    
-    %% reduce to data of one day
-    
-    dateVecDayOnlyQ = dateVecOneSubjectQ-timeofday(dateVecOneSubjectQ);
-    idxDate = find(dateVecDayOnlyQ >= stInfo.StartDay & dateVecDayOnlyQ <= stInfo.EndDay);
-    
-    if ~isempty(idxDate)
-        FinalIdxQ = find (dateVecOneSubjectQ(idxDate) > FinaltimeVecPSD(1));
-        
-        FinalTimeQ = dateVecOneSubjectQ(idxDate(FinalIdxQ));
-        FinalTableOneSubject = TableOneSubject(idxDate(FinalIdxQ),:);
-        ReportedDelay = zeros(height(FinalTableOneSubject),1);
-        if str2double(szYear) < 2017
-            for kk = 1:height(FinalTableOneSubject)
-                if iscell(FinalTableOneSubject.AssessDelay)
-                    AssessDelay = FinalTableOneSubject.AssessDelay{kk};
-                elseif isnumeric(FinalTableOneSubject.AssessDelay)
-                    AssessDelay = FinalTableOneSubject.AssessDelay(kk);
-                end
-                if (~ischar(AssessDelay))
-                    if (AssessDelay <= 5)
-                        ReportedDelay(kk) = (AssessDelay-1)*5;
-                    elseif (AssessDelay == 5)
-                        ReportedDelay(kk) = 30;
-                    elseif (AssessDelay >= 6)
-                        ReportedDelay(kk) = 40; % Could be everything
-                    end
-                else
-                    ReportedDelay(kk) = 0;
-                end
-            end
-        else
-            for kk = 1:height(FinalTableOneSubject)
-                if iscell(FinalTableOneSubject.AssessDelay)
-                    AssessDelay = FinalTableOneSubject.AssessDelay{kk};
-                elseif isnumeric(FinalTableOneSubject.AssessDelay)
-                    AssessDelay = FinalTableOneSubject.AssessDelay(kk);
-                end
-                if (~ischar(AssessDelay))
-                    switch AssessDelay
-                        case 1
-                            ReportedDelay(kk) = 0;
-                        case 2
-                            ReportedDelay(kk) = 2.5;
-                        case 3
-                            ReportedDelay(kk) = 5;
-                        case 4
-                            ReportedDelay(kk) = 10;
-                        case 5
-                            ReportedDelay(kk) = 15;
-                        case 6
-                            ReportedDelay(kk) = 20;
-                        case 7
-                            ReportedDelay(kk) = 30;
-                        otherwise
-                    end
-                end
-            end
-        end
-        
-    else
-        hasSubjectiveData = 0;
-    end
-end
-
-
-
 %% plot objective Data
-
 iPlotHeight = 1122.5;
 
 figure('PaperPosition',[0 0 1 1],'Position',[0 0 iPlotWidth iPlotHeight]);
@@ -290,7 +187,7 @@ PosVecCoher = get(axCoher,'Position');
 Calib_RMS = getCalibConst(obj.stSubject.Name);
 axRMS = axes('Position',[GUI_xStart 0.09 PosVecCoher(3) 0.09]);
 % hRMS = plot(TimeVecRMS,20*log10(DataRMS)+Calib_RMS);
-hRMS = plot(datenum(FinaltimeVecRMS),20*log10(FinalDataRMS)+Calib_RMS);
+hRMS = plot(datenum(FinaltimeVecRMS),20*log10(FinalDataRMS)+Calib_RMS{:});
 
 ylim([30 100]);
 yticks([30 50 70 90])
@@ -370,212 +267,14 @@ annotationRMS.FontSize = 12;
 annotationRMS.Position = [0.82 0.112 0.0251 0.0411];
 
 
-%% plot subjective Data
-if hasSubjectiveData
-    situationColors = [...
-        66 197 244; % light blue: at home
-        255 153   0; % orange: on the way
-        165 191 102; % green: society
-        166  65 244; % purple: work
-        0   0   0; % black: no rating
-        ]./255; % RGB scaling
-    FinalTimeQ = FinalTimeQ((FinalTimeQ <= FinaltimeVecPSD(end)));
-    
-    if ~isempty(FinalTimeQ)
-        axQ = axes('Position',[GUI_xStart 0.4  PosVecCoher(3) 0.13]);
-        
-        hold on;
-        for ss = 1:length(FinalTimeQ)
-            
-            hLineLR = plot(datenum(FinalTimeQ(ss)-ReportedDelay(ss)),1,'bx');
-            hLineLE = plot(datenum(FinalTimeQ(ss)-ReportedDelay(ss)),2.5,'bx');
-            hLineIM = plot(datenum(FinalTimeQ(ss)-ReportedDelay(ss)),4,'bx');
-            hLineSU = plot(datenum(FinalTimeQ(ss)-ReportedDelay(ss)),5.5,'bx');
-            hLineIP = plot(datenum(FinalTimeQ(ss)-ReportedDelay(ss)),7,'bx');
-            %plot(datenum(FinalTimeQ(axQ.YTickLabel{iTick}ss)-minutes(ReportedDelay(ss))),4,'bx');
-            ylim([0.0 9]);
-            yticks([1 2.5 4 5.5 7]);
-            yticklabels({'loudness rating','listening effort','impairment rating','speech understanding','importance'});
-            
-            ActivityDescription = {'Relaxing','Eating','Kitchen work',...
-                'Reading-Computer', 'Music listening', 'Chores' , ...
-                'Yard-Balcony' , 'Car driving' , 'Car ride' , ...
-                'Bus' , 'Train', 'By foot', 'By bike', ...
-                'On visit', 'Party' ,'Restaurant', 'Theater etc', ...
-                'Meeting' , 'Admin or med office' , 'Store', ...
-                'Office' , 'Workshop' , 'Counter', 'Meeting room', ...
-                'Working outside', 'Cantine', 'Other activity'};
-            
-            Ac = FinalTableOneSubject.Activity((ss));
-            situation = FinalTableOneSubject.Situation(ss);
-            if situation > 4
-                situation = 5;
-            end
-            if iscell(Ac)
-                if (isnumeric(Ac{1}))
-                    if Ac{1} == 222
-                        Ac{1} = 27; % Re-assign to 'other activity'
-                    end
-                    % set(hLine,'MarkerSize',2*LE{1});
-                    hText = text(datenum(FinalTimeQ(ss)),8.15,ActivityDescription{Ac{1}},'FontSize',10);
-                    set(hText,'Rotation',40);
-                else
-                    %             display('Missing Activity');
-                    set(hLineLR,'MarkerSize',0.5);
-                    set(hLineLE,'MarkerSize',0.5);
-                    set(hLineIM,'MarkerSize',0.5);
-                    set(hLineSU,'MarkerSize',0.5);
-                    set(hLineIP,'MarkerSize',0.5);
-                end
-            elseif isnumeric(Ac)
-                if (isnumeric(Ac(1)))
-                    if Ac(1) == 222
-                        Ac(1) = 27; % Re-assign to 'other activity'
-                    end
-                    hText = text(datenum(FinalTimeQ(ss)),8.15,ActivityDescription{Ac(1)},'FontSize',10);
-                    set(hText,'Rotation',40);
-                else
-                    %             display('Missing Activity');
-                    set(hLineLR,'MarkerSize',0.5);
-                    set(hLineLE,'MarkerSize',0.5);
-                    set(hLineIM,'MarkerSize',0.5);
-                    set(hLineSU,'MarkerSize',0.5);
-                    set(hLineIP,'MarkerSize',0.5);
-                end
-            end
-            if ~bPrint
-                LE = FinalTableOneSubject.ListeningEffort((ss));
-                if ~iscell(LE)
-                    LE = num2cell(LE);
-                end
-                if (isnumeric(LE{1}))
-                    %display('Zahl');
-                    if LE{1} < 111
-                        set(hLine,'MarkerSize',2*LE{1});
-                    else
-                        %             display('LE is 111');
-                        set(hLine,'MarkerSize',0.5);
-                    end
-                else
-                    %         display('Missing LE');
-                    set(hLine,'MarkerSize',0.5);
-                end
-                SU = FinalTableOneSubject.SpeechUnderstanding((ss));
-                set(axQ,'YTick',[]);
-                %                 set(axQ,'XTick',XTicksTime);
-                set(axQ,'XTickLabel',[]);
-                xlim([FinaltimeVecPSD(1) FinaltimeVecPSD(end)]);
-                if ~iscell(SU)
-                    SU = num2cell(SU);
-                end
-                if (isnumeric(SU{1}))
-                    ColorMapSU = flipud([0 1 0; 0 0.8 0; 0.2 0.6 0.2; 0.4 0.4 0.2; 0.6 0.2 0; 0.8 0 0; 1 0 0]);
-                    if SU{1} < 100
-                        set(hLine,'Color',ColorMapSU(SU{1},:));
-                    else % 222 no speech
-                        set(hLine,'Color',[0 0 0]);
-                    end
-                else
-                    %         display('Missing SU');
-                    set(hLine,'Color',[0 0 1]);
-                end
-                
-                LR = FinalTableOneSubject.LoudnessRating((ss));
-                if ~iscell(LR)
-                    set(axQ,'YTick',[]);
-                    %                     set(axQ,'XTick',XTicksTime);
-                    set(axQ,'XTickLabel',[]);
-                    xlim([FinaltimeVecPSD(1) FinaltimeVecPSD(end)]);
-                    LR = num2cell(LR);
-                end
-                MarkerFormLR = {'x','o','diamond','<','>','*','square'};
-                if (isnumeric(LR{1}))
-                    if LR{1} <= numel(MarkerFormLR)
-                        set(hLine,'Marker',MarkerFormLR{LR{1}});
-                    else
-                        %             display('LR too big');
-                        set(hLine,'Marker','.');
-                    end
-                    
-                else
-                    %         display('Missing LE');
-                    set(hLine,'Marker','.');
-                end
-                
-            else
-                LE = FinalTableOneSubject.ListeningEffort((ss));
-                LR = FinalTableOneSubject.LoudnessRating((ss));
-                IM = FinalTableOneSubject.Impaired((ss));
-                SU = FinalTableOneSubject.SpeechUnderstanding(ss);
-                IP = FinalTableOneSubject.Importance(ss);
-                % Case: Missing ratingset(axQ,'YTick',[]);
-                %             set(axQ,'XTick',XTicksTime);
-                %             set(axQ,'XTickLabel',[]);
-                xlim([datenum(FinaltimeVecPSD(1)) datenum(FinaltimeVecPSD(end))]);
-                if LE > 100
-                    hLineLE.Marker = 'x';
-                    hLineLE.MarkerSize = 5;
-                    hLineLE.LineWidth = 0.5;
-                else
-                    hLineLE.Marker = 'o';
-                    hLineLE.MarkerSize = 2*LE;
-                    hLineLE.LineWidth = 2;
-                end
-                hLineLE.MarkerEdgeColor = situationColors(situation,:);
-                
-                if LR > 100
-                    hLineLR.Marker = 'x';
-                    hLineLR.MarkerSize = 5;
-                    hLineLR.LineWidth = 0.5;
-                else
-                    hLineLR.Marker = '*';
-                    hLineLR.MarkerSize = 2*((-1)*LR + 8);
-                    hLineLR.LineWidth = 2;
-                end
-                hLineLR.MarkerEdgeColor = situationColors(situation,:);
-                
-                if IM > 100
-                    hLineIM.Marker = 'x';
-                    hLineIM.MarkerSize = 5;
-                    hLineIM.LineWidth = 0.5;
-                else
-                    hLineIM.Marker = '^';
-                    hLineIM.MarkerSize = 2*IM;
-                    hLineIM.LineWidth = 2;
-                end
-                hLineIM.MarkerEdgeColor = situationColors(situation,:);
-                
-                if SU > 100
-                    hLineSU.Marker = 'x';
-                    hLineSU.MarkerSize = 5;
-                    hLineSU.LineWidth = 0.5;
-                else
-                    hLineSU.Marker = 's';
-                    hLineSU.MarkerSize = 2*IM;
-                    hLineSU.LineWidth = 2;
-                end
-                hLineSU.MarkerEdgeColor = situationColors(situation,:);
-                
-                if IP > 100
-                    hLineIP.Marker = 'x';
-                    hLineIP.MarkerSize = 5;
-                    hLineIP.LineWidth = 0.5;
-                else
-                    hLineIP.Marker = 'p';
-                    hLineIP.MarkerSize = 2*IM;
-                    hLineIP.LineWidth = 2;
-                end
-                hLineIP.MarkerEdgeColor = situationColors(situation,:);
-                
-            end
-            
-        end
-    end
-end
-
+%% get and plot subjective data
+[hasSubjectiveData, axQ] = plotSubjectiveData(obj, stInfo, bPrint, GUI_xStart, PosVecCoher);
+ 
 xlim([datenum(FinaltimeVecPSD(1)) datenum(FinaltimeVecPSD(end))]);
+
+
 set(gcf,'PaperPositionMode', 'auto');
-if hasSubjectiveData && ~isempty(FinalTimeQ)
+if hasSubjectiveData 
     axQ.YAxis.Visible = 'off';
     axQ.XAxis.Visible = 'off';
     lenYTickLabels = numel(axQ.YTickLabel);
@@ -591,7 +290,6 @@ if hasSubjectiveData && ~isempty(FinalTimeQ)
 else
     linkaxes([axOVD,axRMS,axPxx,axCoher],'x');
     % dynamicDateTicks([axOVD,axRMS,axPxx,axCoher,axCoherInvalid,axPxxInvalid],'linked');
-    
 end
 
 

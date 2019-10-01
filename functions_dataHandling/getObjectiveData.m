@@ -1,18 +1,27 @@
 function [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
-% function to load objective data of one day for one test subject
-% Usage [Data,TimeVec]=getObjectiveDataOneDay(szTestSubject,desiredDay, szFeature)
+% function to load objective data of one test subject for a specific time
+% frame
+% Usage [Data,TimeVec,stInfoFile]=getObjectiveDataOneDay(obj,szFeature,varargin)
 %
 % Parameters
 % ----------
-% obj : struct, containing all informations
+% obj : class IHABdata, contains all informations
+%
+% szFeature : string, specifies which feature data should be read in
+%             possible: 'PSD', 'RMS', 'ZCR'
 %
 % varargin :  specifies optional parameter name/value pairs.
 %             getObjectiveData(obj 'PARAM1', val1, 'PARAM2', val2, ...)
 %     'StartTime'    duration to specify the start time of desired data
-%                    syntax duration(H,MI,S)
+%                    syntax duration(H,MI,S);
+%                    or a number between [0 24], which will be transformed
+%                    to a duration;
 %
 %     'EndTime'      duration to specify the end time of desired data
-%                    syntax duration(H,MI,S)
+%                    syntax duration(H,MI,S);
+%                    or a number between [0 24], which will be transformed
+%                    to a duration; obviously EndTime should be greater
+%                    than StartTime;
 %
 %     'StartDay'     to specify the start day of desired data, allowed
 %                    formats are datetime, numeric (i.e. 1 for day one),
@@ -20,7 +29,16 @@ function [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
 %
 %     'EndDay'      to specify the end day of desired data, allowed
 %                   formats are datetime, numeric (i.e. 1 for day one),
-%                   char (i.e. 'last')
+%                   char (i.e. 'last'); obviously EndDay should be greater
+%                   than or equal to StartDay;
+%
+%     'stInfo'      struct which contains valid date informations about the
+%                   aboved named 4 parameters; this struct results from
+%                   calling checkInputFormat.m
+%
+%     'PlotWidth'   number that speciefies the width of the desired figure
+%                   in pixels; by default it is the standard width of 560
+%                   pixels
 %
 % Returns
 % -------
@@ -28,8 +46,8 @@ function [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
 %
 % TimeVec :  a date/time vector with the corresponding time information
 %
-% stInfo : a struct containg infos about the feature files, e.g. fs, sample
-%          size
+% stInfoFile : a struct containg infos about the feature files, e.g. fs, 
+%              frame size in samples...
 %
 % Author: J.Bitzer (c) TGM @ Jade Hochschule applied licence see EOF
 % Source: the function is based on getObjectiveDataOneDay.m
@@ -37,9 +55,17 @@ function [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
 % Ver. 0.01 initial create (empty) 15-May-2017  Initials JB
 % Ver. 1.0 object-based version, new input 26-Sept-2019 JP
 
-% preallocate output paramters
+% preallocate output parameters
 Data = [];
 TimeVec = [];
+stInfoFile = [];
+
+% check for valid feature data
+vFeatureNames = {'RMS', 'PSD', 'ZCR'};
+szFeature = upper(szFeature); % convert to uppercase characters
+if ~any(strcmp(vFeatureNames,szFeature))
+    error('input feature string should be RMS, PSD or ZCR');
+end
 
 % default plot width in pixels
 iDefaultPlotWidth = 560;
@@ -48,6 +74,7 @@ iDefaultPlotWidth = 560;
 stControl.DataPointOverlap_percent = 0;
 stControl.szTimeCompressionMode = 'mean';
 
+% parse input arguments
 p = inputParser;
 p.KeepUnmatched = true;
 p.addRequired('obj', @(x) isa(x,'IHABdata') && ~isempty(x));
