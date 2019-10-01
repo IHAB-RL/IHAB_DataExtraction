@@ -20,7 +20,7 @@ subjectDirectories = dir(szBaseDir);
 szCurrentFolder = subjectDirectories(10).name;
 
 % get object
-[obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
+% [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
 
 % get all dates of one subject
 caDates = getdatesonesubject(obj);

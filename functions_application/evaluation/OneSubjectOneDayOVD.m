@@ -18,8 +18,10 @@ function [] = OneSubjectOneDayOVD(obj, varargin)
 % Version History:
 % Ver. 0.01 initial create 10-Sep-2019  JP
 
+% define figure width to full screen in pixels
+stRoots = get(0);
 % default plot width in pixels
-iDefaultPlotWidth = 560;
+iDefaultPlotWidth = stRoots.ScreenSize(3);
 
 % parse input arguments
 p = inputParser;
@@ -146,11 +148,12 @@ clear FinalDataCxy FinalDataPxx FinalDataPyy;
 
 
 %% plot objective Data
-iPlotHeight = 1122.5;
+% define figure height full screen in pixels
+iPlotHeight = stRoots.ScreenSize(4);
 
 figure('PaperPosition',[0 0 1 1],'Position',[0 0 iPlotWidth iPlotHeight]);
-GUI_xStart = 0.1300;
-GUI_xAxesWidth = 0.7750;
+GUI_xStart = 0.05;
+GUI_xAxesWidth = 0.9;
 mTextTitle = uicontrol(gcf,'style','text');
 if stInfo.StartDay ~= stInfo.StartDay
     szTitle = [obj.stSubject.Name ' ' datestr(stInfo.StartDay) ' : ' datestr(stInfo.EndDay)];
@@ -242,6 +245,7 @@ set(axOVD,'XTickLabel','');
 set(axCoher,'XTickLabel',[]);
 set(axPxx,'XTickLabel',[]);
 
+iStartAnno = 0.95; % define 'left' position/ start for all annotations
 
 annotationOVD =annotation(gcf,'textbox',...
     'String',{'OVD'},...
@@ -249,7 +253,7 @@ annotationOVD =annotation(gcf,'textbox',...
 annotationOVD.LineStyle = 'none';
 annotationOVD.FontSize = 12;
 annotationOVD.Color = [1 0 0];
-annotationOVD.Position = [0.82 0.85 0.0251 0.0411];
+annotationOVD.Position = [iStartAnno 0.85 0.0251 0.0411];
 
 annotationFVD =annotation(gcf,'textbox',...
     'String',{'FVD'},...
@@ -257,14 +261,14 @@ annotationFVD =annotation(gcf,'textbox',...
 annotationFVD.LineStyle = 'none';
 annotationFVD.FontSize = 12;
 annotationFVD.Color = [0 0 1];
-annotationFVD.Position = [0.82 0.83 0.0251 0.0411];
+annotationFVD.Position = [iStartAnno 0.83 0.0251 0.0411];
 
 annotationRMS =annotation(gcf,'textbox',...
     'String',{'RMS'},...
     'FitBoxToText','off');
 annotationRMS.LineStyle = 'none';
 annotationRMS.FontSize = 12;
-annotationRMS.Position = [0.82 0.112 0.0251 0.0411];
+annotationRMS.Position = [iStartAnno 0.112 0.0251 0.0411];
 
 
 %% get and plot subjective data
