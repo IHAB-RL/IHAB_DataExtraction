@@ -1,23 +1,38 @@
 function stInfo = checkInputFormat(obj, StartTime, EndTime, StartDay, EndDay)
 % function to check the input format of a given input param
-% Usage [outParam]=checkInputFormat(inParam)
+% Usage stInfo = checkInputFormat(obj, StartTime, EndTime, StartDay, EndDay)
 %
 % Parameters
 % ----------
-% inParam :  type
-%	 explanation
+% inParam : 
+%   obj : class IHABdata, contains all informations
+%
+%   StartTime : duration to specify the start time of desired data
+%               syntax duration(H,MI,S);
+%                or a number between [0 24], which will be transformed
+%                to a duration;
+%
+%   EndTime : duration to specify the end time of desired data
+%             syntax duration(H,MI,S);
+%             or a number between [0 24], which will be transformed
+%             to a duration; obviously EndTime should be greater
+%             than StartTime;
+%
+%   StartDay : to specify the start day of desired data, allowed formats 
+%              are datetime, numeric (i.e. 1 for day one), char (i.e. 
+%              'first', 'last')
+%
+%   EndDay : to specify the end day of desired data, allowed formats are 
+%            datetime, numeric (i.e. 1 for day one), char (i.e. 'first', 
+%            'last'); obviously EndDay should be greater than or equal to 
+%            StartDay;
 %
 % Returns
 % -------
-% outParam :  type
-%	 explanation
+% outParam :  
+%   stInfo : struct, contains valid time informations based on input args
 %
-%------------------------------------------------------------------------ 
-% Example: Provide example here if applicable (one or two lines) 
-
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF 
-% Source: If the function is based on a scientific paper or a web site, 
-%         provide the citation detail here (with equation no. if applicable)  
 % Version History:
 % Ver. 0.01 initial create 26-Sep-2019  JP
 
