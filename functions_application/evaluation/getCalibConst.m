@@ -11,31 +11,22 @@ function [vCalibConst]=getCalibConst(szSubjectID)
 %
 % Returns
 % -------
-% outParam :  vCalibConst - vector, contains system specific calibration
-%                           constants
+% outParam :  vCalibConst - cell array, contains system specific 
+%                           calibration constants
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF 
 % Version History:
 % Ver. 0.01 initial create 25-Sep-2019 JP
+% Ver. 0.02 switched to map 01-Oct-2019 JP
 
 % load assignment of IHAB systems and subjects
-load('IdentificationProbandSystem.mat');
-
-% get all subject IDs
-stAllSubjects = {stSubject_1.ID};
-
-% find subject
-IdxSubj = find(strcmp(szSubjectID, stAllSubjects));
+load(fullfile('functions_helper', 'IHAB', 'IdentificationProbandSystem_Maps.mat'));
 
 % get used IHAB system
-szSystem = stSubject_1(IdxSubj).System;
-
-% get all IHAB system
-stAllSystems = {stSystem.System};
+szSystem = values(mapSubject_1, {szSubjectID});
 
 % get system specific calibration constant
-IdxSys = find(strcmp(szSystem, stAllSystems));
-vCalibConst = stSystem(IdxSys).Calib;
+vCalibConst = values(mapSystem, szSystem);
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
