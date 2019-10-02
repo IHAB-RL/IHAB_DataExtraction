@@ -155,7 +155,7 @@ figure('PaperPosition',[0 0 1 1],'Position',[0 0 iPlotWidth iPlotHeight]);
 GUI_xStart = 0.05;
 GUI_xAxesWidth = 0.9;
 mTextTitle = uicontrol(gcf,'style','text');
-if stInfo.StartDay ~= stInfo.StartDay
+if stInfo.StartDay ~= stInfo.EndDay
     szTitle = [obj.stSubject.Name ' ' datestr(stInfo.StartDay) ' : ' datestr(stInfo.EndDay)];
 else
     szTitle = [obj.stSubject.Name ' ' datestr(stInfo.StartDay)];
@@ -163,7 +163,7 @@ end
 set(mTextTitle,'Units','normalized','Position', [0.2 0.93 0.6 0.05], 'String', szTitle,'FontSize',16);
 
 
-%% Erst die Coherence
+%% Coherence
 axCoher = axes('Position',[GUI_xStart 0.6 GUI_xAxesWidth 0.18]);
 
 timeVecShort = datenum(FinaltimeVecPSD);
@@ -190,7 +190,7 @@ PosVecCoher = get(axCoher,'Position');
 Calib_RMS = getCalibConst(obj.stSubject.Name);
 axRMS = axes('Position',[GUI_xStart 0.09 PosVecCoher(3) 0.09]);
 % hRMS = plot(TimeVecRMS,20*log10(DataRMS)+Calib_RMS);
-hRMS = plot(datenum(FinaltimeVecRMS),20*log10(FinalDataRMS)+Calib_RMS{:});
+plot(datenum(FinaltimeVecRMS),20*log10(FinalDataRMS)+Calib_RMS{:});
 
 ylim([30 100]);
 yticks([30 50 70 90])
@@ -211,9 +211,9 @@ hold on;
 hOVD = plot(datenum(FinaltimeVecPSD),FinalDataMeanCohe);
 hOVD.Color = [0 0 0];
 
-% Einbinden OVD:
+% view estimated own voice sequences (red)
 plot(datenum(FinaltimeVecPSD),1.25*vOVS,'rx');
-% Einbinden FVD:
+% view estimated futher voice sequences (blue)
 plot(datenum(FinaltimeVecPSD),1.25*vFVS,'bx');
 set(axOVD,'XTick',[]);
 axOVD.YLabel = ylabel('avg. Re\{Coherence\}');
@@ -245,6 +245,7 @@ set(axOVD,'XTickLabel','');
 set(axCoher,'XTickLabel',[]);
 set(axPxx,'XTickLabel',[]);
 
+%% assign annotations
 iStartAnno = 0.95; % define 'left' position/ start for all annotations
 
 annotationOVD =annotation(gcf,'textbox',...
