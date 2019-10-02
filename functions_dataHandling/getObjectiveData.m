@@ -12,33 +12,36 @@ function [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
 %
 % varargin :  specifies optional parameter name/value pairs.
 %             getObjectiveData(obj 'PARAM1', val1, 'PARAM2', val2, ...)
-%     'StartTime'    duration to specify the start time of desired data
-%                    syntax duration(H,MI,S);
-%                    or a number between [0 24], which will be transformed
-%                    to a duration;
+%  'StartTime'          duration to specify the start time of desired data
+%                       syntax duration(H,MI,S);
+%                       or a number between [0 24], which will be 
+%                       transformed to a duration;
 %
-%     'EndTime'      duration to specify the end time of desired data
-%                    syntax duration(H,MI,S);
-%                    or a number between [0 24], which will be transformed
-%                    to a duration; obviously EndTime should be greater
-%                    than StartTime;
+%  'EndTime'            duration to specify the end time of desired data
+%                       syntax duration(H,MI,S);
+%                       or a number between [0 24], which will be 
+%                       transformed to a duration; 
+%                       obviously EndTime should be greater than StartTime;
 %
-%     'StartDay'     to specify the start day of desired data, allowed
-%                    formats are datetime, numeric (i.e. 1 for day one),
-%                    char (i.e. 'first', 'last')
+%  'StartDay'           to specify the start day of desired data, allowed
+%                       formats are datetime, numeric (i.e. 1 for day one),
+%                       char (i.e. 'first', 'last')
 %
-%     'EndDay'      to specify the end day of desired data, allowed
-%                   formats are datetime, numeric (i.e. 1 for day one),
-%                   char (i.e. 'first', 'last'); obviously EndDay should be 
-%                   greater than or equal to StartDay;
+%  'EndDay'             to specify the end day of desired data, allowed
+%                       formats are datetime, numeric (i.e. 1 for day one),
+%                       char (i.e. 'first', 'last'); obviously EndDay 
+%                       should be greater than or equal to StartDay;
 %
-%     'stInfo'      struct which contains valid date informations about the
-%                   aboved named 4 parameters; this struct results from
-%                   calling checkInputFormat.m
+%  'stInfo'             struct which contains valid date informations about 
+%                       the aboved named 4 parameters; this struct results 
+%                       from calling checkInputFormat.m
 %
-%     'PlotWidth'   number that speciefies the width of the desired figure
-%                   in pixels; by default it is the standard width of 560
-%                   pixels
+%  'PlotWidth'          number that speciefies the width of the desired 
+%                       figure in pixels; by default it is set to full 
+%                       screen
+%
+%  'SamplesPerPixel'    number that speciefies the data point resolution in
+%                       samples per pixel; by default it is 5 samples/pixel
 %
 % Returns
 % -------
@@ -67,8 +70,12 @@ if ~any(strcmp(vFeatureNames,szFeature))
     error('input feature string should be RMS, PSD or ZCR');
 end
 
-% default plot width in pixels
-iDefaultPlotWidth = 560;
+% default plot width in pixels (full screen)
+stRoots = get(0);
+iDefaultPlotWidth = stRoots.ScreenSize(3);
+
+% default plot resolution in samples (data points) per pixel
+iDefaultSamplesPerPixel = 5; 
 
 % set parameters for data compression
 stControl.DataPointOverlap_percent = 0;
@@ -85,11 +92,13 @@ p.addParameter('StartDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x))
 p.addParameter('EndDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x));
 p.addParameter('stInfo', [], @(x) isstruct(x));
 p.addParameter('PlotWidth', iDefaultPlotWidth, @(x) isnumeric(x));
+p.addParameter('SamplesPerPixel', iDefaultSamplesPerPixel, @(x) isnumeric(x));
 p.parse(obj,varargin{:});
 
 % Re-assign values
 stInfo = p.Results.stInfo;
 iPlotWidth = p.Results.PlotWidth;
+iStaticSamplesPerPixel = p.Results.SamplesPerPixel;
 
 if isempty(stInfo)
     % call function to check input date format and plausibility
@@ -160,7 +169,6 @@ if ~isempty(idxDay)
     if ~isempty(featFilesWithoutCorrupt)
         
         % set static value for data resolution
-        iStaticSamplesPerPixel = 1; %input
         iStaticNumSamples = ceil(iStaticSamplesPerPixel*iPlotWidth);
         
         % get infos about feature file for pre-allocation
@@ -168,7 +176,6 @@ if ~isempty(idxDay)
         
         % get duration in sec of one feature file (i.e. 60 sec)
         LenOneFile_s = stInfoFile.nFrames * stInfoFile.FrameSizeInSamples / stInfoFile.fs;
-        LenOneFile_s = seconds(timeVecAll(end)-timeVecAll(end-1)); % equivalent
         
         % get duration in sec of all feature files
         LenAllFiles_s = LenOneFile_s * NrOfFiles;
@@ -220,9 +227,10 @@ if ~isempty(idxDay)
                 DateTimeValue = dateVecAll(fileIdx);
                 TimeVecIn = linspace(DateTimeValue,DateTimeValue+minutes(1-1/ActBlockSize),ActBlockSize);
                 
-                % find gaps between files
+                % find time gaps between files lager than 120 sec
+                % if there is a time gap the residual values are cleared
                 if fileIdx > 1
-                    if  seconds(abs(TimeVecIn(1) - iLastTime)) > LenOneFile_s
+                    if  seconds(abs(TimeVecIn(1) - iLastTime)) > 2*LenOneFile_s
                         TimeVecRes = [];
                         DataVecRes = [];
                     end
@@ -231,14 +239,14 @@ if ~isempty(idxDay)
                 % save last time value
                 iLastTime = TimeVecIn(end);
                     
-                                    % add residual values
-                if ~isempty(DataVecRes)
+                % add residual values
+                if ~isempty(DataVecRes) && ~isempty(TimeVecRes)
                     FeatData = [DataVecRes; FeatData];
                     TimeVecIn = [TimeVecRes TimeVecIn];
                 end
                 
                 % compression
-                [DataVecComp,TimeVecComp,TimeVecRes,DataVecRes] = DataCompactor(FeatData,TimeVecIn,stControl);
+                [DataVecComp,TimeVecComp,DataVecRes,TimeVecRes] = DataCompactor(FeatData,TimeVecIn,stControl);
                 
                 ActBlockSize = size(DataVecComp,1);
                 
@@ -289,7 +297,7 @@ if ~isempty(idxDay)
                     TimeVecTemp = [TimeVecRes TimeVecTemp];
                 
                     % compression
-                    [DataVecComp,TimeVecComp,TimeVecRes,DataVecRes] = DataCompactor(FeatDataTemp,TimeVecTemp,stControl);
+                    [DataVecComp,TimeVecComp,DataVecRes,TimeVecRes] = DataCompactor(FeatDataTemp,TimeVecTemp,stControl);
 
                     ActBlockSize = size(DataVecComp,1);
 
