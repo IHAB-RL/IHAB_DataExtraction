@@ -1,4 +1,4 @@
-function [DataVecOut,TimeVecOut,TimeVecRes,DataVecRes,NrOfDataPoints]=DataCompactor(DataVec,TimeVec,stControl)
+function [DataVecOut,TimeVecOut,DataVecRes,TimeVecRes,NrOfDataPoints]=DataCompactor(DataVec,TimeVec,stControl)
 % function to compact feature data by different methods
 % Usage [DataVec,TimeVec]=DataCompactor(DataVec,TimeVec,stControl)
 %
@@ -17,13 +17,19 @@ function [DataVecOut,TimeVecOut,TimeVecRes,DataVecRes,NrOfDataPoints]=DataCompac
 % -------
 % DataVecOut :  matrix
 %	 The compacted data matrix
+%
 % TimeVec :  datetime vector
 %	 The new timeline
+% 
+% DataVecRes :  matrix
+%	 contains residual values of input data matrix 
 %
-%------------------------------------------------------------------------
-% Example: Provide example here if applicable (one or two lines)
-
-% Author: J. BItzer (c) TGM @ Jade Hochschule applied licence see EOF
+% TimeVecRes : datetime vector
+%    contains residual values of input datetime vector
+% 
+% NrOfDataPoints : number of data points
+%
+% Author: J. Bitzer (c) TGM @ Jade Hochschule applied licence see EOF
 % Source: If the function is based on a scientific paper or a web site,
 %         provide the citation detail here (with equation no. if applicable)
 % Version History:
@@ -59,6 +65,7 @@ if strcmpi(stControl.szTimeCompressionMode,'subsample')
     DataVecOut = DataVec(1:SubSampleFaktor:end,:);
     TimeVecOut= TimeVec((1:SubSampleFaktor:end));
 end
+
 % mean
 if strcmpi(stControl.szTimeCompressionMode,'mean')
     BlockLen = round(length(TimeVec)*stControl.DataPointRepresentation_s/DataLen_s);
