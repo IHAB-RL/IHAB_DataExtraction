@@ -9,14 +9,14 @@ function stInfo = checkInputFormat(obj, StartTime, EndTime, StartDay, EndDay)
 %
 %   StartTime : duration to specify the start time of desired data
 %               syntax duration(H,MI,S);
-%                or a number between [0 24], which will be transformed
-%                to a duration;
+%               or a number between [0 24], which will be transformed
+%               to a duration;
 %
 %   EndTime : duration to specify the end time of desired data
 %             syntax duration(H,MI,S);
 %             or a number between [0 24], which will be transformed
-%             to a duration; obviously EndTime should be greater
-%             than StartTime;
+%             to a duration; 
+%             obviously EndTime should be greater than StartTime;
 %
 %   StartDay : to specify the start day of desired data, allowed formats 
 %              are datetime, numeric (i.e. 1 for day one), char (i.e. 
@@ -31,6 +31,7 @@ function stInfo = checkInputFormat(obj, StartTime, EndTime, StartDay, EndDay)
 % -------
 % outParam :  
 %   stInfo : struct, contains valid time informations based on input args
+%            if the input parameters contain invalid data stOnfo is empty
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF 
 % Version History:
