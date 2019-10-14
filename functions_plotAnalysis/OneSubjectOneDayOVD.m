@@ -110,7 +110,7 @@ clear Cxy Pxx Pyy;
 
 % set frequency specific parameters
 stParam.fs = stInfoFile.fs;
-stParam.nFFT = 1024;
+stParam.nFFT = (stInfoFile.nDimensions - 2 - 4)/2;
 stParam.vFreqRange  = [400 1000]; % frequency range in Hz
 stParam.vFreqIdx = round(stParam.nFFT*stParam.vFreqRange./stParam.fs);
 
@@ -135,6 +135,9 @@ clear Cohe MeanCohe MeanCoheTimeSmoothed TimeVecPSD;
 % limit to 125 ... 8000 Hz for optical reasons
 stBandDef.StartFreq = 125;
 stBandDef.EndFreq = 8000;
+if stInfoFile.fs/2 <= stBandDef.EndFreq
+    stBandDef.EndFreq = 4000;
+end
 stBandDef.Mode = 'onethird';
 stBandDef.fs = stInfoFile.fs;
 [stBandDef] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
