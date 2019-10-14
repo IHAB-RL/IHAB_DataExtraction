@@ -1,18 +1,20 @@
-function [vCalibConst]=getCalibConst(szSubjectID)
+function [vCalibConst,szSystem]=getCalibConst(szSubjectID)
 % function to get the system specific calibration constant
 % informations are based on calibration measurements (Aug-2019), the
 % returned calibration constant is channel (right+left) dependent
 %
-% Usage [vCalibConst]=getCalibConst(szSubjectID)
+% Usage [vCalibConst,szSystem]=getCalibConst(szSubjectID)
 %
 % Parameters
 % ----------
-% inParam :  szSubjectID - string, contains subject ID, e.g. AA00BB11
+% szSubjectID - string, contains subject ID, e.g. AA00BB11
 %
 % Returns
 % -------
-% outParam :  vCalibConst - cell array, contains system specific 
-%                           calibration constants
+% vCalibConst - cell array, contains system specific 
+%               calibration constants (measured Sept 2019 JP)
+%
+% szSystem    - cell array, contains used smartphone system
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF 
 % Version History:
