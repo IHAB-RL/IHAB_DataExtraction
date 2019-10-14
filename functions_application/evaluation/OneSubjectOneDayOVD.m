@@ -4,19 +4,49 @@ function [] = OneSubjectOneDayOVD(obj, varargin)
 % OVD and FVD by Nils Schreiber (Master 2019)
 % Usage: OneSubjectOneDayOVD(szBaseDir, stTestSubject, stDesiredDay, AllParts)
 %
-% input:
-%   szBaseDir     - string, path to data folder (needs to be customized)
-%   stTestSubject - string, name of subject folder,
-%                   format <subject id>_yymmdd_<experimenter id>
-%   stDesiredDay  - datetime, desired day to be analysed
-%   AllParts      - logical whether to select all (1) or just one (0) part
-%                   of the desired day
+% Parameters
+% ----------
+% obj : class IHABdata, contains all informations
+%
+% varargin :  specifies optional parameter name/value pairs.
+%             getObjectiveData(obj 'PARAM1', val1, 'PARAM2', val2, ...)
+%  'StartTime'          duration to specify the start time of desired data
+%                       syntax duration(H,MI,S);
+%                       or a number between [0 24], which will be 
+%                       transformed to a duration;
+%
+%  'EndTime'            duration to specify the end time of desired data
+%                       syntax duration(H,MI,S);
+%                       or a number between [0 24], which will be 
+%                       transformed to a duration; 
+%                       obviously EndTime should be greater than StartTime;
+%
+%  'StartDay'           to specify the start day of desired data, allowed
+%                       formats are datetime, numeric (i.e. 1 for day one),
+%                       char (i.e. 'first', 'last')
+%
+%  'EndDay'             to specify the end day of desired data, allowed
+%                       formats are datetime, numeric (i.e. 1 for day one),
+%                       char (i.e. 'first', 'last'); obviously EndDay 
+%                       should be greater than or equal to StartDay;
+%
+%  'stInfo'             struct which contains valid date informations about 
+%                       the aboved named 4 parameters; this struct results 
+%                       from calling checkInputFormat.m
+%
+%  'PlotWidth'          number that speciefies the width of the desired 
+%                       figure in pixels; by default it is set to full 
+%                       screen
+%
+%  'SamplesPerPixel'    number that speciefies the data point resolution in
+%                       samples per pixel; by default it is 5 samples/pixel
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % contains main.m and plotAllDayFingerprints.m
 % mainly computeDayFingerprintData.m by Nils Schreiber
 % Version History:
 % Ver. 0.01 initial create 10-Sep-2019  JP
+% Ver. 1.0 object-based version, new input 26-Sept-2019 JP
 
 % define figure width to full screen in pixels
 stRoots = get(0);
