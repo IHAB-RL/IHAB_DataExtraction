@@ -22,12 +22,6 @@ szCurrentFolder = subjectDirectories(18).name;
 % get object
 [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
 
-% % get all dates of one subject
-% caDates = getdatesonesubject(obj);
-% 
-% % choose the desired day
-% szDesiredDay = caDates(1);
-
 
 OneSubjectOneDayOVD(obj,'startDay',2,'ENdDay',2);
 
