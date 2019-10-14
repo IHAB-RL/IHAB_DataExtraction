@@ -123,7 +123,7 @@ AllFeatFiles = strcat(AllFeatFiles,'.feat');
 % Load txt file with corrupt file names
 corruptTxtFile = fullfile(obj.stSubject.Folder,'corrupt_files.txt');
 if ~exist(corruptTxtFile,'file')
-    CheckDataIntegrety(obj.stSubject.Folder);
+    checkDataIntegrity(obj);
 end
 fid = fopen(corruptTxtFile,'r');
 corruptFiles = textscan(fid,'%s\n');
