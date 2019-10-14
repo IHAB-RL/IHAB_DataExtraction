@@ -8,17 +8,17 @@
 close all;
 
 % path to data folder (needs to be customized)
-szBaseDir = '/Volumes/Samsung_T5/IHAB_1_EMA2018/IHAB_Rohdaten_EMA2018';
-szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
+% szBaseDir = '/Volumes/Samsung_T5/IHAB_1_EMA2018/IHAB_Rohdaten_EMA2018';
+szBaseDir = 'I:\IHAB_2_EMA2018\IHAB_Rohdaten_EMA2018';
 
 % get all subject directories
 subjectDirectories = dir(szBaseDir);
 
 % get one subject directoy
-szCurrentFolder = subjectDirectories(4).name;
+szCurrentFolder = subjectDirectories(10).name;
 
 % get object
-% [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
+[obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
 
 szFeature = 'PSD';
 
@@ -28,15 +28,14 @@ stRoots = get(0);
 % get plot width
 iPlotWidth = stRoots.ScreenSize(3);
 
-[Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
-    'startDay','first','ENdDay','last', ...
-    'StartTime',duration(8,0,0),'EndTime',duration(13,0,0), ...
-    'PlotWidth',iPlotWidth);
-
-
 % [Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
-%     'startDay','first', 'ENdDay', 'first', ...
+%     'startDay','first','ENdDay','last', ...
+%     'StartTime',duration(8,0,0),'EndTime',duration(13,0,0), ...
 %     'PlotWidth',iPlotWidth);
+
+[Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
+    'startDay','first', 'ENdDay', 'last', ...
+    'PlotWidth',iPlotWidth);
 
 % [Data,TimeVec,stInfo] = getObjectiveData(obj, szFeature, ...
 %     'StartTime',22,'EndTime',23);
