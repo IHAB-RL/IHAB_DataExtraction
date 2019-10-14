@@ -19,6 +19,9 @@ subjectDirectories = subjectDirectories(isValidLength);
 % desired feature
 szFeature = 'PSD';
 
+% preallocate table struct
+stTable = struct('subject', [], 'StartDate', [], 'EndDate', [], 'SMS', [], 'Samplingfrequency', [], 'FFTSize', []);
+
 % loop over each subject
 for idxSubj = 1:numel(subjectDirectories)
     
@@ -62,12 +65,28 @@ for idxSubj = 1:numel(subjectDirectories)
     % Also filter the corresponding file list
     featFilesWithoutCorrupt = featFilesWithoutCorrupt(logical(isFeatFile));
     
+    % get date informations
+    UniqueDates = unique(dateVecAll - timeofday(dateVecAll));
+    UniqueDates.Format = 'dd-MM-yyyy';
+    
     % get infos about feature file for pre-allocation
     [FeatData, ~,stInfoFile]= LoadFeatureFileDroidAlloc([szDir filesep featFilesWithoutCorrupt{1}]);
     
     % add infos to Table struct
-    stTable = schade;
+    stTable(idxSubj).subject = obj.stSubject.Name;
+    stTable(idxSubj).StartDate = UniqueDates(1);
+    stTable(idxSubj).EndDate = UniqueDates(end);
+    stTable(idxSubj).Samplingfrequency = stInfoFile.fs;
+    stTable(idxSubj).FFTSize = (stInfoFile.nDimensions - 2 - 4)/2;
+    
+    [~,szSystem] = getCalibConst(obj.stSubject.Name);
+    stTable(idxSubj).SMS = szSystem{1};
 end
+
+T = struct2table(stTable)
+
+save('CheckPSDFormat','stTable','T');
+
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
 % Institute for Hearing Technology and Audiology
