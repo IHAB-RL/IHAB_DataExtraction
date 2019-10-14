@@ -53,6 +53,9 @@ stRoots = get(0);
 % default plot width in pixels
 iDefaultPlotWidth = stRoots.ScreenSize(3);
 
+% default plot resolution in samples (data points) per pixel
+iDefaultSamplesPerPixel = 5; 
+
 % parse input arguments
 p = inputParser;
 p.KeepUnmatched = true;
@@ -63,10 +66,12 @@ p.addParameter('EndTime', 24, @(x) isduration(x) || isnumeric(x));
 p.addParameter('StartDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x));
 p.addParameter('EndDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x));
 p.addParameter('PlotWidth', iDefaultPlotWidth, @(x) isnumeric(x));
+p.addParameter('SamplesPerPixel', iDefaultSamplesPerPixel, @(x) isnumeric(x));
 p.parse(obj,varargin{:});
 
 % Re-assign values
 iPlotWidth = p.Results.PlotWidth;
+iSamplesPerPixel = p.Results.SamplesPerPixel;
 
 % call function to check input date format and plausibility
 stInfo = checkInputFormat(obj, p.Results.StartTime, p.Results.EndTime, ...
@@ -81,7 +86,8 @@ compressData = 0; % because of new structure of getObjectiveData.m
 szFeature = 'PSD';
 
 % get all available feature file data
-[DataPSD,TimeVecPSD,stInfoFile] = getObjectiveData(obj, szFeature, 'stInfo', stInfo, 'PlotWidth',iPlotWidth);
+[DataPSD,TimeVecPSD,stInfoFile] = getObjectiveData(obj, szFeature, ...
+    'stInfo', stInfo, 'PlotWidth',iPlotWidth, 'SamplesPerPixel', iSamplesPerPixel);
 
 
 version = 1; % JP modified get_psd
