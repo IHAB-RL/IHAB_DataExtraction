@@ -27,11 +27,11 @@ if nargin < 2
     szFeatureNameShort = 'PSD';
 end
 
-if iscell(szFileName)
+if iscell(szFileName) && ~isempty(szFeatureNameShort)
     szFileName = szFileName(:);
     splitNames = regexpi(szFileName{1}, '[_]', 'split');
     numFilenameParts = numel(splitNames);
-        
+    
     if numFilenameParts < 4
         isOldFormat = true;
     else
@@ -53,6 +53,7 @@ if iscell(szFileName)
     
     szFileName = szFileName(isValidLength);
     
+    % look for the right Feature File Type in the directory
     checkFeatFile = @(x) (strcmpi(x(1:3),szFeatureNameShort));
     isFeatFile = cellfun(checkFeatFile, szFileName);
     
@@ -78,8 +79,48 @@ if iscell(szFileName)
     szMin = str2double(cellfun(@(x)(x(16+offset:17+offset)),szFileName,'UniformOutput',false));
     szSec = str2double(cellfun(@(x)(x(18+offset:19+offset)),szFileName,'UniformOutput',false));
     dateVal = datetime(szYear,szMonth,szDay,szHour,szMin,szSec);
+        
+elseif iscell(szFileName) % added for wav files 14-Oct-2019  JP
+    szFileName = szFileName(:);
+    splitNames = regexpi(szFileName{1}, '[_]', 'split');
+    numFilenameParts = numel(splitNames);
     
-    % look for the right Feature File Type in the directory
+    if numFilenameParts < 4
+        isOldFormat = true;
+    else
+        isOldFormat = false;
+    end
+    
+    if isOldFormat
+        checkLength = @(x)(length(x)> 21); % old comparison value was 4
+    else
+        checkLength = @(x)(length(x)> 28); % old comparison value was 4
+    end
+    isValidLength = cellfun(checkLength, szFileName);
+    
+    if isempty(isValidLength)
+        warning(['The length of the file name/s do not match the convention.'...
+            'Returning...'])
+        return;
+    end
+    
+    szFileName = szFileName(isValidLength);
+    
+    if isOldFormat
+        offset = 0;
+    else
+        offset = 7;
+    end
+    
+    szYear = str2double(cellfun(@(x)(x(1+offset:4+offset)),szFileName,'UniformOutput',false));
+    szMonth = str2double(cellfun(@(x)(x(5+offset:6+offset)),szFileName,'UniformOutput',false));
+    szDay = str2double(cellfun(@(x)(x(7+offset:8+offset)),szFileName,'UniformOutput',false));
+    szHour = str2double(cellfun(@(x)(x(10+offset:11+offset)),szFileName,'UniformOutput',false));
+    szMin = str2double(cellfun(@(x)(x(12+offset:13+offset)),szFileName,'UniformOutput',false));
+    szSec = str2double(cellfun(@(x)(x(14+offset:15+offset)),szFileName,'UniformOutput',false));
+    dateVal = datetime(szYear,szMonth,szDay,szHour,szMin,szSec);
+    
+    isFeatFile = isValidLength;
 else
     % Get numeric parts of file name
     splitNames = regexpi(szFileName,'[_]','split');
