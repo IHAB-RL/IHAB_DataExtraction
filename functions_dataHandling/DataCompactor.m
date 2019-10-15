@@ -72,7 +72,7 @@ if strcmpi(stControl.szTimeCompressionMode,'mean')
     BlockFeed = round(BlockLen*(1-stControl.DataPointOverlap_percent));
     BlockIndex = 1:BlockLen;
     Counter = 1;
-    TimeVecOut = datetime(zeros(NrOfDataPoints,1),zeros(NrOfDataPoints,1),zeros(NrOfDataPoints,1));
+    TimeVecOut = datetime(zeros(NrOfDataPoints,1),zeros(NrOfDataPoints,1),zeros(NrOfDataPoints,1),zeros(NrOfDataPoints,1),zeros(NrOfDataPoints,1),zeros(NrOfDataPoints,1));
     
     DataVecOut = zeros(NrOfDataPoints,size(DataVec,2));
     
