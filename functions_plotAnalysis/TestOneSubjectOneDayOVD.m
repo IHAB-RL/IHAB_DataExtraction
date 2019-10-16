@@ -17,12 +17,12 @@ szBaseDir = 'I:\IHAB_2_EMA2018\IHAB_Rohdaten_EMA2018';
 subjectDirectories = dir(szBaseDir);
 
 % get one subject directoy
-szCurrentFolder = subjectDirectories(20).name;
+szCurrentFolder = subjectDirectories(19).name;
 
 % get object
 [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
 
-OneSubjectOneDayOVD(obj);
+OneSubjectOneDayOVD(obj,'startDay',1,'EndDay',2);
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> Jule Pohlhausen

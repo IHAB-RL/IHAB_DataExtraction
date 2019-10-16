@@ -145,7 +145,7 @@ stDataOVD.snrPrio = [];
 stDataOVD.movAvgSNR = [];
 stDataFVD.vFVS = [];
 
-[stDataOVD] = OVD3(reshape(Cxy,[size(Cxy,2), size(Cxy,1)]), reshape(Pxx,[size(Pxx,2), size(Pxx,1)]), reshape(Pyy,[size(Pyy,2), size(Pyy,1)]), stParam.fs);
+[stDataOVD] = OVD3(Cxy, Pxx, Pyy, stParam.fs);
 
 [stDataFVD] = FVD3(stDataOVD.vOVS,stDataOVD.snrPrio,stDataOVD.movAvgSNR);
 
@@ -326,12 +326,11 @@ if bPrint
 end
 
 
-
-% fprintf('counted %d times own voice per day\n',sum(stDataOVD.vOVS));
-% relative value
-OVSrel = sum(stDataOVD.vOVS)/size(stDataOVD.vOVS,2);
+% print relative values of voice activity
+nFrames = size(stDataOVD.vOVS,1);
+OVSrel = sum(stDataOVD.vOVS)/nFrames;
 fprintf('***estimated %.2f %% own voice per day\n',100*OVSrel);
-FVSrel = sum(stDataFVD.vFVS)/size(stDataFVD.vFVS,2);
+FVSrel = sum(stDataFVD.vFVS)/nFrames;
 fprintf('***estimated %.2f %% futher voice per day\n',100*FVSrel);
 
 

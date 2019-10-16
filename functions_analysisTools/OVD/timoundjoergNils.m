@@ -51,7 +51,7 @@ function [shat, snrPrio, noisePow, gainMat,PH1] = timoundjoergNils(noisy,fs,flag
 %     disp('(c) Timo Gerkmann, Universitaet Oldenburg, 2012, J. Bitzer, Jade HS Oldenburg, 2015');
 % end
 disp(' ')
-noisy = noisy.';
+% noisy = noisy.';
 noisy(isnan(noisy)) = eps*10^-1;
 noisy(noisy == 0) = eps*10^-1;
 %% some constants
