@@ -19,8 +19,15 @@ szNoiseConfig = '1';
 szDir = [szBaseDir filesep szCurrentFolder filesep 'config' szNoiseConfig];
 
 audiofile = fullfile(szDir, [szCurrentFolder '_config' szNoiseConfig '.wav']);
+audiofile = 'olsa_male_full_3_0.wav';
 [audioIn,fs] = audioread(audiofile);
-[f0,idx] = pitch(audioIn,fs);
+audioIn = audioIn(round(5.5*fs):round(8.5*fs));
+
+[f0,idx] = pitch(audioIn,fs, ...
+    'Method','PEF', ...
+    'Range',[50 800], ...
+    'WindowLength',round(fs*0.08), ...
+    'OverlapLength',round(fs*0.05));
 
 figure;
 subplot(2,1,1);
