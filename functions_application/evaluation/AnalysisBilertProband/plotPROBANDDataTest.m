@@ -19,10 +19,10 @@ obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\O
 subjectDirectories = dir(obj.szBaseDir);
 
 % choose one subject directoy
-obj.szCurrentFolder = subjectDirectories(17).name;
+obj.szCurrentFolder = subjectDirectories(18).name;
 
 % number of noise configurations
-nConfig = 1;
+nConfig = 6;
 
 for config = 1:nConfig
     % choose noise configurations

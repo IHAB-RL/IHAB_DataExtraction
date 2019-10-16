@@ -29,32 +29,31 @@ gtFile = fullfile(szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '_Voice.txt']
 
 vActVoice = importdata(gtFile);
 
+%% FVS
+fvsIndicator = 0; % JP
+
+idxFVS = vActVoice(:,3) == fvsIndicator;
+
+startTimeFVS = vActVoice(idxFVS, 1);
+endTimeFVS = vActVoice(idxFVS, 2);
+
+% check bounds
+[startIdxFVS,endIdxFVS] = checkBounds(obj,startTimeFVS,endTimeFVS);
+
+for ll = 1:size(startIdxFVS,1)
+    vActivFVS(startIdxFVS(ll):endIdxFVS(ll)) = 1;
+end
+
+
 %% OVS
-ovsIndicator = 0;
-
-idxOVS = vActVoice(:,3) == ovsIndicator;
-
-startTimeOVS = vActVoice(idxOVS, 1);
-endTimeOVS = vActVoice(idxOVS, 2);
+startTimeOVS = vActVoice(~idxFVS,1);
+endTimeOVS = vActVoice(~idxFVS,2);
 
 % check bounds
 [startIdxOVS,endIdxOVS] = checkBounds(obj,startTimeOVS,endTimeOVS);
 
 for ll = 1:size(startIdxOVS,1)
     vActivOVS(startIdxOVS(ll):endIdxOVS(ll)) = 1;
-end
-
-
-%% FVS
-startTimeFVS = vActVoice(~idxOVS,1);
-endTimeFVS = vActVoice(~idxOVS,2);
-
-% check bounds
-[startIdxFVS,endIdxFVS] = checkBounds(obj,startTimeFVS,endTimeFVS);
-
-
-for ll = 1:size(startIdxFVS,1)
-    vActivFVS(startIdxFVS(ll):endIdxFVS(ll)) = 1;
 end
 
 

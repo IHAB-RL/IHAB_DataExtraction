@@ -67,19 +67,21 @@ alpha = exp(-1./(CohTimeSmoothing_s*fs_cohdata));
 MeanCoheTimeSmoothed = filter([1-alpha],[1 -alpha],MeanCohe);
 
 
-% limit to 125 ... 8000 Hz for optical reasons
-stBandDef.StartFreq = 125;
-stBandDef.EndFreq = 8000;
-stBandDef.Mode = 'onethird';
-stBandDef.fs = stInfoFile.fs;
-[stBandDef] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
-stBandDef.skipFrequencyNormalization = 1;
-[stBandDefCohe] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
+isFreqLim = 0;
+if isFreqLim
+    % limit to 125 ... 8000 Hz for optical reasons
+    stBandDef.StartFreq = 125;
+    stBandDef.EndFreq = 8000;
+    stBandDef.Mode = 'onethird';
+    stBandDef.fs = stInfoFile.fs;
+    [stBandDef] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
+    stBandDef.skipFrequencyNormalization = 1;
+    [stBandDefCohe] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
 
-PxxShort = Pxx*stBandDefCohe.ReGroupMatrix;
-CoheShort = Cohe*stBandDefCohe.ReGroupMatrix;
-clear Cohe MeanCohe;
-
+    PxxShort = Pxx*stBandDefCohe.ReGroupMatrix;
+    CoheShort = Cohe*stBandDefCohe.ReGroupMatrix;
+    clear Cohe MeanCohe;
+end
 
 % desired feature RMS
 szFeature = 'RMS';
@@ -147,19 +149,29 @@ set(mTextTitle,'Units','normalized','Position', [0.2 0.93 0.6 0.05], 'String', s
 %% Coherence
 axCoher = axes('Position',[GUI_xStart 0.6 GUI_xAxesWidth 0.18]);
 
-timeVecShort = datenum(TimeVecPSD);
-freqVecShort = 1:size(PxxShort,2);
-RealCoheShort = real(CoheShort(:,:))';
-imagesc(timeVecShort,freqVecShort,RealCoheShort);
+timeVec = datenum(TimeVecPSD);
+if isFreqLim
+    nFreqBins = size(PxxShort,2);
+    freqVec = 1:nFreqBins;
+
+    RealCohe = real(CoheShort(:,:))';
+else
+    freqVec = 0 : stParam.fs/stParam.nFFT : stParam.fs/2;
+    
+    RealCohe = real(Cohe(:,:))';
+end
+imagesc(timeVec,freqVec,RealCohe);
 axis xy;
 colorbar;
 title('');
-reText=text(timeVecShort(5),freqVecShort(end-1),'Re\{Coherence\}','Color',[1 1 1]);
+reText=text(timeVec(5),freqVec(end-1),'Re\{Coherence\}','Color',[1 1 1]);
 reText.FontSize = 12;
-yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
-yaxisLables = strrep(yaxisLables,'000', 'k');
-set(axCoher,'YTick',1:3:size(PxxShort,2));
-set(axCoher,'YTickLabel',yaxisLables);
+if isFreqLim
+    yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
+    yaxisLables = strrep(yaxisLables,'000', 'k');
+    set(axCoher,'YTick',1:3:nFreqBins);
+    set(axCoher,'YTickLabel',yaxisLables);
+end
 set(axCoher ,'ylabel', ylabel('frequency in Hz'))
 set(axCoher,'XTick',[]);
 drawnow;
@@ -167,7 +179,6 @@ PosVecCoher = get(axCoher,'Position');
 
 
 %% RMS
-EnvelopeFromRMS = sqrt(DataRMS)
 Calib_RMS = 100; % needs to be changed...
 axRMS = axes('Position',[GUI_xStart 0.09 PosVecCoher(3) 0.09]);
 plot(datenum(TimeVecRMS),20*log10(DataRMS)+Calib_RMS);
@@ -176,49 +187,49 @@ ylim([30 100]);
 yticks([30 50 70 90])
 axRMS.YLabel = ylabel('dB SPL');
 datetickzoom(axRMS,'x','HH:MM:SS');
-xlim([timeVecShort(1) timeVecShort(end)]);
+xlim([timeVec(1) timeVec(end)]);
 
 
 %% audio signal with labels
 axAudio = axes('Position',[GUI_xStart 0.41  PosVecCoher(3) 0.16]);
 plot(datenum(TimeVecWav(1:100:end)),WavData(1:100:end,1));
 hold on;
-vTimeLabels = linspace(timeVecShort(1),timeVecShort(end),obj.NrOfBlocks);
-plot(vTimeLabels, groundTrOVS, 'r','LineWidth', 1.25);
-plot(vTimeLabels, groundTrFVS, 'b','LineWidth', 1.25);
-plot(vTimeLabels, vHit.OVD, 'Color', [0.2 0.6 0.2], 'LineWidth', 1.5);
-plot(vTimeLabels, vFalseAlarm.OVD, 'Color', [0.7 0.7 0.7]);
-plot(vTimeLabels, vHit.FVD, 'Color', [0.2 0.6 0.2], 'LineWidth', 1.5);
-plot(vTimeLabels, vFalseAlarm.FVD, 'Color', [0.7 0.7 0.7]);
+vTimeLabels = linspace(timeVec(1),timeVec(end),obj.NrOfBlocks);
+plot(vTimeLabels, vHit.OVD, 'r', 'LineWidth', 1.5);
+plot(vTimeLabels, vFalseAlarm.OVD, 'Color', [0.65 0.65 0.65]);
+plot(vTimeLabels, vHit.FVD, 'b', 'LineWidth', 1.5);
+plot(vTimeLabels, vFalseAlarm.FVD, 'Color', [0.85 0.85 0.85]);
 % patch('Faces',vTimeLabels,'Vertices',vHit.OVD,'FaceColor','red','FaceAlpha',.3);
 % siehe IHABdata Ziele 1547ff ...
 
 set(axAudio,'XTick',[]);
 axAudio.YLabel = ylabel('amplitude');
-xlim([timeVecShort(1) timeVecShort(end)]);
+xlim([timeVec(1) timeVec(end)]);
 
 
-
-
-%% Results Voice Detection
-vOVS = double(stDataOVD.vOVS);
-vOVS(vOVS == 0) = NaN;
-vFVS = double(stDataFVD.vFVS);
-vFVS(vFVS == 0) = NaN;
-% stDataOVD.meanCoh = mean(real(stDataOVD.Coh(6:64,:)),1);
-
+%% Results Voice Detection with mean smooted coherence
 axOVD = axes('Position',[GUI_xStart 0.8 PosVecCoher(3) 0.13]);
 hold on;
 hOVD = plot(datenum(TimeVecPSD),MeanCoheTimeSmoothed);
 hOVD.Color = [0 0 0];
 
-% view estimated own voice sequences (red)
-plot(datenum(TimeVecPSD),1.25*vOVS,'rx');
-% view estimated futher voice sequences (blue)
-plot(datenum(TimeVecPSD),1.25*vFVS,'bx');
+% vOVS = double(stDataOVD.vOVS);
+% vOVS(vOVS == 0) = NaN;
+% vFVS = double(stDataFVD.vFVS);
+% vFVS(vFVS == 0) = NaN;
+% stDataOVD.meanCoh = mean(real(stDataOVD.Coh(6:64,:)),1);
+% % view estimated own voice sequences (red)
+% plot(datenum(TimeVecPSD),1.25*vOVS,'rx');
+% % view estimated futher voice sequences (blue)
+% plot(datenum(TimeVecPSD),1.25*vFVS,'bx');
+
+groundTrOVS(groundTrOVS == 0) = NaN;
+groundTrFVS(groundTrFVS == 0) = NaN;
+plot(vTimeLabels, 1.15*groundTrOVS, 'rx');
+plot(vTimeLabels, 1.25*groundTrFVS, 'bx');
 set(axOVD,'XTick',[]);
 axOVD.YLabel = ylabel('avg. Re\{Coherence\}');
-xlim([timeVecShort(1) timeVecShort(end)]);
+xlim([timeVec(1) timeVec(end)]);
 ylim ([-0.5 1.5]);
 axOVD.YTick = [-0.5 0 0.5 1];
 axOVD.YTickLabels = {'-0.5','0', '0.5', '1'};
@@ -226,18 +237,24 @@ axOVD.YTickLabels = {'-0.5','0', '0.5', '1'};
 
 %% Pxx
 axPxx = axes('Position',[GUI_xStart 0.2 GUI_xAxesWidth 0.18]);
-timeVecShort = datenum(TimeVecPSD);
-freqVecShort = 1:size(PxxShort,2);
-PxxShortLog = 10*log10(PxxShort)';
-imagesc(timeVecShort,freqVecShort,PxxShortLog);
+timeVec = datenum(TimeVecPSD);
+
+if isFreqLim
+    PxxLog = 10*log10(PxxShort)';
+else
+    PxxLog = 10*log10(Pxx)';
+end
+imagesc(timeVec,freqVec,PxxLog);
 axis xy;
 colorbar;
 title('');
-psdText=text(timeVecShort(5),freqVecShort(end-1),'PSD (left)','Color',[1 1 1]);
+psdText=text(timeVec(5),freqVec(end-1),'PSD (left)','Color',[1 1 1]);
 psdText.FontSize = 12;
-set(axPxx,'YTick',1:3:size(PxxShort,2));
-yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
-set(axPxx,'YTickLabel',yaxisLables);
+if isFreqLim
+    set(axPxx,'YTick',1:3:size(PxxShort,2));
+    yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
+    set(axPxx,'YTickLabel',yaxisLables);
+end
 set(axPxx ,'ylabel', ylabel('frequency in Hz'))
 set(axPxx,'CLim',[-110 -55]);
 
@@ -251,7 +268,7 @@ set(axPxx,'XTickLabel',[]);
 iStartAnno = 0.95; % define 'left' position/ start for all annotations
 
 annotationOVD =annotation(gcf,'textbox',...
-    'String',{'OVD'},...
+    'String',{'OVS'},...
     'FitBoxToText','off');
 annotationOVD.LineStyle = 'none';
 annotationOVD.FontSize = 12;
@@ -259,7 +276,7 @@ annotationOVD.Color = [1 0 0];
 annotationOVD.Position = [iStartAnno 0.85 0.0251 0.0411];
 
 annotationFVD =annotation(gcf,'textbox',...
-    'String',{'FVD'},...
+    'String',{'FVS'},...
     'FitBoxToText','off');
 annotationFVD.LineStyle = 'none';
 annotationFVD.FontSize = 12;
@@ -275,7 +292,7 @@ annotationAudio.Color = [0 0 0];
 annotationAudio.Position = [iStartAnno 0.5 0.0251 0.0411];
 
 annotationOVS =annotation(gcf,'textbox',...
-    'String',{'OVS'},...
+    'String',{'OVD'},...
     'FitBoxToText','off');
 annotationOVS.LineStyle = 'none';
 annotationOVS.FontSize = 11;
@@ -283,7 +300,7 @@ annotationOVS.Color = [1 0 0];
 annotationOVS.Position = [iStartAnno 0.48 0.0251 0.0411];
 
 annotationFVS =annotation(gcf,'textbox',...
-    'String',{'FVS'},...
+    'String',{'FVD'},...
     'FitBoxToText','off');
 annotationFVS.LineStyle = 'none';
 annotationFVS.FontSize = 11;
@@ -327,11 +344,21 @@ fprintf('***estimated %.2f %% futher voice per day\n',100*FVSrel);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Test Area%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % % modulation spectrum
+% EnvelopeFromRMS = sqrt(DataRMS);
 % ModSpec = fft(EnvelopeFromRMS(:,1), stParam.nFFT);
 % ModSpec = ModSpec(1:stParam.nFFT/2+1);
 % vFreq = 0 : stParam.fs/stParam.nFFT : stParam.fs/2;
 % figure;
 % plot(vFreq, ModSpec);
+
+
+% % magnitude spectrum
+% figure;
+% plot(freqVec,Pxx(ceil(14.6/0.125)+7,:));
+% hold on;
+% plot(freqVec,Pyy(ceil(14.6/0.125)+7,:));
+% xlim([0 2000]);
+
 
 
 %--------------------Licence ---------------------------------------------
