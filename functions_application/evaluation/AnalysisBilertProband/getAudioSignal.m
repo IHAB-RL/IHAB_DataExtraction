@@ -1,17 +1,19 @@
-function [Data,TimeVec]=getAudioSignal(obj)
+function [Data,TimeVec,Fs]=getAudioSignal(obj)
 % function to load the audio signal and labels of own / futher voice for
 % one test subject
 % Usage [Data,TimeVec]=getAudioSignalLabels(obj)
 %
 % Parameters
 % ----------
-% obj : struct, contains all informations
+% obj     : struct, contains all informations
 %
 % Returns
 % -------
-% Data :  a matrix containg the feature data
+% Data    : a matrix containg the feature data
 %
-% TimeVec :  a date/time vector with the corresponding time information
+% TimeVec : a date/time vector with the corresponding time information
+%
+% Fs      : sampling frequency
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Source: the function is based on getObjectiveData.m
@@ -20,7 +22,7 @@ function [Data,TimeVec]=getAudioSignal(obj)
 
 % preallocate output parameters
 Data = [];
-TimeVec = [];
+TimeVec = datetime(0,0,0,0,0,0);
 
 % build the full directory
 szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
@@ -42,7 +44,7 @@ AllWavFiles = strcat(AllWavFiles,'.wav');
 AllWavFiles = AllWavFiles(logical(isFeatFile));
 
 
-%% read the data
+%% read in the data
 
 % get number of available feature files in current time frame
 NrOfFiles = numel(AllWavFiles);
@@ -56,7 +58,7 @@ if ~isempty(AllWavFiles)
         szFileName =  AllWavFiles{fileIdx};
         
         % load data from feature file
-        [WavData, fs] = audioread([szDir filesep szFileName]);
+        [WavData, Fs] = audioread([szDir filesep szFileName]);
         
         ActBlockSize = size(WavData,1);
         
@@ -69,7 +71,7 @@ if ~isempty(AllWavFiles)
         Startindex = Startindex + ActBlockSize;
     end
     
-end % if: ~isempty(AllFeatFiles)
+end 
 
 
 %--------------------Licence ---------------------------------------------

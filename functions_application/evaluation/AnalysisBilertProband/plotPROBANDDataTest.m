@@ -5,7 +5,12 @@
 % Ver. 0.01 initial create 14-Oct-2019  JP
 
 clear;
-close all;
+% close all;
+
+% define figure width full screen in pixels
+stRoots = get(0);
+% get plot width
+iPlotWidth = stRoots.ScreenSize(3);
 
 % path to main data folder (needs to be customized)
 obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
@@ -16,16 +21,15 @@ subjectDirectories = dir(obj.szBaseDir);
 % choose one subject directoy
 obj.szCurrentFolder = subjectDirectories(17).name;
 
-% choose noise configurations
-obj.szNoiseConfig = 'config2';
+% number of noise configurations
+nConfig = 1;
 
-% define figure width full screen in pixels
-stRoots = get(0);
-% get plot width
-iPlotWidth = stRoots.ScreenSize(3);
+for config = 1:nConfig
+    % choose noise configurations
+    obj.szNoiseConfig = ['config' num2str(config)];
 
-plotPROBANDData(obj, 'PlotWidth', iPlotWidth);
-
+    plotPROBANDData(obj, 'PlotWidth', iPlotWidth);
+end
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
 % Institute for Hearing Technology and Audiology
