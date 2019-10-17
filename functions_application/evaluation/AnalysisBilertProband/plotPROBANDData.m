@@ -164,7 +164,7 @@ imagesc(timeVec,freqVec,RealCohe);
 axis xy;
 colorbar;
 title('');
-reText=text(timeVec(5),freqVec(end-1),'Re\{Coherence\}','Color',[1 1 1]);
+reText=text(timeVec(5),freqVec(end-10),'Re\{Coherence\}','Color',[1 1 1]);
 reText.FontSize = 12;
 if isFreqLim
     yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
@@ -248,7 +248,7 @@ imagesc(timeVec,freqVec,PxxLog);
 axis xy;
 colorbar;
 title('');
-psdText=text(timeVec(5),freqVec(end-1),'PSD (left)','Color',[1 1 1]);
+psdText=text(timeVec(5),freqVec(end-10),'PSD (left)','Color',[1 1 1]);
 psdText.FontSize = 12;
 if isFreqLim
     set(axPxx,'YTick',1:3:size(PxxShort,2));
@@ -341,25 +341,90 @@ fprintf('***estimated %.2f %% futher voice per day\n',100*FVSrel);
 
 
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Test Area%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% % modulation spectrum
-% EnvelopeFromRMS = sqrt(DataRMS);
-% ModSpec = fft(EnvelopeFromRMS(:,1), stParam.nFFT);
-% ModSpec = ModSpec(1:stParam.nFFT/2+1);
-% vFreq = 0 : stParam.fs/stParam.nFFT : stParam.fs/2;
+idxTrOVS = ~isnan(groundTrOVS);
+idxTrFVS = ~isnan(groundTrFVS);
+idxTrNone = ~idxTrOVS & ~idxTrFVS;
+
+% modulation spectrum
+EnvelopeFromRMS = sqrt(DataRMS);
+nFFT = 16*stParam.nFFT;
+ModSpecOVS = fft(EnvelopeFromRMS(idxTrOVS,1), nFFT);
+ModSpecOVS = ModSpecOVS(1:nFFT/2+1);
+ModSpecFVS = fft(EnvelopeFromRMS(idxTrFVS,1), nFFT);
+ModSpecFVS = ModSpecFVS(1:nFFT/2+1);
+ModSpecNone = fft(EnvelopeFromRMS(idxTrNone,1), nFFT);
+ModSpecNone = ModSpecNone(1:nFFT/2+1);
+vFreq = 0 : stParam.fs/nFFT : stParam.fs/2;
+
+figure;
+subplot(2,2,1);
+plot(vFreq, ModSpecOVS, 'r');
+hold on;
+plot(vFreq, ModSpecFVS, 'b');
+plot(vFreq, ModSpecNone, 'g');
+title('envelope modulation spectrum');
+xlabel('Frequency in Hz');
+ylabel('magnitude');
+legend('OVS','FVS','none');
+xlim([0 100]);
+
+
+% magnitude spectrum
 % figure;
-% plot(vFreq, ModSpec);
+subplot(2,2,3);
+[hLineXX] = PlotMeanStd(Pxx(idxTrOVS,:), freqVec, 'r');
+% plot(freqVec, mean(Pxx(idxTrOVS,:)), 'r');
+hold on;
+[hLineYY] = PlotMeanStd(Pyy(idxTrOVS,:), freqVec, 'm');
+% plot(freqVec, mean(Pyy(idxTrOVS,:)), 'm');
+xlim([0 2000]);
+title('mean magnitude spectrum PSD at OVS');
+xlabel('Frequency in Hz');
+ylabel('magnitude');
+legend([hLineXX, hLineYY], 'Pxx','Pyy');
 
-
-% % magnitude spectrum
 % figure;
-% plot(freqVec,Pxx(ceil(14.6/0.125)+7,:));
-% hold on;
-% plot(freqVec,Pyy(ceil(14.6/0.125)+7,:));
-% xlim([0 2000]);
+subplot(2,2,4);
+[hLineXX] = PlotMeanStd(Pxx(idxTrFVS,:), freqVec, 'b');
+% plot(freqVec,mean(Pxx(idxTrFVS,:)), 'b');
+hold on;
+[hLineYY] = PlotMeanStd(Pyy(idxTrFVS,:), freqVec, 'c');
+% plot(freqVec,mean(Pyy(idxTrFVS,:)), 'c');
+xlim([0 2000]);
+title('mean magnitude spectrum PSD at FVS');
+xlabel('Frequency in Hz');
+ylabel('magnitude');
+legend([hLineXX, hLineYY], 'Pxx','Pyy');
 
+% figure;
+subplot(2,2,2);
+[hLineXX] = PlotMeanStd(Pxx(idxTrNone,:), freqVec, 'g');
+% plot(freqVec,mean(Pxx(idxTrNone,:)), 'k');
+hold on;
+[hLineYY] = PlotMeanStd(Pyy(idxTrNone,:), freqVec, 'y');
+% plot(freqVec,mean(Pyy(idxTrNone,:)), 'Color', [0.8 0.8 0.8]);
+xlim([0 2000]);
+title('mean magnitude spectrum PSD at no VS');
+xlabel('Frequency in Hz');
+ylabel('magnitude');
+legend([hLineXX, hLineYY], 'Pxx','Pyy');
 
+sgtitle([obj.szCurrentFolder ' ' obj.szNoiseConfig]);
+
+function [hl] = PlotMeanStd(data, freqVec, color)
+    lo = mean(data) - std(data);
+    hi = mean(data) + std(data);
+
+    hp = patch([freqVec freqVec(end:-1:1) freqVec(1)], [lo hi(end:-1:1) lo(1)], color);
+    hold on;
+    hl = line(freqVec,mean(data));
+
+    set(hp, 'FaceColor', color, 'edgecolor', 'none', 'FaceAlpha',.2);
+    set(hl, 'Color', color, 'marker', 'x');
+end
+
+end
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
