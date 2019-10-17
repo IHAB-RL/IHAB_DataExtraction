@@ -30,11 +30,17 @@ audioIn = audioIn(round(5.5*fs):round(8.5*fs));
     'OverlapLength',round(fs*0.05));
 
 figure;
-subplot(2,1,1);
+subplot(3,1,1);
 plot(audioIn);
 ylabel('Amplitude');
 
-subplot(2,1,2);
+nFFT = 2048; % Parameter festlegen
+DataLen = 2048;
+Overlap = 0.5*DataLen;
+subplot(3,1,2);
+spectrogram(audioIn,DataLen,Overlap,nFFT,fs,'yaxis');
+
+subplot(3,1,3);
 plot(idx,f0);
 ylabel('Pitch (Hz)');
 xlabel('Sample Number');
