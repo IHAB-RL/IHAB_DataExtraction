@@ -5,6 +5,7 @@
 % Ver. 0.01 initial create 14-Oct-2019  JP
 
 clear;
+clc;
 close all;
 
 % define figure width full screen in pixels
@@ -18,29 +19,44 @@ obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\O
 % get all subject directories
 subjectDirectories = dir(obj.szBaseDir);
 
-% choose one subject directoy
-obj.szCurrentFolder = subjectDirectories(18).name;
+% sort for correct subjects
+isValidLength = arrayfun(@(x)(length(x.name) == 8), subjectDirectories);
+subjectDirectories = subjectDirectories(isValidLength);
+
+% number of subjects
+nSubject = size(subjectDirectories, 1);
 
 % number of noise configurations
 nConfig = 6;
 
-% preallocate variables
-obj.stdRMSOVS = [];
-obj.stdRMSFVS = [];
-obj.stdRMSNone = [];
+% loop over all subjects
+for subj = 1:nSubject
 
-for config = 1:nConfig
-    % choose noise configurations
-    obj.szNoiseConfig = ['config' num2str(config)];
+    % choose one subject directoy
+    obj.szCurrentFolder = subjectDirectories(subj).name;
 
-    obj = plotPROBANDData(obj, 'PlotWidth', iPlotWidth);
+    % preallocate variables
+    obj.stdRMSOVS = [];
+    obj.stdRMSFVS = [];
+    obj.stdRMSNone = [];
+    
+    % loop over all noise configurations
+    for config = 1:nConfig
+        
+        % choose noise configurations
+        obj.szNoiseConfig = ['config' num2str(config)];
 
+        obj = plotPROBANDData(obj, 'PlotWidth', iPlotWidth);
+
+    end
+
+    % display table with std of RMS
+    if ~isempty(obj.stdRMSOVS)
+        szConfig = (1:nConfig)';
+        varNames = {'config', 'OVS', 'FVS', 'none'};
+        tabSTDRMS = table(szConfig, obj.stdRMSOVS, obj.stdRMSFVS, obj.stdRMSNone,'VariableNames',varNames)
+    end
 end
-
-szConfig = (1:nConfig)';
-varNames = {'config', 'OVS', 'FVS', 'none'};
-tabSTDRMS = table(szConfig, obj.stdRMSOVS, obj.stdRMSFVS, obj.stdRMSNone,'VariableNames',varNames);
-
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
 % Institute for Hearing Technology and Audiology

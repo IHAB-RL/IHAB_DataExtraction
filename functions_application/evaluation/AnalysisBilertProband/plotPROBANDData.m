@@ -42,8 +42,11 @@ iPlotWidth = p.Results.PlotWidth;
 szFeature = 'PSD';
 
 % get all available feature file data
-[DataPSD,TimeVecPSD,stInfoFile] = getObjectiveDataBilert(obj, szFeature);
+[DataPSD,TimeVecPSD,stInfoPSD] = getObjectiveDataBilert(obj, szFeature);
 
+if isempty(DataPSD)
+    return;
+end
 
 version = 1; % JP modified get_psd
 [Cxy,Pxx,Pyy] = get_psd(DataPSD, version);
@@ -52,7 +55,7 @@ Cohe = Cxy./(sqrt(Pxx.*Pyy) + eps);
 
 
 % set frequency specific parameters
-stParam.fs = stInfoFile.fs;
+stParam.fs = stInfoPSD.fs;
 stParam.nFFT = 1024;
 stParam.vFreqRange  = [400 1000]; % frequency range in Hz
 stParam.vFreqIdx = round(stParam.nFFT*stParam.vFreqRange./stParam.fs);
@@ -73,7 +76,7 @@ if isFreqLim
     stBandDef.StartFreq = 125;
     stBandDef.EndFreq = 8000;
     stBandDef.Mode = 'onethird';
-    stBandDef.fs = stInfoFile.fs;
+    stBandDef.fs = stInfoPSD.fs;
     [stBandDef] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
     stBandDef.skipFrequencyNormalization = 1;
     [stBandDefCohe] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
@@ -87,8 +90,11 @@ end
 szFeature = 'RMS';
 
 % get all available feature file data
-[DataRMS,TimeVecRMS,~] = getObjectiveDataBilert(obj, szFeature);
+[DataRMS,TimeVecRMS,stInfoRMS] = getObjectiveDataBilert(obj, szFeature);
 
+if isempty(DataRMS)
+    return;
+end
 
 % logical to save figure
 bPrint = 1;
@@ -114,7 +120,7 @@ clear FinalDataCxy FinalDataPxx FinalDataPyy;
 [WavData, TimeVecWav, Fs] = getAudioSignal(obj);
 
 % and ground truth labels for voice activity
-obj.fsVD = stInfoFile.nFrames / 60;
+obj.fsVD = ceil(stInfoPSD.nFrames / 60);
 obj.NrOfBlocks = size(stDataFVD.vFVS(:)',2);
 [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
 
@@ -138,7 +144,7 @@ vFalseAlarm.FVD(groundTrFVS ~= vFVS) = vFVS(groundTrFVS ~= vFVS);
 % define figure height full screen in pixels
 iPlotHeight = stRoots.ScreenSize(4);
 
-figure('PaperPosition',[0 0 1 1],'Position',[0 0 iPlotWidth iPlotHeight]);
+hFig1 = figure('PaperPosition',[0 0 1 1],'Position',[0 0 iPlotWidth iPlotHeight]);
 GUI_xStart = 0.05;
 GUI_xAxesWidth = 0.9;
 mTextTitle = uicontrol(gcf,'style','text');
@@ -323,15 +329,6 @@ linkaxes([axOVD,axRMS,axAudio,axPxx,axCoher],'x');
 % dynamicDateTicks([axOVD,axRMS,axPxx,axCoher,axCoherInvalid,axPxxInvalid],'linked');
 
 
-if bPrint
-    set(0,'DefaultFigureColor','remove')
-    exportName = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig ...
-        'Fingerprint_VD_' obj.szCurrentFolder '_' obj.szNoiseConfig];
-    
-    savefig(exportName);
-    %     saveas(gcf, exportName,'pdf')
-end
-
 % print relative values of voice activity
 nFrames = size(stDataOVD.vOVS,1);
 OVSrel = sum(stDataOVD.vOVS)/nFrames;
@@ -347,31 +344,39 @@ idxTrOVS = ~isnan(groundTrOVS);
 idxTrFVS = ~isnan(groundTrFVS);
 idxTrNone = ~idxTrOVS & ~idxTrFVS;
 
-% % % % % % obj.FigTitle = [obj.szCurrentFolder ' ' obj.szNoiseConfig];
+% and ground truth labels for voice activity at time base of RMS
+obj.fsVD = ceil(stInfoRMS.nFrames / 60);
+obj.NrOfBlocks = size(DataRMS,1);
+[vActivOVS, vActivFVS] = getVoiceLabels(obj);
+idxTrOVS_rms = vActivOVS == 1;
+idxTrFVS_rms = vActivFVS == 1;
+idxTrNone_rms = ~idxTrOVS_rms & ~idxTrFVS_rms;
+
+obj.FigTitle = [obj.szCurrentFolder ' ' obj.szNoiseConfig];
 % % % % % % [obj] = getGUI(obj);
 vScreenSize = get(0,'screensize');
 nBottomFig = 45;
 nWidthFig = 1300;
 nLeftFig = (vScreenSize(3)-nWidthFig)/2;
 nHeightFig = vScreenSize(4)-130;
-fig = figure();
-fig.Position = [nLeftFig, nBottomFig, nWidthFig, nHeightFig];
+hFig2 = figure();
+hFig2.Position = [nLeftFig, nBottomFig, nWidthFig, nHeightFig];
+hFig2.Name = obj.FigTitle;
 
 % standard deviation RMS
-obj.stdRMSOVS = [obj.stdRMSOVS; std(DataRMS(idxTrOVS,1))];
-obj.stdRMSFVS = [obj.stdRMSFVS; std(DataRMS(idxTrFVS,1))];
-obj.stdRMSNone = [obj.stdRMSNone; std(DataRMS(idxTrNone,1))];
+obj.stdRMSOVS = [obj.stdRMSOVS; std(DataRMS(idxTrOVS_rms,1))];
+obj.stdRMSFVS = [obj.stdRMSFVS; std(DataRMS(idxTrFVS_rms,1))];
+obj.stdRMSNone = [obj.stdRMSNone; std(DataRMS(idxTrNone_rms,1))];
 
 
 % modulation spectrum
-EnvelopeFromRMS = sqrt(DataRMS);
-% EnvelopeFromRMS = DataRMS;
-nFFT = 16*stParam.nFFT;
-ModSpecOVS = fft(EnvelopeFromRMS(idxTrOVS,1), nFFT);
+EnvelopeFromRMS = sqrt(DataRMS); % Kates 2008
+nFFT = 32*stParam.nFFT;
+ModSpecOVS = fft(EnvelopeFromRMS(idxTrOVS_rms,1), nFFT);
 ModSpecOVS = ModSpecOVS(1:nFFT/2+1);
-ModSpecFVS = fft(EnvelopeFromRMS(idxTrFVS,1), nFFT);
+ModSpecFVS = fft(EnvelopeFromRMS(idxTrFVS_rms,1), nFFT);
 ModSpecFVS = ModSpecFVS(1:nFFT/2+1);
-ModSpecNone = fft(EnvelopeFromRMS(idxTrNone,1), nFFT);
+ModSpecNone = fft(EnvelopeFromRMS(idxTrNone_rms,1), nFFT);
 ModSpecNone = ModSpecNone(1:nFFT/2+1);
 vFreq = 0 : stParam.fs/nFFT : stParam.fs/2;
 
@@ -445,6 +450,27 @@ title('mean real coherence at no VS');
 xlabel('Frequency in Hz');
 ylabel('real coherence');
 
+
+% save figures
+if bPrint
+    szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
+    sDataFolder_Output = [szDir filesep 'Overviews'];
+    if ~exist(sDataFolder_Output, 'dir')
+        mkdir(sDataFolder_Output);
+    end
+            
+    set(0,'DefaultFigureColor','remove');
+    
+    exportName = [szDir filesep 'Overviews' filesep ...
+        'Fingerprint_VD_' obj.szCurrentFolder '_' obj.szNoiseConfig];
+    
+    savefig(hFig1, exportName);
+    
+    exportName = [szDir filesep 'Overviews' filesep ...
+        'AnalyseWindow_VD_' obj.szCurrentFolder '_' obj.szNoiseConfig];
+    
+    savefig(hFig2, exportName);
+end
 
 
 function [hl] = PlotMeanStd(data, freqVec, color)

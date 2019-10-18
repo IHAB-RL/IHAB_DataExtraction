@@ -48,6 +48,10 @@ szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
 AllFeatFiles = listFiles(szDir,'*.feat');
 AllFeatFiles = {AllFeatFiles.name}';
 
+if isempty(AllFeatFiles)
+    return;
+end
+
 % Get names wo. path
 [~,AllFeatFiles] = cellfun(@fileparts, AllFeatFiles,'UniformOutput',false);
 
@@ -110,7 +114,6 @@ if ~isempty(AllFeatFiles)
     end
     
 end % if: ~isempty(AllFeatFiles)
-
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
