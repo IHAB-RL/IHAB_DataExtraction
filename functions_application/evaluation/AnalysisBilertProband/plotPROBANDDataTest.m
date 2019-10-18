@@ -5,7 +5,7 @@
 % Ver. 0.01 initial create 14-Oct-2019  JP
 
 clear;
-% close all;
+close all;
 
 % define figure width full screen in pixels
 stRoots = get(0);
@@ -24,12 +24,23 @@ obj.szCurrentFolder = subjectDirectories(18).name;
 % number of noise configurations
 nConfig = 6;
 
+% preallocate variables
+obj.stdRMSOVS = [];
+obj.stdRMSFVS = [];
+obj.stdRMSNone = [];
+
 for config = 1:nConfig
     % choose noise configurations
     obj.szNoiseConfig = ['config' num2str(config)];
 
-    plotPROBANDData(obj, 'PlotWidth', iPlotWidth);
+    obj = plotPROBANDData(obj, 'PlotWidth', iPlotWidth);
+
 end
+
+szConfig = (1:nConfig)';
+varNames = {'config', 'OVS', 'FVS', 'none'};
+tabSTDRMS = table(szConfig, obj.stdRMSOVS, obj.stdRMSFVS, obj.stdRMSNone,'VariableNames',varNames);
+
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
 % Institute for Hearing Technology and Audiology

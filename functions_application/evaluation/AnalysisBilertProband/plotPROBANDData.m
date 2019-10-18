@@ -1,4 +1,4 @@
-function []=plotPROBANDData(obj, varargin)
+function [obj]=plotPROBANDData(obj, varargin)
 % function to
 % Usage [outParam]=plotPROBANDData(inParam)
 %
@@ -342,12 +342,30 @@ fprintf('***estimated %.2f %% futher voice per day\n',100*FVSrel);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Test Area%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% define indices for own, further or no voice sequences
 idxTrOVS = ~isnan(groundTrOVS);
 idxTrFVS = ~isnan(groundTrFVS);
 idxTrNone = ~idxTrOVS & ~idxTrFVS;
 
+% % % % % % obj.FigTitle = [obj.szCurrentFolder ' ' obj.szNoiseConfig];
+% % % % % % [obj] = getGUI(obj);
+vScreenSize = get(0,'screensize');
+nBottomFig = 45;
+nWidthFig = 1300;
+nLeftFig = (vScreenSize(3)-nWidthFig)/2;
+nHeightFig = vScreenSize(4)-130;
+fig = figure();
+fig.Position = [nLeftFig, nBottomFig, nWidthFig, nHeightFig];
+
+% standard deviation RMS
+obj.stdRMSOVS = [obj.stdRMSOVS; std(DataRMS(idxTrOVS,1))];
+obj.stdRMSFVS = [obj.stdRMSFVS; std(DataRMS(idxTrFVS,1))];
+obj.stdRMSNone = [obj.stdRMSNone; std(DataRMS(idxTrNone,1))];
+
+
 % modulation spectrum
 EnvelopeFromRMS = sqrt(DataRMS);
+% EnvelopeFromRMS = DataRMS;
 nFFT = 16*stParam.nFFT;
 ModSpecOVS = fft(EnvelopeFromRMS(idxTrOVS,1), nFFT);
 ModSpecOVS = ModSpecOVS(1:nFFT/2+1);
@@ -357,8 +375,7 @@ ModSpecNone = fft(EnvelopeFromRMS(idxTrNone,1), nFFT);
 ModSpecNone = ModSpecNone(1:nFFT/2+1);
 vFreq = 0 : stParam.fs/nFFT : stParam.fs/2;
 
-figure;
-subplot(2,2,1);
+subplot(4,2,[1, 2]);
 plot(vFreq, ModSpecOVS, 'r');
 hold on;
 plot(vFreq, ModSpecFVS, 'b');
@@ -371,8 +388,7 @@ xlim([0 100]);
 
 
 % magnitude spectrum
-% figure;
-subplot(2,2,3);
+subplot(4,2,3);
 [hLineXX] = PlotMeanStd(Pxx(idxTrOVS,:), freqVec, 'r');
 % plot(freqVec, mean(Pxx(idxTrOVS,:)), 'r');
 hold on;
@@ -384,8 +400,7 @@ xlabel('Frequency in Hz');
 ylabel('magnitude');
 legend([hLineXX, hLineYY], 'Pxx','Pyy');
 
-% figure;
-subplot(2,2,4);
+subplot(4,2,5);
 [hLineXX] = PlotMeanStd(Pxx(idxTrFVS,:), freqVec, 'b');
 % plot(freqVec,mean(Pxx(idxTrFVS,:)), 'b');
 hold on;
@@ -397,8 +412,7 @@ xlabel('Frequency in Hz');
 ylabel('magnitude');
 legend([hLineXX, hLineYY], 'Pxx','Pyy');
 
-% figure;
-subplot(2,2,2);
+subplot(4,2,7);
 [hLineXX] = PlotMeanStd(Pxx(idxTrNone,:), freqVec, 'g');
 % plot(freqVec,mean(Pxx(idxTrNone,:)), 'k');
 hold on;
@@ -410,9 +424,31 @@ xlabel('Frequency in Hz');
 ylabel('magnitude');
 legend([hLineXX, hLineYY], 'Pxx','Pyy');
 
-sgtitle([obj.szCurrentFolder ' ' obj.szNoiseConfig]);
+
+% Re(coherence)
+RealCohe = RealCohe';
+subplot(4,2,4);
+[hLineXX] = PlotMeanStd(RealCohe(idxTrOVS,:), freqVec, 'r');
+title('mean real coherence at OVS');
+xlabel('Frequency in Hz');
+ylabel('real coherence');
+
+subplot(4,2,6);
+[hLineXX] = PlotMeanStd(RealCohe(idxTrFVS,:), freqVec, 'b');
+title('mean real coherence at FVS');
+xlabel('Frequency in Hz');
+ylabel('real coherence');
+
+subplot(4,2,8);
+[hLineXX] = PlotMeanStd(RealCohe(idxTrNone,:), freqVec, 'g');
+title('mean real coherence at no VS');
+xlabel('Frequency in Hz');
+ylabel('real coherence');
+
+
 
 function [hl] = PlotMeanStd(data, freqVec, color)
+    % inspired by :  http://kellyakearney.net/2016/06/10/boundedline.html
     lo = mean(data) - std(data);
     hi = mean(data) + std(data);
 
@@ -422,6 +458,50 @@ function [hl] = PlotMeanStd(data, freqVec, color)
 
     set(hp, 'FaceColor', color, 'edgecolor', 'none', 'FaceAlpha',.2);
     set(hl, 'Color', color, 'marker', 'x');
+end
+
+
+function [obj] = getGUI(obj)
+    obj.fig = uifigure();
+    obj.fig.Name = obj.FigTitle;
+    obj.vScreenSize = get(0,'screensize');
+    obj.nHeightFig = obj.vScreenSize(4)-80;
+    obj.nWidthFig = 1300;
+    obj.fig.Position = [(obj.vScreenSize(3)-obj.nWidthFig)/2,...
+        (obj.vScreenSize(4)-obj.nHeightFig)/2, obj.nWidthFig, obj.nHeightFig];
+
+    obj.axModSpec = uiaxes(obj.fig);
+    obj.axModSpec.Units = 'Pixels';
+    obj.axModSpec.Position = [0,3/4*obj.nHeightFig,obj.nWidthFig, 1/4*obj.nHeightFig];
+
+    obj.axPSDOVS = uiaxes(obj.fig);
+    obj.axPSDOVS.Units = 'Pixels';
+    obj.axPSDOVS.Position = [0,1/2*obj.nHeightFig,1/2*obj.nWidthFig, 1/4*obj.nHeightFig];
+
+    obj.axPSDFVS = uiaxes(obj.fig);
+    obj.axPSDFVS.Units = 'Pixels';
+    obj.axPSDFVS.Position = [0,1/4*obj.nHeightFig,1/2*obj.nWidthFig, 1/4*obj.nHeightFig];
+
+    obj.axPSDNone = uiaxes(obj.fig);
+    obj.axPSDNone.Units = 'Pixels';
+    obj.axPSDNone.Position = [0,0,1/2*obj.nWidthFig, 1/4*obj.nHeightFig];
+
+
+%     obj.axTable = uitable(obj.fig);
+%     obj.axTable.Units = 'Pixels';
+%     obj.axTable.Position = [1/2*obj.nWidthFig,3/4*obj.nHeightFig,1/2*obj.nWidthFig, 1/4*obj.nHeightFig];
+
+    obj.axCoheOVS = uiaxes(obj.fig);
+    obj.axCoheOVS.Units = 'Pixels';
+    obj.axCoheOVS.Position = [1/2*obj.nWidthFig,1/2*obj.nHeightFig,1/2*obj.nWidthFig, 1/4*obj.nHeightFig];
+
+    obj.axCoheFVS = uiaxes(obj.fig);
+    obj.axCoheFVS.Units = 'Pixels';
+    obj.axCoheFVS.Position = [1/2*obj.nWidthFig,1/4*obj.nHeightFig,1/2*obj.nWidthFig, 1/4*obj.nHeightFig];
+
+    obj.axCoheNone = uiaxes(obj.fig);
+    obj.axCoheNone.Units = 'Pixels';
+    obj.axCoheNone.Position = [1/2*obj.nWidthFig,0,1/2*obj.nWidthFig, 1/4*obj.nHeightFig];
 end
 
 end
