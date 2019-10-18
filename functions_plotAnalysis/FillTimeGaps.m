@@ -37,7 +37,7 @@ UsualValue = Values(idxSort(1));
 
 % detect gaps that are significant greater, i.e. 5 times, than the usual
 % time gap
-idxGaps = find(vGaps > 5*UsualValue);
+idxGaps = find(vGaps > 10*UsualValue);
 
 if ~isempty(idxGaps)
     
