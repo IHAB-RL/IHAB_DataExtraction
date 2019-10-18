@@ -1,10 +1,9 @@
 function [] = OneSubjectOneDayOVD(obj, varargin)
 % function to plot a fingerprint for a specific time frame
-% analyse data 
-% Own Voice Detection (OVD) and Futher Voice
-% Detection (FVD) on real IHAB data
-% OVD and FVD by Nils Schreiber (Master 2019)
-% Usage: OneSubjectOneDayOVD(szBaseDir, stTestSubject, stDesiredDay, AllParts)
+% analyse data from IHAB
+% shows results of Own Voice Detection (OVD) and Futher Voice
+% Detection (FVD) by Nils Schreiber (Master 2019)
+% Usage: OneSubjectOneDayOVD(obj, varargin)
 %
 % Parameters
 % ----------
@@ -48,7 +47,7 @@ function [] = OneSubjectOneDayOVD(obj, varargin)
 %                        frequency resolution (=true)
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
-% contains main.m and plotAllDayFingerprints.m
+% based on:  main.m and plotAllDayFingerprints.m,
 % mainly computeDayFingerprintData.m by Nils Schreiber
 % Version History:
 % Ver. 0.01 initial create 10-Sep-2019  JP

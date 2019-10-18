@@ -1,14 +1,11 @@
-% test script to evaluate the Own Voice Detection (OVD) and Futher Voice 
-% Detection (FVD) on real IHAB data
-% OVD and FVD by Nils Schreiber (Master 2019)
+% test script to plot a fingerprint for a specific time frame
 %
 % Author: J. Pohlhausen (c) IHA @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create 10-Sep-2019 	JP
 
-
-% clear; 
-% close all;
+clear; 
+close all;
 
 % path to data folder (needs to be customized)
 szBaseDir = 'I:\IHAB_2_EMA2018\IHAB_Rohdaten_EMA2018';
@@ -22,7 +19,6 @@ subjectDirectories = subjectDirectories(isValidLength);
 
 % choose a subject randomly  (adjust for a specific subject)
 nSubject = round(size(subjectDirectories,1)*rand(1));
-nSubject = 7;
 
 % get one subject directoy
 szCurrentFolder = subjectDirectories(nSubject).name;
