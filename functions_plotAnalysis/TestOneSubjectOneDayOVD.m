@@ -7,8 +7,8 @@
 % Ver. 0.01 initial create 10-Sep-2019 	JP
 
 
-clear; 
-close all;
+% clear; 
+% close all;
 
 % path to data folder (needs to be customized)
 szBaseDir = 'I:\IHAB_2_EMA2018\IHAB_Rohdaten_EMA2018';
@@ -16,13 +16,21 @@ szBaseDir = 'I:\IHAB_2_EMA2018\IHAB_Rohdaten_EMA2018';
 % get all subject directories
 subjectDirectories = dir(szBaseDir);
 
+% sort for correct subjects
+isValidLength = arrayfun(@(x)(length(x.name) == 18), subjectDirectories);
+subjectDirectories = subjectDirectories(isValidLength);
+
+% choose a subject randomly  (adjust for a specific subject)
+nSubject = round(size(subjectDirectories,1)*rand(1));
+nSubject = 7;
+
 % get one subject directoy
-szCurrentFolder = subjectDirectories(19).name;
+szCurrentFolder = subjectDirectories(nSubject).name;
 
 % get object
 [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
 
-OneSubjectOneDayOVD(obj,'startDay',1,'EndDay',2);
+OneSubjectOneDayOVD(obj,'startDay',1,'EndDay',1);
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> Jule Pohlhausen

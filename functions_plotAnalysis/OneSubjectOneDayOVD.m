@@ -1,5 +1,7 @@
 function [] = OneSubjectOneDayOVD(obj, varargin)
-% function to evaluate the Own Voice Detection (OVD) and Futher Voice
+% function to plot a fingerprint for a specific time frame
+% analyse data 
+% Own Voice Detection (OVD) and Futher Voice
 % Detection (FVD) on real IHAB data
 % OVD and FVD by Nils Schreiber (Master 2019)
 % Usage: OneSubjectOneDayOVD(szBaseDir, stTestSubject, stDesiredDay, AllParts)
@@ -41,6 +43,10 @@ function [] = OneSubjectOneDayOVD(obj, varargin)
 %  'SamplesPerPixel'    number that speciefies the data point resolution in
 %                       samples per pixel; by default it is 5 samples/pixel
 %
+% 'HigherFreqResolution' logical whether to plot with a low frequency 
+%                        resolution (=false) or with the highest possible
+%                        frequency resolution (=true)
+%
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % contains main.m and plotAllDayFingerprints.m
 % mainly computeDayFingerprintData.m by Nils Schreiber
@@ -67,11 +73,13 @@ p.addParameter('StartDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x))
 p.addParameter('EndDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x));
 p.addParameter('PlotWidth', iDefaultPlotWidth, @(x) isnumeric(x));
 p.addParameter('SamplesPerPixel', iDefaultSamplesPerPixel, @(x) isnumeric(x));
+p.addParameter('HigherFreqResolution', false, @(x) islogical(x));
 p.parse(obj,varargin{:});
 
 % Re-assign values
 iPlotWidth = p.Results.PlotWidth;
 iSamplesPerPixel = p.Results.SamplesPerPixel;
+iHigherFreqResolution = p.Results.HigherFreqResolution;
 
 % call function to check input date format and plausibility
 stInfo = checkInputFormat(obj, p.Results.StartTime, p.Results.EndTime, ...
@@ -107,22 +115,23 @@ fs_cohdata = 1/0.125;
 alpha = exp(-1./(CohTimeSmoothing_s*fs_cohdata));
 MeanCoheTimeSmoothed = filter([1-alpha], [1 -alpha], MeanCohe);
 
+if ~iHigherFreqResolution
+    % limit to 125 ... 8000 Hz for optical reasons
+    stBandDef.StartFreq = 125;
+    stBandDef.EndFreq = 8000;
+    if stInfoFile.fs/2 <= stBandDef.EndFreq
+        stBandDef.EndFreq = 4000;
+    end
+    stBandDef.Mode = 'onethird';
+    stBandDef.fs = stInfoFile.fs;
+    [stBandDef] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
+    stBandDef.skipFrequencyNormalization = 1;
+    [stBandDefCohe] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
 
-% limit to 125 ... 8000 Hz for optical reasons
-stBandDef.StartFreq = 125;
-stBandDef.EndFreq = 8000;
-if stInfoFile.fs/2 <= stBandDef.EndFreq
-    stBandDef.EndFreq = 4000;
+    PxxShort = Pxx*stBandDefCohe.ReGroupMatrix;
+    CoheShort = Cohe*stBandDefCohe.ReGroupMatrix;
+    clear Cohe MeanCohe;
 end
-stBandDef.Mode = 'onethird';
-stBandDef.fs = stInfoFile.fs;
-[stBandDef] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
-stBandDef.skipFrequencyNormalization = 1;
-[stBandDefCohe] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
-
-PxxShort = Pxx*stBandDefCohe.ReGroupMatrix;
-CoheShort = Cohe*stBandDefCohe.ReGroupMatrix;
-clear Cohe;
 
 
 % desired feature RMS
@@ -149,7 +158,7 @@ stDataFVD.vFVS = [];
 
 [stDataFVD] = FVD3(stDataOVD.vOVS,stDataOVD.snrPrio,stDataOVD.movAvgSNR);
 
-clear Cxy Pxx Pyy;
+% clear Cxy Pxx Pyy;
 
 
 
@@ -172,24 +181,36 @@ set(mTextTitle,'Units','normalized','Position', [0.2 0.93 0.6 0.05], 'String', s
 %% Coherence
 axCoher = axes('Position',[GUI_xStart 0.6 GUI_xAxesWidth 0.18]);
 
-freqVecShort = 1:size(PxxShort,2);
-FinalRealCohe = real(CoheShort(:,:))';
+if ~iHigherFreqResolution
+    nFreqBins = size(PxxShort,2);
+    freqVec = 1:nFreqBins;
+    
+    RealCohe = real(CoheShort(:,:))';
+else
+    freqVec = 0 : stParam.fs/stParam.nFFT : stParam.fs/2;
+    
+    RealCohe = real(Cohe(:,:))';
+end
 
 % find time gaps and fill them with NaNs
-[FinalTimeVecPSD, FinalRealCohe] = FillTimeGaps(TimeVecPSD, FinalRealCohe);
+[timeVec, FinalRealCohe] = FillTimeGaps(TimeVecPSD, RealCohe);
 
-TimeVecShort = datenum(FinalTimeVecPSD);
+timeVec = datenum(timeVec);
 
-imagesc(TimeVecShort,freqVecShort,FinalRealCohe);
+imagesc(timeVec,freqVec,FinalRealCohe);
 axis xy;
 colorbar;
 axCoher.Colormap(1,:) = [1 1 1]; % set darkest blue to white for time gaps
 title('');
-reText=text(TimeVecShort(5),freqVecShort(end-1),'Re\{Coherence\}','Color',[1 1 1]);
+reText=text(timeVec(5),freqVec(end-1),'Re\{Coherence\}','Color',[1 1 1]);
 reText.FontSize = 12;
-yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
+if ~iHigherFreqResolution
+    set(axCoher,'YTick',1:3:size(PxxShort,2));
+    yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
+else
+    yaxisLables = axCoher.YTickLabel;
+end
 yaxisLables = strrep(yaxisLables,'000', 'k');
-set(axCoher,'YTick',1:3:size(PxxShort,2));
 set(axCoher,'YTickLabel',yaxisLables);
 set(axCoher ,'ylabel', ylabel('frequency in Hz'))
 set(axCoher,'XTick',[]);
@@ -210,7 +231,40 @@ datetickzoom(axRMS,'x','HH:MM:SS')
 xlim([datenum(TimeVecRMS(1)) datenum(TimeVecRMS(end))]);
 
 
+%% Pxx
+axPxx = axes('Position',[GUI_xStart 0.2 GUI_xAxesWidth 0.18]);
+
+if ~iHigherFreqResolution
+    PxxLog = 10*log10(PxxShort)';
+else
+    PxxLog = 10*log10(Pxx)';
+end
+
+% find time gaps and fill them with NaNs
+[~, PxxLog] = FillTimeGaps(TimeVecPSD, PxxLog);
+
+imagesc(timeVec,freqVec,PxxLog);
+axis xy;
+colorbar;
+axPxx.Colormap(1,:) = [1 1 1]; % set darkest blue to white for time gaps
+title('');
+psdText=text(timeVec(5),freqVec(end-1),'PSD (left)','Color',[1 1 1]);
+psdText.FontSize = 12;
+if ~iHigherFreqResolution
+    set(axPxx,'YTick',1:3:size(PxxShort,2));
+    yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
+else
+    yaxisLables = axPxx.YTickLabel;
+end
+yaxisLables = strrep(yaxisLables,'000', 'k');
+set(axPxx,'YTickLabel',yaxisLables);
+set(axPxx ,'ylabel', ylabel('frequency in Hz'))
+set(axPxx,'CLim',[-110 -55]);
+
+
 %% Results Voice Detection
+TimeVecPSD = datenum(TimeVecPSD);
+
 vOVS = double(stDataOVD.vOVS);
 vOVS(vOVS == 0) = NaN;
 vFVS = double(stDataFVD.vFVS);
@@ -219,44 +273,19 @@ vFVS(vFVS == 0) = NaN;
 
 axOVD = axes('Position',[GUI_xStart 0.8 PosVecCoher(3) 0.13]);
 hold on;
-hOVD = plot(datenum(TimeVecPSD),MeanCoheTimeSmoothed);
+hOVD = plot(TimeVecPSD,MeanCoheTimeSmoothed);
 hOVD.Color = [0 0 0];
 
 % view estimated own voice sequences (red)
-plot(datenum(TimeVecPSD),1.25*vOVS,'rx');
+plot(TimeVecPSD,1.25*vOVS,'rx');
 % view estimated futher voice sequences (blue)
-plot(datenum(TimeVecPSD),1.25*vFVS,'bx');
+plot(TimeVecPSD,1.25*vFVS,'bx');
 set(axOVD,'XTick',[]);
 axOVD.YLabel = ylabel('avg. Re\{Coherence\}');
-xlim([datenum(TimeVecPSD(1)) datenum(TimeVecPSD(end))]);
+xlim([TimeVecPSD(1) TimeVecPSD(end)]);
 ylim ([-0.5 1.5]);
 axOVD.YTick = [-0.5 0 0.5 1];
 axOVD.YTickLabels = {'-0.5','0', '0.5', '1'};
-
-
-%% Pxx
-axPxx = axes('Position',[GUI_xStart 0.2 GUI_xAxesWidth 0.18]);
-
-freqVecShort = 1:size(PxxShort,2);
-FinalPxx = 10*log10(PxxShort)';
-
-% find time gaps and fill them with NaNs
-[~, FinalPxx] = FillTimeGaps(TimeVecPSD, FinalPxx);
-
-TimeVecShort = datenum(FinalTimeVecPSD);
-
-imagesc(TimeVecShort,freqVecShort,FinalPxx);
-axis xy;
-colorbar;
-axPxx.Colormap(1,:) = [1 1 1]; % set darkest blue to white for time gaps
-title('');
-psdText=text(TimeVecShort(5),freqVecShort(end-1),'PSD (left)','Color',[1 1 1]);
-psdText.FontSize = 12;
-set(axPxx,'YTick',1:3:size(PxxShort,2));
-yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
-set(axPxx,'YTickLabel',yaxisLables);
-set(axPxx ,'ylabel', ylabel('frequency in Hz'))
-set(axPxx,'CLim',[-110 -55]);
 
 
 set(axOVD,'XTickLabel','');
@@ -293,7 +322,7 @@ annotationRMS.Position = [iStartAnno 0.112 0.0251 0.0411];
 %% get and plot subjective data
 [hasSubjectiveData, axQ] = plotSubjectiveData(obj, stInfo, bPrint, GUI_xStart, PosVecCoher);
  
-xlim([datenum(TimeVecPSD(1)) datenum(TimeVecPSD(end))]);
+xlim([TimeVecPSD(1) TimeVecPSD(end)]);
 
 
 set(gcf,'PaperPositionMode', 'auto');
