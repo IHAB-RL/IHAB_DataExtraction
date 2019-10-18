@@ -80,7 +80,7 @@ if isFreqLim
     [stBandDef] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
     stBandDef.skipFrequencyNormalization = 1;
     [stBandDefCohe] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
-
+    
     PxxShort = Pxx*stBandDefCohe.ReGroupMatrix;
     CoheShort = Cohe*stBandDefCohe.ReGroupMatrix;
     clear Cohe MeanCohe;
@@ -159,7 +159,7 @@ timeVec = datenum(TimeVecPSD);
 if isFreqLim
     nFreqBins = size(PxxShort,2);
     freqVec = 1:nFreqBins;
-
+    
     RealCohe = real(CoheShort(:,:))';
 else
     freqVec = 0 : stParam.fs/stParam.nFFT : stParam.fs/2;
@@ -363,14 +363,9 @@ hFig2 = figure();
 hFig2.Position = [nLeftFig, nBottomFig, nWidthFig, nHeightFig];
 hFig2.Name = obj.FigTitle;
 
-% standard deviation RMS
-obj.stdRMSOVS = [obj.stdRMSOVS; std(DataRMS(idxTrOVS_rms,1))];
-obj.stdRMSFVS = [obj.stdRMSFVS; std(DataRMS(idxTrFVS_rms,1))];
-obj.stdRMSNone = [obj.stdRMSNone; std(DataRMS(idxTrNone_rms,1))];
 
-
-% modulation spectrum
-EnvelopeFromRMS = sqrt(DataRMS); % Kates 2008
+% modulation spectrum - only abs()
+EnvelopeFromRMS = sqrt(DataRMS); % Kates (2008) EQ A.2
 nFFT = 32*stParam.nFFT;
 ModSpecOVS = fft(EnvelopeFromRMS(idxTrOVS_rms,1), nFFT);
 ModSpecOVS = ModSpecOVS(1:nFFT/2+1);
@@ -390,6 +385,21 @@ xlabel('Frequency in Hz');
 ylabel('magnitude');
 legend('OVS','FVS','none');
 xlim([0 100]);
+
+
+% standard deviation RMS
+obj.stdRMSOVS = [obj.stdRMSOVS; std(DataRMS(idxTrOVS_rms,1))];
+obj.stdRMSFVS = [obj.stdRMSFVS; std(DataRMS(idxTrFVS_rms,1))];
+obj.stdRMSNone = [obj.stdRMSNone; std(DataRMS(idxTrNone_rms,1))];
+
+
+% standard deviation signal envelope 
+obj.stdRMSOVS2 = [obj.stdRMSOVS2; ...
+    calcSTDEnv(DataRMS(idxTrOVS_rms,1), EnvelopeFromRMS(idxTrOVS_rms,1), alpha)];
+obj.stdRMSFVS2 = [obj.stdRMSFVS2; ...
+    calcSTDEnv(DataRMS(idxTrFVS_rms,1), EnvelopeFromRMS(idxTrFVS_rms,1), alpha)];
+obj.stdRMSNone2 = [obj.stdRMSNone2; ...
+    calcSTDEnv(DataRMS(idxTrNone_rms,1), EnvelopeFromRMS(idxTrNone_rms,1), alpha)];
 
 
 % magnitude spectrum
@@ -458,7 +468,7 @@ if bPrint
     if ~exist(sDataFolder_Output, 'dir')
         mkdir(sDataFolder_Output);
     end
-            
+    
     set(0,'DefaultFigureColor','remove');
     
     exportName = [szDir filesep 'Overviews' filesep ...
@@ -484,6 +494,19 @@ function [hl] = PlotMeanStd(data, freqVec, color)
 
     set(hp, 'FaceColor', color, 'edgecolor', 'none', 'FaceAlpha',.2);
     set(hl, 'Color', color, 'marker', 'x');
+end
+
+
+function  [vSTDEnv] = calcSTDEnv(vRMS, vEnv, alpha)
+    % --- Kates (2008) EQ A.3-4 ---
+    % smooth rms data
+    vRMS_smooth = filter([1-alpha],[1 -alpha], vRMS);
+    
+    % smooth envelope data
+    vEnv_smooth = filter([1-alpha],[1 -alpha], vEnv);
+    
+    % calculate standard deviation of the signal envelope
+    vSTDEnv = sqrt(vRMS_smooth - vEnv_smooth.^2);
 end
 
 
@@ -513,9 +536,9 @@ function [obj] = getGUI(obj)
     obj.axPSDNone.Position = [0,0,1/2*obj.nWidthFig, 1/4*obj.nHeightFig];
 
 
-%     obj.axTable = uitable(obj.fig);
-%     obj.axTable.Units = 'Pixels';
-%     obj.axTable.Position = [1/2*obj.nWidthFig,3/4*obj.nHeightFig,1/2*obj.nWidthFig, 1/4*obj.nHeightFig];
+    %     obj.axTable = uitable(obj.fig);
+    %     obj.axTable.Units = 'Pixels';
+    %     obj.axTable.Position = [1/2*obj.nWidthFig,3/4*obj.nHeightFig,1/2*obj.nWidthFig, 1/4*obj.nHeightFig];
 
     obj.axCoheOVS = uiaxes(obj.fig);
     obj.axCoheOVS.Units = 'Pixels';

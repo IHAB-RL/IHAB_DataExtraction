@@ -6,7 +6,7 @@
 
 clear;
 clc;
-close all;
+% close all;
 
 % define figure width full screen in pixels
 stRoots = get(0);
@@ -31,6 +31,8 @@ nConfig = 6;
 
 % loop over all subjects
 for subj = 1:nSubject
+    
+%     close all;
 
     % choose one subject directoy
     obj.szCurrentFolder = subjectDirectories(subj).name;
@@ -39,6 +41,9 @@ for subj = 1:nSubject
     obj.stdRMSOVS = [];
     obj.stdRMSFVS = [];
     obj.stdRMSNone = [];
+    obj.stdRMSOVS2 = [];
+    obj.stdRMSFVS2 = [];
+    obj.stdRMSNone2 = [];
     
     % loop over all noise configurations
     for config = 1:nConfig
@@ -51,11 +56,9 @@ for subj = 1:nSubject
     end
 
     % display table with std of RMS
-    if ~isempty(obj.stdRMSOVS)
-        szConfig = (1:nConfig)';
-        varNames = {'config', 'OVS', 'FVS', 'none'};
-        tabSTDRMS = table(szConfig, obj.stdRMSOVS, obj.stdRMSFVS, obj.stdRMSNone,'VariableNames',varNames)
-    end
+    szConfig = (1:size(obj.stdRMSOVS,1))';
+    varNames = {'config', 'OVS', 'FVS', 'none'};
+    tabSTDRMS = table(szConfig, obj.stdRMSOVS, obj.stdRMSFVS, obj.stdRMSNone,'VariableNames',varNames)
 end
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
