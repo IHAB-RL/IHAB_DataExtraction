@@ -5,7 +5,7 @@ classdef IHABdata < handle
         
         stSubject;
         sFolderMain = pwd;
-        sFolder_Latex = [pwd, filesep, 'functions', filesep, 'latex'];
+        sFolder_Latex = [pwd, filesep, 'functions_reporting', filesep, 'latex'];
         sFileName_Preferences = 'preferences.txt';
         sLogFile = 'log2.txt';
         stPreferences;
@@ -1347,6 +1347,7 @@ classdef IHABdata < handle
             sCommand_quest_features = [obj.prefix, 'adb ls sdcard/ihab/features'];
             [~, cmdout] = system(sCommand_quest_features);
             cLines_features = splitlines(cmdout);
+            cLines_features(1:2) = [];
             nLines_features = length(cLines_features);
             
             obj.cListQuestionnaire{end} = 'Copying feature files: 0%';
@@ -1372,6 +1373,7 @@ classdef IHABdata < handle
                     
                     obj.cListQuestionnaire{end} = sprintf('Copying feature files: %.0i%%, estimated time: %s', ceil(iCount/nLines_features*100), secondsToTime(nApproxTime));
                     obj.hListBox.Value = obj.cListQuestionnaire;
+                    drawnow;
                 end
                 
             end
@@ -1743,12 +1745,14 @@ classdef IHABdata < handle
             
             if obj.stPreferences.MinPartLength == -1
                 obj.hButton_MinPartLength.Text = 'n/a';
+                obj.bIncludeObjectiveData = false;
                 obj.cListQuestionnaire{end+1} =...
                     sprintf('     Objective data excluded from analysis');
             else
                 obj.hButton_MinPartLength.Text = num2str(obj.stPreferences.MinPartLength);
                 obj.cListQuestionnaire{end+1} =...
                     sprintf('     Minimum part length changed to: %d', obj.stPreferences.MinPartLength);
+                obj.bIncludeObjectiveData = true;
             end
             
             obj.writePreferencesToFile;

@@ -1,4 +1,8 @@
 function computeDayFingerprintData(obj, dateDay, desiredDayPart, isDebug, varargin)
+
+% UK191019: Changed call for getObjectiveDataOneDay to account for
+    %           previous changes
+
 % INPUT:
 %   szDir,szSubject,dateDay,desiredDayPart,isDebug,varargin
 isDebugMode = isDebug;
@@ -50,7 +54,7 @@ if isDebugMode
     load DataMat
 else
     szFeature = 'RMS';
-    [DataRMS, timeVecRMS, ~] = getObjectiveDataOneDay(obj, desiredDay, szFeature, desiredPart);
+    [DataRMS, timeVecRMS, ~] = getObjectiveDataOneDay(fileparts(obj.stSubject.Folder), obj.stSubject.Code, desiredDay, szFeature, desiredPart);
     
     if ~isempty(timeVecRMS)
         % No Inclusion of Parts shorter than e.g. 10 Minutes % UK
@@ -62,7 +66,7 @@ else
     end
     
     szFeature = 'PSD';
-    [DataPSD, timeVecPSD, ~] = getObjectiveDataOneDay(obj, desiredDay, szFeature, desiredPart);
+    [DataPSD, timeVecPSD, ~] = getObjectiveDataOneDay(fileparts(obj.stSubject.Folder), obj.stSubject.Code, desiredDay, szFeature, desiredPart);
     %    save DataMat DataRMS timeVecRMS DataPSD timeVecPSD NrOfParts
 end
 

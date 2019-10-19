@@ -34,7 +34,7 @@ if ~isempty(stSubject)
         
         % First: Check for broken data
         obj.hProgress.startTimer();
-        checkDataIntegrity(obj, obj.stSubject.Name);
+        checkDataIntegrity(obj);
         obj.hProgress.stopTimer();
         
         % These parameters are for the validation check

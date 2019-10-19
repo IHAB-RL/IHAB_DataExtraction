@@ -1,4 +1,5 @@
-function [Data,TimeVec,NrOfParts,stInfo]=getObjectiveDataOneDay(szBaseDir,szTestSubjectDir,desiredDay,szFeature,PartNumberToLoad,AllParts)
+function [Data, TimeVec, NrOfParts, stInfo] = getObjectiveDataOneDay(...
+    szBaseDir,szTestSubjectDir,desiredDay,szFeature,PartNumberToLoad,AllParts)
 % function to load objective data of one day for one test subject
 % Usage [Data,TimeVec]=getObjectiveDataOneDay(szTestSubject,desiredDay, szFeature)
 %

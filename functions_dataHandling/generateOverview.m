@@ -91,7 +91,7 @@ end
 
 dateVecDayOnlyFeatPSD = dateVecAllFeatPSD-timeofday(dateVecAllFeatPSD);
 AllDates = getdatesonesubject(obj);
-AllDates = AllDates.(obj.stSubject.Name)(:);
+%AllDates = AllDates.(obj.stSubject.Name)(:);
 
 if ~printMode
     % Feature Data RMS
@@ -115,8 +115,8 @@ end
 fid = fopen(txtFile,'wt');
 
 % Plot all data
-hFig_Overview = figure();
-hFig_Overview.Visible = 'Off';
+hFig_Overview = figure('Visible', 'Off');
+% hFig_Overview.Visible = 'Off';
 set(hFig_Overview,'renderer','Painters')
 box off
 yDistance = @(x) x;

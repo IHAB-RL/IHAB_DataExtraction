@@ -16,6 +16,8 @@ function generateProfile(obj)
     % sk180522: delete temporary PDFs
     % sk180529: parameter to ignore objective data, minor fixes
     %           sort file according to running number
+    % UK191019: Changed call for getObjectiveDataOneDay to account for
+    %           previous changes
     
     
     % prevent figures from appearing
@@ -35,17 +37,19 @@ function generateProfile(obj)
            
             szFeature = 'RMS';
             tableDates = getdatesonesubject(obj);
-            numDates = length(tableDates.(obj.stSubject.Name));
+%             numDates = length(tableDates.(obj.stSubject.Name));
+            numDates = length(tableDates);
             
             
             hProgress = BlindProgress(obj);
             
             for nDate = 1:numDates
-                dateDay = tableDates.(obj.stSubject.Name)(nDate);
+%                 dateDay = tableDates.(obj.stSubject.Name)(nDate);
+                dateDay = tableDates(nDate);
                 
                 % Get all available parts for each day and each subject
                 % To do this, set desiredPart variable to zero (last variable)
-                [~, ~, iNrOfParts] = getObjectiveDataOneDay(obj, dateDay, szFeature,0);
+                [~, ~, iNrOfParts] = getObjectiveDataOneDay(fileparts(obj.stSubject.Folder), obj.stSubject.Code, dateDay, szFeature,0);
                 
                 % Loop over all parts of one day for one subject
                 for jj = 1:iNrOfParts

@@ -210,7 +210,7 @@ end
 %% objective Data
 %
 % figure('Units','normalized','PaperPosition',[0.15 0.05 0.5 0.85]);
-hFig_Fingerprint = figure('Units','normalized','PaperPosition',[0 0 1 1],'Position',[0 0 1 1]);
+hFig_Fingerprint = figure('Units','normalized','PaperPosition',[0 0 1 1],'Position',[0 0 1 1], 'Visible', 'Off');
 
 mTextTitle = uicontrol(hFig_Fingerprint, 'Style', 'Text');
 set(mTextTitle, 'Units', 'normalized', 'Position', [0.2 0.91 0.6 0.05], ...

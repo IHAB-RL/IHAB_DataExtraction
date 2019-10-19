@@ -81,8 +81,8 @@ situations(1 : 5) = sum((QuestionnairesTable.Situation == (1 : 5)));
 
 % plot
 figure_idx = 1;
-hFig_Pie = figure();
-hFig_Pie.Visible = 'Off';
+hFig_Pie = figure('Visible', 'Off');
+% hFig_Pie.Visible = 'Off';
 
 pie_handle = pie(situations);
 pie_colors = pie_colors((situations>0)', :);
@@ -175,8 +175,8 @@ for parameters_idx = 1 : 3
     
     % Plot
     figure_idx = figure_idx+1;
-    hFig_Situations = figure();
-    hFig_Situations.Visible = 'Off';
+    hFig_Situations = figure('Visible', 'Off');
+%     hFig_Situations.Visible = 'Off';
     hFig_Situations.Color = 'w';
     
     bar_handle = bar(parameters_plot, 1);
@@ -289,8 +289,8 @@ for parameters_idx = 1 : 3
     
     % Plot
     figure_idx = figure_idx+1;
-    hFig_Activity = figure();
-    hFig_Activity.Visible = 'Off';
+    hFig_Activity = figure('Visible', 'Off');
+%     hFig_Activity.Visible = 'Off';
     hFig_Activity.Color = 'w';
     
     plot(mean_plot, 1:length(mean_plot), 'linewidth', 2)
@@ -353,8 +353,8 @@ for parameters_idx = 1 : 3
     % Bar Graph
    
     figure_idx = figure_idx+1;
-    hFig_Activity2 = figure();
-    hFig_Activity2.Visible = 'Off';
+    hFig_Activity2 = figure('Visible', 'Off');
+%     hFig_Activity2.Visible = 'Off';
 
     bar_handle = barh(parameters_plot, 1);
     for idx = 1:size(parameters_plot, 2)
@@ -463,8 +463,8 @@ for parameters_idx = 1 : 3
     % Plot
     figure_idx = figure_idx+1;
     
-    hFig_Source = figure();
-    hFig_Source.Visible = 'Off';
+    hFig_Source = figure('Visible', 'Off');
+%     hFig_Source.Visible = 'Off';
     hFig_Source.Color = 'w';
    
     plot(mean_plot, 1:length(mean_plot), 'linewidth', 2)
@@ -526,8 +526,8 @@ for parameters_idx = 1 : 3
     % Regular Plot
     
     figure_idx = figure_idx+1;
-    hFig_Source2 = figure();
-    hFig_Source2.Visible = 'Off';
+    hFig_Source2 = figure('Visible', 'Off');
+%     hFig_Source2.Visible = 'Off';
     hFig_Source2.Color = 'w';
     
     bar_handle = barh(parameters_plot, 1);
