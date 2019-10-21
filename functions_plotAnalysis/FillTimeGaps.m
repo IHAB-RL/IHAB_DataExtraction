@@ -1,4 +1,4 @@
-function [TimeVecOut, DataVecOut]=FillTimeGaps(TimeVec, DataVec)
+function [TimeVecOut, DataVecOut, hasGap]=FillTimeGaps(TimeVec, DataVec)
 % function to find time gaps and fill them with NaNs in the data vector
 % -> cave: the time vector is filled as well
 % Usage [TimeVecOut, DataVecOut]=FillTimeGaps(TimeVec, DataVec)
@@ -17,6 +17,8 @@ function [TimeVecOut, DataVecOut]=FillTimeGaps(TimeVec, DataVec)
 %   TimeVecOut - datetime array with filled time gaps 
 %
 %   DataVecOut - data vector with filled time gaps (NaNs)
+%   
+%   hasGap     - logical, if there is a time gap
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Version History:
@@ -38,8 +40,9 @@ UsualValue = Values(idxSort(1));
 % detect gaps that are significant greater, i.e. 5 times, than the usual
 % time gap
 idxGaps = find(vGaps > 10*UsualValue);
+hasGap = ~isempty(idxGaps);
 
-if ~isempty(idxGaps)
+if hasGap
     
     % number of detected gaps
     NrOfGaps = numel(idxGaps);
