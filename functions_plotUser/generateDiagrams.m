@@ -354,7 +354,6 @@ for parameters_idx = 1 : 3
    
     figure_idx = figure_idx+1;
     hFig_Activity2 = figure('Visible', 'Off');
-%     hFig_Activity2.Visible = 'Off';
 
     bar_handle = barh(parameters_plot, 1);
     for idx = 1:size(parameters_plot, 2)

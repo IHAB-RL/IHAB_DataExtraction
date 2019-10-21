@@ -53,6 +53,9 @@ if hasSubjectiveData
         zeros(tableHeight,1),...
         zeros(tableHeight,1));
     % generate date type variable from data
+    
+    if (tableHeight > 1)
+    
     for kk = 1:tableHeight
         szDate = TableOneSubject.Date{kk};
         szTime = TableOneSubject.Start{kk};
@@ -67,6 +70,22 @@ if hasSubjectiveData
             str2double(szMonth), str2double(szDay),str2double(szHour), ...
             str2double(szMin),str2double(szSec));
     end
+    
+    else
+        szDate = TableOneSubject.Date;
+        szTime = TableOneSubject.Start;
+        szYear = szDate(1:4);
+        szMonth = szDate(6:7);
+        szDay = szDate(9:10);
+        szHour = szTime(1:2);
+        szMin = szTime(4:5);
+        szSec = szTime(7:8);
+        
+        dateVecOneSubjectQ =  datetime(str2double(szYear), ...
+            str2double(szMonth), str2double(szDay),str2double(szHour), ...
+            str2double(szMin),str2double(szSec));
+    end
+    
     % unique Dates of one subject
     dateVecDayOnlyQ = dateVecOneSubjectQ - timeofday(dateVecOneSubjectQ);
 
@@ -297,7 +316,7 @@ for kk = 1:length(AllDates)
         % Gather statistical data for report
         obj.stAnalysis.NumberOfQuestionnaires(kk) = length(idx);
         
-        if ~isempty(idx) && length(idx) > 1
+        if ~isempty(idx) && length(idx) >= 1
             %plot(dateVecAll(idx)-UniqueDays(kk),kk,'x');
             hold on;
             for ss = 1:length(idx)
@@ -370,7 +389,7 @@ for kk = 1:length(AllDates)
                     
                     %                     if ~isfield(TableOneSubject, 'ListeningEffort')
                     if ~ismember('ListeningEffort', TableOneSubject.Properties.VariableNames)
-                        hProgress.stopTimer();
+                      
                         obj.cListQuestionnaire{end} = [];
                         obj.cListQuestionnaire{end} = sprintf('    Questionnaire data incomplete.');
                         obj.hListBox.Value = obj.cListQuestionnaire;
