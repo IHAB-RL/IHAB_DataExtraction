@@ -16,7 +16,7 @@ function [obj]=plotPROBANDData(obj, varargin)
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Source: based on
-% Version History:
+% Version histogramory:
 % Ver. 0.01 initial create 14-Oct-2019  JP
 
 
@@ -37,38 +37,89 @@ p.parse(obj,varargin{:});
 iPlotWidth = p.Results.PlotWidth;
 
 
+%% get recorded audio signal
+[WavData, TimeVecWav, Fs] = getAudioSignal(obj);
+
+
 %% lets start with reading objective data
-% desired feature PSD
-szFeature = 'PSD';
+stParam.privacy = true;
+if isfield(obj, 'UseAudio')
+    % set parameters for processing audio data
+    stParam.fs          = Fs/2;
+    stParam.mSignal     = resample(WavData, stParam.fs, Fs);
+    TimeVecWav          = TimeVecWav(1:2:end);
+    
+    stParam.tFrame      = 0.025; % block length in sec 
+    stParam.lFrame      = floor(stParam.tFrame*stParam.fs); % block length in samples
+    stParam.lOverlap    = stParam.lFrame/2; % overlap adjacent blocks
+    stParam.nFFT        = 1024; % number of fast Fourier transform points
+    stParam.vFreqRange  = [400 1000]; % frequency range of interest in Hz
+    stParam.vFreqBins   = round(stParam.vFreqRange./stParam.fs*stParam.nFFT);
+    stParam.tFrame      = 0.125; % Nils
+    stParam.tauCoh      = 0.1; % Nils
+    stParam.fixThresh   = 0.6; % fixed coherence threshold
+    stParam.adapThreshWin  = 0.05*stParam.fs; % window length for the adaptive threshold
+    stParam.winLen      = floor(stParam.nFFT/10); % normalized window length (Nils)
 
-% get all available feature file data
-[DataPSD,TimeVecPSD,stInfoPSD] = getObjectiveDataBilert(obj, szFeature);
+    [stData] = detectOVSRealCoherence(stParam);
+    Pxx = stData.Pxx';
+    Pyy = stData.Pyy';
+    Cxy = stData.Cxy';
+    Cohe = stData.mCoherence';
+    MeanCohe = stData.vCohMeanReal';
+    MeanCoheTimeSmoothed = stData.vCohMeanRealSmooth';
+    DataRMS = stData.mRMS;
+    clear stData;
+    
+    stInfoPSD.nFrames = 480;
+    stInfoRMS.nFrames = 4799;
+    TimeVecPSD = linspace(TimeVecWav(1), TimeVecWav(end), size(Pxx,1));
+    TimeVecRMS = linspace(TimeVecWav(1), TimeVecWav(end), size(DataRMS,1));
+    
+else % with feature files
+    
+    % desired feature PSD
+    szFeature = 'PSD';
 
-if isempty(DataPSD)
-    return;
+    % get all available feature file data
+    [DataPSD,TimeVecPSD,stInfoPSD] = getObjectiveDataBilert(obj, szFeature);
+
+    if isempty(DataPSD)
+        return;
+    end
+
+    version = 1; % JP modified get_psd
+    [Cxy,Pxx,Pyy] = get_psd(DataPSD, version);
+    clear DataPSD;
+    Cohe = Cxy./(sqrt(Pxx.*Pyy) + eps);
+
+
+    % set frequency specific parameters
+    stParam.fs = stInfoPSD.fs;
+    stParam.nFFT = 1024;
+    stParam.vFreqRange  = [400 1000]; % frequency range in Hz
+    stParam.vFreqIdx = round(stParam.nFFT*stParam.vFreqRange./stParam.fs);
+
+    % averaged Coherence
+    MeanCohe = mean(real(Cohe(:,stParam.vFreqIdx(1):stParam.vFreqIdx(2))),2);
+
+    CohTimeSmoothing_s = 0.1;
+    fs_cohdata = 1/0.125;
+
+    alpha = exp(-1./(CohTimeSmoothing_s*fs_cohdata));
+    MeanCoheTimeSmoothed = filter([1-alpha],[1 -alpha],MeanCohe);
+
+    
+    % desired feature RMS
+    szFeature = 'RMS';
+
+    % get all available feature file data
+    [DataRMS,TimeVecRMS,stInfoRMS] = getObjectiveDataBilert(obj, szFeature);
+
+    if isempty(DataRMS)
+        return;
+    end
 end
-
-version = 1; % JP modified get_psd
-[Cxy,Pxx,Pyy] = get_psd(DataPSD, version);
-clear DataPSD;
-Cohe = Cxy./(sqrt(Pxx.*Pyy) + eps);
-
-
-% set frequency specific parameters
-stParam.fs = stInfoPSD.fs;
-stParam.nFFT = 1024;
-stParam.vFreqRange  = [400 1000]; % frequency range in Hz
-stParam.vFreqIdx = round(stParam.nFFT*stParam.vFreqRange./stParam.fs);
-
-% averaged Coherence
-MeanCohe = mean(real(Cohe(:,stParam.vFreqIdx(1):stParam.vFreqIdx(2))),2);
-
-CohTimeSmoothing_s = 0.1;
-fs_cohdata = 1/0.125;
-
-alpha = exp(-1./(CohTimeSmoothing_s*fs_cohdata));
-MeanCoheTimeSmoothed = filter([1-alpha],[1 -alpha],MeanCohe);
-
 
 isFreqLim = 0;
 if isFreqLim
@@ -76,7 +127,7 @@ if isFreqLim
     stBandDef.StartFreq = 125;
     stBandDef.EndFreq = 8000;
     stBandDef.Mode = 'onethird';
-    stBandDef.fs = stInfoPSD.fs;
+    stBandDef.fs = stParam.fs;
     [stBandDef] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
     stBandDef.skipFrequencyNormalization = 1;
     [stBandDefCohe] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
@@ -86,20 +137,8 @@ if isFreqLim
     clear Cohe MeanCohe;
 end
 
-% desired feature RMS
-szFeature = 'RMS';
-
-% get all available feature file data
-[DataRMS,TimeVecRMS,stInfoRMS] = getObjectiveDataBilert(obj, szFeature);
-
-if isempty(DataRMS)
-    return;
-end
-
 % logical to save figure
 bPrint = 1;
-
-stParam.privacy = true;
 
 
 %% VOICE DETECTION
@@ -116,12 +155,9 @@ stDataFVD.vFVS = [];
 clear FinalDataCxy FinalDataPxx FinalDataPyy;
 
 
-%% get recorded audio signal
-[WavData, TimeVecWav, Fs] = getAudioSignal(obj);
-
-% and ground truth labels for voice activity
+%% get ground truth labels for voice activity
 obj.fsVD = ceil(stInfoPSD.nFrames / 60);
-obj.NrOfBlocks = size(stDataFVD.vFVS(:)',2);
+obj.NrOfBlocks = size(stDataFVD.vFVS, 2);
 [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
 
 % look for hits and false alarms
@@ -218,17 +254,6 @@ axOVD = axes('Position',[GUI_xStart 0.8 PosVecCoher(3) 0.13]);
 hold on;
 hOVD = plot(datenum(TimeVecPSD),MeanCoheTimeSmoothed);
 hOVD.Color = [0 0 0];
-
-% vOVS = double(stDataOVD.vOVS);
-% vOVS(vOVS == 0) = NaN;
-% vFVS = double(stDataFVD.vFVS);
-% vFVS(vFVS == 0) = NaN;
-% stDataOVD.meanCoh = mean(real(stDataOVD.Coh(6:64,:)),1);
-% % view estimated own voice sequences (red)
-% plot(datenum(TimeVecPSD),1.25*vOVS,'rx');
-% % view estimated futher voice sequences (blue)
-% plot(datenum(TimeVecPSD),1.25*vFVS,'bx');
-
 groundTrOVS(groundTrOVS == 0) = NaN;
 groundTrFVS(groundTrFVS == 0) = NaN;
 plot(vTimeLabels, 1.15*groundTrOVS, 'rx');
@@ -352,58 +377,92 @@ idxTrOVS_rms = vActivOVS == 1;
 idxTrFVS_rms = vActivFVS == 1;
 idxTrNone_rms = ~idxTrOVS_rms & ~idxTrFVS_rms;
 
-obj.FigTitle = [obj.szCurrentFolder ' ' obj.szNoiseConfig];
-% % % % % % [obj] = getGUI(obj);
-vScreenSize = get(0,'screensize');
-nBottomFig = 45;
-nWidthFig = 1300;
-nLeftFig = (vScreenSize(3)-nWidthFig)/2;
-nHeightFig = vScreenSize(4)-130;
-hFig2 = figure();
-hFig2.Position = [nLeftFig, nBottomFig, nWidthFig, nHeightFig];
-hFig2.Name = obj.FigTitle;
 
-
-% modulation spectrum - only abs()
-EnvelopeFromRMS = sqrt(DataRMS); % Kates (2008) EQ A.2
-nFFT = 32*stParam.nFFT;
-ModSpecOVS = fft(EnvelopeFromRMS(idxTrOVS_rms,1), nFFT);
-ModSpecOVS = ModSpecOVS(1:nFFT/2+1);
-ModSpecFVS = fft(EnvelopeFromRMS(idxTrFVS_rms,1), nFFT);
-ModSpecFVS = ModSpecFVS(1:nFFT/2+1);
-ModSpecNone = fft(EnvelopeFromRMS(idxTrNone_rms,1), nFFT);
-ModSpecNone = ModSpecNone(1:nFFT/2+1);
-vFreq = 0 : stParam.fs/nFFT : stParam.fs/2;
-
-subplot(4,2,[1, 2]);
-plot(vFreq, ModSpecOVS, 'r');
-hold on;
-plot(vFreq, ModSpecFVS, 'b');
-plot(vFreq, ModSpecNone, 'g');
-title('envelope modulation spectrum');
-xlabel('Frequency in Hz');
-ylabel('magnitude');
-legend('OVS','FVS','none');
-xlim([0 100]);
-
+% define RMS as envelope
+EnvelopeFromRMS = DataRMS; % Kates (2008) EQ A.2
 
 % standard deviation RMS
 obj.stdRMSOVS = [obj.stdRMSOVS; std(DataRMS(idxTrOVS_rms,1))];
 obj.stdRMSFVS = [obj.stdRMSFVS; std(DataRMS(idxTrFVS_rms,1))];
 obj.stdRMSNone = [obj.stdRMSNone; std(DataRMS(idxTrNone_rms,1))];
 
+% mean squared signal power
+MSPower = DataRMS.^2;
+
+% calculate standard deviation signal envelope 
+STDEnvOVS = calcSTDEnv(MSPower(idxTrOVS_rms,1), EnvelopeFromRMS(idxTrOVS_rms,1), alpha);
+STDEnvFVS = calcSTDEnv(MSPower(idxTrFVS_rms,1), EnvelopeFromRMS(idxTrFVS_rms,1), alpha);
+STDEnvNone = calcSTDEnv(MSPower(idxTrNone_rms,1), EnvelopeFromRMS(idxTrNone_rms,1), alpha);
+
+
+obj.FigTitle = [obj.szCurrentFolder ' ' obj.szNoiseConfig];
+% % % % % % [obj] = getGUI(obj);
+vScreenSize = get(0,'screensize');
+nBottomFig = 45;
+nWidthFig = vScreenSize(3);
+nLeftFig = (vScreenSize(3)-nWidthFig)/2;
+nHeightFig = vScreenSize(4)-130;
+hFig2 = figure();
+hFig2.Position = [nLeftFig, nBottomFig, nWidthFig, nHeightFig];
+hFig2.Name = obj.FigTitle;
+nRowsPlot = 3;
+nColumnsPlot = 5;
+
+
+% % modulation spectrum - only abs()
+% nFFT = 32*stParam.nFFT;
+% ModSpecOVS = fft(EnvelopeFromRMS(idxTrOVS_rms,1), nFFT);
+% ModSpecOVS = ModSpecOVS(1:nFFT/2+1);
+% ModSpecFVS = fft(EnvelopeFromRMS(idxTrFVS_rms,1), nFFT);
+% ModSpecFVS = ModSpecFVS(1:nFFT/2+1);
+% ModSpecNone = fft(EnvelopeFromRMS(idxTrNone_rms,1), nFFT);
+% ModSpecNone = ModSpecNone(1:nFFT/2+1);
+% vFreq = 0 : stParam.fs/nFFT : stParam.fs/2;
+% 
+% subplot(4,2,[1, 2]);
+% plot(vFreq, ModSpecOVS, 'r');
+% hold on;
+% plot(vFreq, ModSpecFVS, 'b');
+% plot(vFreq, ModSpecNone, 'g');
+% title('envelope modulation spectrum');
+% xlabel('Frequency in Hz');
+% ylabel('magnitude');
+% legend('OVS','FVS','none');
+% xlim([0 100]);
+
 
 % standard deviation signal envelope 
-obj.stdRMSOVS2 = [obj.stdRMSOVS2; ...
-    calcSTDEnv(DataRMS(idxTrOVS_rms,1), EnvelopeFromRMS(idxTrOVS_rms,1), alpha)];
-obj.stdRMSFVS2 = [obj.stdRMSFVS2; ...
-    calcSTDEnv(DataRMS(idxTrFVS_rms,1), EnvelopeFromRMS(idxTrFVS_rms,1), alpha)];
-obj.stdRMSNone2 = [obj.stdRMSNone2; ...
-    calcSTDEnv(DataRMS(idxTrNone_rms,1), EnvelopeFromRMS(idxTrNone_rms,1), alpha)];
+subplot(nRowsPlot,nColumnsPlot,1);
+histogram(STDEnvOVS, 'FaceColor', 'r');
+text();
+title('standard deviation signal envelope at OVS');
+xlabel('standard deviation signal envelope');
+ylabel('number of occurence');
+dim = [.17 .6 .3 .3];
+str = ['STD RMS = ' num2str(obj.stdRMSOVS(end),'%.4f')];
+annotation('textbox',dim,'String',str,'FitBoxToText','on');
+
+subplot(nRowsPlot,nColumnsPlot,1+nColumnsPlot);
+histogram(STDEnvFVS, 'FaceColor', 'b');
+title('standard deviation signal envelope at FVS');
+xlabel('standard deviation signal envelope');
+ylabel('number of occurence');
+dim = [.17 .3 .3 .3];
+str = ['STD RMS = ' num2str(obj.stdRMSFVS(end),'%.4f')];
+annotation('textbox',dim,'String',str,'FitBoxToText','on');
+
+subplot(nRowsPlot,nColumnsPlot,1+2*nColumnsPlot);
+histogram(STDEnvNone, 'FaceColor', [0 0.6 0.2]);
+title('standard deviation signal envelope at no VS');
+xlabel('standard deviation signal envelope');
+ylabel('number of occurence');
+dim = [.17 0 .3 .3];
+str = ['STD RMS = ' num2str(obj.stdRMSNone(end),'%.4f')];
+annotation('textbox',dim,'String',str,'FitBoxToText','on');
 
 
-% magnitude spectrum
-subplot(4,2,3);
+% magnitude spectrum Pxx and Pyy
+subplot(nRowsPlot,nColumnsPlot,2);
 [hLineXX] = PlotMeanStd(Pxx(idxTrOVS,:), freqVec, 'r');
 % plot(freqVec, mean(Pxx(idxTrOVS,:)), 'r');
 hold on;
@@ -415,7 +474,7 @@ xlabel('Frequency in Hz');
 ylabel('magnitude');
 legend([hLineXX, hLineYY], 'Pxx','Pyy');
 
-subplot(4,2,5);
+subplot(nRowsPlot,nColumnsPlot,2+nColumnsPlot);
 [hLineXX] = PlotMeanStd(Pxx(idxTrFVS,:), freqVec, 'b');
 % plot(freqVec,mean(Pxx(idxTrFVS,:)), 'b');
 hold on;
@@ -427,7 +486,7 @@ xlabel('Frequency in Hz');
 ylabel('magnitude');
 legend([hLineXX, hLineYY], 'Pxx','Pyy');
 
-subplot(4,2,7);
+subplot(nRowsPlot,nColumnsPlot,2+2*nColumnsPlot);
 [hLineXX] = PlotMeanStd(Pxx(idxTrNone,:), freqVec, 'g');
 % plot(freqVec,mean(Pxx(idxTrNone,:)), 'k');
 hold on;
@@ -440,30 +499,118 @@ ylabel('magnitude');
 legend([hLineXX, hLineYY], 'Pxx','Pyy');
 
 
+% magnitude spectrum Cxy
+subplot(nRowsPlot,nColumnsPlot,3);
+PlotMeanStd(Cxy(idxTrOVS,:), freqVec, 'r');
+xlim([0 6000]);
+title('mean magnitude spectrum Cxy at OVS');
+xlabel('Frequency in Hz');
+ylabel('magnitude');
+
+subplot(nRowsPlot,nColumnsPlot,3+nColumnsPlot);
+PlotMeanStd(Cxy(idxTrFVS,:), freqVec, 'b');
+xlim([0 6000]);
+title('mean magnitude spectrum Cxy at FVS');
+xlabel('Frequency in Hz');
+ylabel('magnitude');
+
+subplot(nRowsPlot,nColumnsPlot,3+2*nColumnsPlot);
+PlotMeanStd(Cxy(idxTrNone,:), freqVec, 'g');
+xlim([0 6000]);
+title('mean magnitude spectrum Cxy at no VS');
+xlabel('Frequency in Hz');
+ylabel('magnitude');
+
+
 % Re(coherence)
 RealCohe = RealCohe';
-subplot(4,2,4);
-[hLineXX] = PlotMeanStd(RealCohe(idxTrOVS,:), freqVec, 'r');
+subplot(nRowsPlot,nColumnsPlot,4);
+PlotMeanStd(RealCohe(idxTrOVS,:), freqVec, 'r');
+xlim([0 6000]);
 title('mean real coherence at OVS');
 xlabel('Frequency in Hz');
 ylabel('real coherence');
 
-subplot(4,2,6);
-[hLineXX] = PlotMeanStd(RealCohe(idxTrFVS,:), freqVec, 'b');
+subplot(nRowsPlot,nColumnsPlot,4+nColumnsPlot);
+PlotMeanStd(RealCohe(idxTrFVS,:), freqVec, 'b');
+xlim([0 6000]);
 title('mean real coherence at FVS');
 xlabel('Frequency in Hz');
 ylabel('real coherence');
 
-subplot(4,2,8);
-[hLineXX] = PlotMeanStd(RealCohe(idxTrNone,:), freqVec, 'g');
+subplot(nRowsPlot,nColumnsPlot,4+2*nColumnsPlot);
+PlotMeanStd(RealCohe(idxTrNone,:), freqVec, 'g');
+xlim([0 6000]);
 title('mean real coherence at no VS');
 xlabel('Frequency in Hz');
 ylabel('real coherence');
 
 
+% Im(coherence)
+ImagCohe = imag(Cohe);
+subplot(nRowsPlot,nColumnsPlot,5);
+PlotMeanStd(ImagCohe(idxTrOVS,:), freqVec, 'r');
+xlim([0 6000]);
+title('mean imaginary coherence at OVS');
+xlabel('Frequency in Hz');
+ylabel('imaginary coherence');
+
+subplot(nRowsPlot,nColumnsPlot,5+nColumnsPlot);
+PlotMeanStd(ImagCohe(idxTrFVS,:), freqVec, 'b');
+xlim([0 6000]);
+title('mean imaginary coherence at FVS');
+xlabel('Frequency in Hz');
+ylabel('imaginary coherence');
+
+subplot(nRowsPlot,nColumnsPlot,5+2*nColumnsPlot);
+PlotMeanStd(ImagCohe(idxTrNone,:), freqVec, 'g');
+xlim([0 6000]);
+title('mean imaginary coherence at no VS');
+xlabel('Frequency in Hz');
+ylabel('imaginary coherence');
+
+
+
+% %% compare envelope
+% % calculate hilbert envelope
+% EnvelopeHilbert = abs(hilbert(WavData(1:100:end,1)));
+% 
+% % calculate differnce between hilbert and RMS envelope !?
+% % DifferenceEnv = EnvelopeHilbert - EnvelopeFromRMS(:,1);
+% 
+% % define time vectors
+% timeVec = linspace(0, round(size(WavData,1)/Fs), size(WavData,1));
+% timeVecRMS = linspace(0, round(size(WavData,1)/Fs), size(EnvelopeFromRMS,1));
+% 
+% figure;
+% subplot(3,1,1);
+% plot(timeVec(1:100:end), WavData(1:100:end,1));
+% hold on;
+% plot(timeVec(1:100:end), EnvelopeHilbert, 'r');
+% ylabel('amplitude');
+% legend('time signal', 'hilbert envelope');
+% xlim([timeVec(1) timeVec(end)])
+% 
+% subplot(3,1,2);
+% plot(timeVec(1:100:end), WavData(1:100:end,1));
+% hold on;
+% plot(timeVecRMS, EnvelopeFromRMS(:,1), 'Color', [0 0.6 0.2]);
+% ylabel('amplitude');
+% legend('time signal', 'RMS');
+% xlim([timeVec(1) timeVec(end)])
+% 
+% subplot(3,1,3);
+% plot(timeVec, DifferenceEnv, 'k');
+% xlabel('time in s')
+% ylabel('amplitude');
+% legend('time signal', 'RMS');
+% xlim([timeVec(1) timeVec(end)])
+
+
+
 % save figures
 if bPrint
-    szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
+    szDir = [obj.szBaseDir filesep obj.szCurrentFolder];
     sDataFolder_Output = [szDir filesep 'Overviews'];
     if ~exist(sDataFolder_Output, 'dir')
         mkdir(sDataFolder_Output);
@@ -477,7 +624,7 @@ if bPrint
     savefig(hFig1, exportName);
     
     exportName = [szDir filesep 'Overviews' filesep ...
-        'AnalyseWindow_VD_' obj.szCurrentFolder '_' obj.szNoiseConfig];
+        'AnalysisWindow_VD_' obj.szCurrentFolder '_' obj.szNoiseConfig];
     
     savefig(hFig2, exportName);
 end
@@ -497,16 +644,16 @@ function [hl] = PlotMeanStd(data, freqVec, color)
 end
 
 
-function  [vSTDEnv] = calcSTDEnv(vRMS, vEnv, alpha)
+function  [vSTDEnv] = calcSTDEnv(vMSPower, vEnv, alpha)
     % --- Kates (2008) EQ A.3-4 ---
     % smooth rms data
-    vRMS_smooth = filter([1-alpha],[1 -alpha], vRMS);
+    vMSPower_smooth = filter([1-alpha],[1 -alpha], vMSPower);
     
     % smooth envelope data
     vEnv_smooth = filter([1-alpha],[1 -alpha], vEnv);
     
     % calculate standard deviation of the signal envelope
-    vSTDEnv = sqrt(vRMS_smooth - vEnv_smooth.^2);
+    vSTDEnv = sqrt(vMSPower_smooth - vEnv_smooth.^2);
 end
 
 

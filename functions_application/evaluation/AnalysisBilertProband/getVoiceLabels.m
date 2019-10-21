@@ -27,6 +27,10 @@ szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
 
 gtFile = fullfile(szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '_Voice.txt']);
 
+if isempty(gtFile)
+    %% new name
+end
+
 vActVoice = importdata(gtFile);
 
 %% FVS

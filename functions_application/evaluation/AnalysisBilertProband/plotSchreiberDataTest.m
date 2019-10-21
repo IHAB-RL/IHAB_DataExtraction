@@ -1,8 +1,8 @@
-% Script to plot the objective data recorded by Sascha Bilert (2018) for 8
-% subjects and 6 background noise configurations
+% Script to plot the objective data recorded by Nils Schreiber (2019) in
+% real life
 % Author: J. Pohlhausen (c) IHA @ Jade Hochschule applied licence see EOF 
 % Version History:
-% Ver. 0.01 initial create 14-Oct-2019  JP
+% Ver. 0.01 initial create 21-Oct-2019  JP
 
 clear;
 clc;
@@ -14,20 +14,24 @@ stRoots = get(0);
 iPlotWidth = stRoots.ScreenSize(3);
 
 % path to main data folder (needs to be customized)
-obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
+obj.szBaseDir = 'I:\IHAB_DB\OVD_nils';
 
 % get all subject directories
 subjectDirectories = dir(obj.szBaseDir);
 
 % sort for correct subjects
 isValidLength = arrayfun(@(x)(length(x.name) == 8), subjectDirectories);
-subjectDirectories = subjectDirectories(isValidLength);
+isSubject = isValidLength & [subjectDirectories.isdir]';
+subjectDirectories = subjectDirectories(isSubject);
 
 % number of subjects
 nSubject = size(subjectDirectories, 1);
 
-% number of noise configurations
-nConfig = 6;
+% number of measurement configurations
+nConfig = 8;
+
+% use audio signal for analysis
+obj.UseAudio = 1;
 
 % loop over all subjects
 for subj = 1:nSubject
@@ -41,7 +45,7 @@ for subj = 1:nSubject
     obj.stdRMSNone = [];
     
     % loop over all noise configurations
-    for config = 1:nConfig
+    for config = 0:nConfig
         close all;
         % choose noise configurations
         obj.szNoiseConfig = ['config' num2str(config)];
@@ -49,11 +53,6 @@ for subj = 1:nSubject
         obj = plotPROBANDData(obj, 'PlotWidth', iPlotWidth);
 
     end
-
-%     % display table with std of RMS
-%     szConfig = (1:size(obj.stdRMSOVS,1))';
-%     varNames = {'config', 'OVS', 'FVS', 'none'};
-%     tabSTDRMS = table(szConfig, obj.stdRMSOVS, obj.stdRMSFVS, obj.stdRMSNone,'VariableNames',varNames)
 end
 
 %--------------------Licence ---------------------------------------------
