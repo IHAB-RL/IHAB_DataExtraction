@@ -19,7 +19,7 @@ subjectDirectories = subjectDirectories(isValidLength);
 
 % choose a subject randomly  (adjust for a specific subject)
 nSubject = round(size(subjectDirectories,1)*rand(1));
-% nSubject = 10;
+nSubject = 7;
 
 % get one subject directoy
 szCurrentFolder = subjectDirectories(nSubject).name;

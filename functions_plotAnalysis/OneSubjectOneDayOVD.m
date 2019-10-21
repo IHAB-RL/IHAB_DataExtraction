@@ -210,7 +210,8 @@ if ~iHigherFreqResolution
 else
     yaxisLables = axCoher.YTickLabel;
 end
-yaxisLables = strrep(yaxisLables,'000', 'k');
+yaxisLables = strrep(yaxisLables, '000', 'k');
+yaxisLables = strrep(yaxisLables, 'kk', '0k');
 set(axCoher,'YTickLabel',yaxisLables);
 set(axCoher ,'ylabel', ylabel('frequency in Hz'))
 set(axCoher,'XTick',[]);
@@ -258,6 +259,7 @@ else
     yaxisLables = axPxx.YTickLabel;
 end
 yaxisLables = strrep(yaxisLables,'000', 'k');
+yaxisLables = strrep(yaxisLables, 'kk', '0k');
 set(axPxx,'YTickLabel',yaxisLables);
 set(axPxx ,'ylabel', ylabel('frequency in Hz'))
 % set(axPxx,'CLim',[-110 -55]);
