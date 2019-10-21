@@ -199,6 +199,7 @@ timeVec = datenum(timeVec);
 imagesc(timeVec,freqVec,FinalRealCohe);
 axis xy;
 colorbar;
+axCoher.Colormap = parula(256); % increase resolution of colormap
 axCoher.Colormap(1,:) = [1 1 1]; % set darkest blue to white for time gaps
 title('');
 reText=text(timeVec(5),freqVec(end-1),'Re\{Coherence\}','Color',[1 1 1]);
@@ -245,6 +246,7 @@ end
 imagesc(timeVec,freqVec,PxxLog);
 axis xy;
 colorbar;
+axPxx.Colormap = parula(256); % increase resolution of colormap
 axPxx.Colormap(1,:) = [1 1 1]; % set darkest blue to white for time gaps
 title('');
 psdText=text(timeVec(5),freqVec(end-1),'PSD (left)','Color',[1 1 1]);
@@ -258,7 +260,7 @@ end
 yaxisLables = strrep(yaxisLables,'000', 'k');
 set(axPxx,'YTickLabel',yaxisLables);
 set(axPxx ,'ylabel', ylabel('frequency in Hz'))
-set(axPxx,'CLim',[-110 -55]);
+% set(axPxx,'CLim',[-110 -55]);
 
 
 %% Results Voice Detection
