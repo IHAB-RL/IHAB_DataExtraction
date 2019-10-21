@@ -192,29 +192,36 @@ else
 end
 
 % find time gaps and fill them with NaNs
-[timeVec, FinalRealCohe] = FillTimeGaps(TimeVecPSD, RealCohe);
+[timeVec, FinalRealCohe, hasGap] = FillTimeGaps(TimeVecPSD, RealCohe);
 
 timeVec = datenum(timeVec);
 
 imagesc(timeVec,freqVec,FinalRealCohe);
 axis xy;
 colorbar;
-axCoher.Colormap = parula(256); % increase resolution of colormap
-axCoher.Colormap(1,:) = [1 1 1]; % set darkest blue to white for time gaps
+if hasGap
+    axCoher.Colormap = parula(256); % increase resolution of colormap
+    axCoher.Colormap(1,:) = [1 1 1]; % set darkest blue to white for time gaps
+end
 title('');
-reText=text(timeVec(5),freqVec(end-1),'Re\{Coherence\}','Color',[1 1 1]);
-reText.FontSize = 12;
 if ~iHigherFreqResolution
     set(axCoher,'YTick',1:3:size(PxxShort,2));
-    yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
+    yaxisLabels = sprintfc('%d', stBandDef.MidFreq(1:3:end));
+    
+    TextPos = freqVec(end-1);
 else
-    yaxisLables = axCoher.YTickLabel;
+    yaxisLabels = axCoher.YTickLabel;
+    set(axCoher,'YTick', str2double(yaxisLabels));
+    
+    TextPos = freqVec(end-10);
 end
-yaxisLables = strrep(yaxisLables, '000', 'k');
-yaxisLables = strrep(yaxisLables, 'kk', '0k');
-set(axCoher,'YTickLabel',yaxisLables);
+yaxisLabels = strrep(yaxisLabels, '000', 'k');
+yaxisLabels = strrep(yaxisLabels, 'kk', '0k');
+set(axCoher,'YTickLabel',yaxisLabels);
 set(axCoher ,'ylabel', ylabel('frequency in Hz'))
 set(axCoher,'XTick',[]);
+reText=text(timeVec(5),TextPos,'Re\{Coherence\}','Color',[1 1 1]);
+reText.FontSize = 12;
 drawnow;
 PosVecCoher = get(axCoher,'Position');
 
@@ -247,21 +254,23 @@ end
 imagesc(timeVec,freqVec,PxxLog);
 axis xy;
 colorbar;
-axPxx.Colormap = parula(256); % increase resolution of colormap
-axPxx.Colormap(1,:) = [1 1 1]; % set darkest blue to white for time gaps
+if hasGap
+    axPxx.Colormap = parula(256); % increase resolution of colormap
+    axPxx.Colormap(1,:) = [1 1 1]; % set darkest blue to white for time gaps
+end
 title('');
-psdText=text(timeVec(5),freqVec(end-1),'PSD (left)','Color',[1 1 1]);
-psdText.FontSize = 12;
 if ~iHigherFreqResolution
     set(axPxx,'YTick',1:3:size(PxxShort,2));
-    yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
+    yaxisLabels = sprintfc('%d', stBandDef.MidFreq(1:3:end));
 else
-    yaxisLables = axPxx.YTickLabel;
+    yaxisLabels = axPxx.YTickLabel;
 end
-yaxisLables = strrep(yaxisLables,'000', 'k');
-yaxisLables = strrep(yaxisLables, 'kk', '0k');
-set(axPxx,'YTickLabel',yaxisLables);
-set(axPxx ,'ylabel', ylabel('frequency in Hz'))
+yaxisLabels = strrep(yaxisLabels,'000', 'k');
+yaxisLabels = strrep(yaxisLabels, 'kk', '0k');
+set(axPxx,'YTickLabel',yaxisLabels);
+set(axPxx ,'ylabel', ylabel('frequency in Hz'));
+psdText=text(timeVec(5),TextPos,'PSD (left)','Color',[1 1 1]);
+psdText.FontSize = 12;
 % set(axPxx,'CLim',[-110 -55]);
 
 
@@ -358,12 +367,12 @@ if bPrint
 end
 
 
-% print relative values of voice activity
-nFrames = size(stDataOVD.vOVS,1);
-OVSrel = sum(stDataOVD.vOVS)/nFrames;
-fprintf('***estimated %.2f %% own voice per day\n',100*OVSrel);
-FVSrel = sum(stDataFVD.vFVS)/nFrames;
-fprintf('***estimated %.2f %% futher voice per day\n',100*FVSrel);
+% % print relative values of voice activity
+% nFrames = size(stDataOVD.vOVS,1);
+% OVSrel = sum(stDataOVD.vOVS)/nFrames;
+% fprintf('***estimated %.2f %% own voice per day\n',100*OVSrel);
+% FVSrel = sum(stDataFVD.vFVS)/nFrames;
+% fprintf('***estimated %.2f %% further voice per day\n',100*FVSrel);
 
 
 %--------------------Licence ---------------------------------------------

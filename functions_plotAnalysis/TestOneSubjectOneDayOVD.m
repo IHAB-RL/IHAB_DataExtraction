@@ -27,7 +27,7 @@ szCurrentFolder = subjectDirectories(nSubject).name;
 % get object
 [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
 
-OneSubjectOneDayOVD(obj);
+OneSubjectOneDayOVD(obj,'StartTime',14.5 ,'Endday',1,'HigherFreqResolution',false);
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> Jule Pohlhausen
