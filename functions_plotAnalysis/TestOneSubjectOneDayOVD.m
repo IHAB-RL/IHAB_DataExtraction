@@ -19,6 +19,7 @@ subjectDirectories = subjectDirectories(isValidLength);
 
 % choose a subject randomly  (adjust for a specific subject)
 nSubject = round(size(subjectDirectories,1)*rand(1));
+% nSubject = 10;
 
 % get one subject directoy
 szCurrentFolder = subjectDirectories(nSubject).name;
@@ -26,7 +27,7 @@ szCurrentFolder = subjectDirectories(nSubject).name;
 % get object
 [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
 
-OneSubjectOneDayOVD(obj,'startDay',1,'EndDay',1);
+OneSubjectOneDayOVD(obj);
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> Jule Pohlhausen

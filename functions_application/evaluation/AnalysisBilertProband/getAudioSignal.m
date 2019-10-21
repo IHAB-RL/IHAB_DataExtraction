@@ -27,7 +27,7 @@ TimeVec = datetime(0,0,0,0,0,0);
 % build the full directory
 szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
 
-% List all feat files
+% List all wav files
 AllWavFiles = listFiles(szDir,'*.wav');
 AllWavFiles = {AllWavFiles.name}';
 
@@ -37,8 +37,21 @@ AllWavFiles = {AllWavFiles.name}';
 % Append '.wav' extension for comparison to corrupt file names
 AllWavFiles = strcat(AllWavFiles,'.wav');
 
-% isFeatFile filters for the wanted feature dates, such as all of 'RMS'
+% isFeatFile filters for the wanted dates
 [dateVecAll,isFeatFile] = Filename2date(AllWavFiles,[]);
+
+if isempty(dateVecAll)
+    % load data from wav file
+    [Data, Fs] = audioread([szDir filesep AllWavFiles{1}]);
+        
+    ActBlockSize = size(Data,1);
+    nDur = minutes(ActBlockSize/Fs);
+
+    % calculate time vector
+    TimeVec = linspace(TimeVec, TimeVec+nDur, ActBlockSize)';
+    
+    return;
+end
 
 % Also filter the corresponding file list
 AllWavFiles = AllWavFiles(logical(isFeatFile));
@@ -46,18 +59,18 @@ AllWavFiles = AllWavFiles(logical(isFeatFile));
 
 %% read in the data
 
-% get number of available feature files in current time frame
+% get number of available wav files in current time frame
 NrOfFiles = numel(AllWavFiles);
 
 if ~isempty(AllWavFiles)
     
-    % loop over each feature file
+    % loop over each wav file
     Startindex = 1;
     for fileIdx = 1:NrOfFiles
         
         szFileName =  AllWavFiles{fileIdx};
         
-        % load data from feature file
+        % load data from wav file
         [WavData, Fs] = audioread([szDir filesep szFileName]);
         
         ActBlockSize = size(WavData,1);
