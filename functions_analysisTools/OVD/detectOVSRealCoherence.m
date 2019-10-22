@@ -36,7 +36,7 @@ else
     Pxx = zeros(stParam.nFFT/2+1,nFrames);
     Pyy = zeros(stParam.nFFT/2+1,nFrames);
     Cxy = zeros(stParam.nFFT/2+1,nFrames);
-    mRMS = zeros(stParam.nFFT/2+1,2);
+    mRMS = zeros(nFrames,2);
 end
 
 % smoothing factor PSD
