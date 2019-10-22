@@ -4,14 +4,73 @@
 % Ver. 0.01 initial create 22-Oct-2019  Initials JP
 
 clear;
-close all;
+% close all;
 
-audiofile = 'olsa_male_full_3_0.wav';
+% choose testsignal; OLSA sentence or real measured speech
+useOLSA = 0;
+
+if ~useOLSA
+    % path to main data folder (needs to be customized)
+    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
+
+    % get all subject directories
+    subjectDirectories = dir(obj.szBaseDir);
+
+    % choose one subject directoy
+    obj.szCurrentFolder = subjectDirectories(18).name;
+
+    % number of noise configuration
+    obj.szNoiseConfig = 'config2';
+
+    % build the full directory
+    obj.szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
+
+    % select audio file
+    audiofile = fullfile(obj.szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
+    
+    % choose bewtween male, female, background sequence
+    ActSituation = 'all';
+    switch ActSituation
+        case 'male'
+            tStart = 242.1;
+            tEnd = 244.5;
+        
+        case 'female'
+            tStart = 254.4;
+            tEnd = 255.7;
+        
+        case 'quiet'
+            tStart = 252.4;
+            tEnd = 253;
+            
+        case 'noise'
+            switch obj.szNoiseConfig
+                case 'config2'
+                    tStart = 144;
+                    tEnd = 145.7;
+%                     tStart = 232.6 ;
+%                     tEnd = 233.5;
+                    
+                case 'config3'
+                    tStart = 296.5 ;
+                    tEnd = 297.5;
+            end
+    end
+else
+    audiofile = 'olsa_male_full_3_0.wav';
+    ActSituation = 'mOLSA';
+    tStart = 5.95;
+    tEnd = 8.3;
+end
+
+% read in signal
 [signal, fs] = audioread(audiofile);
-
-signal = signal(round(5.95*fs):round(8.3*fs));
-nLen   = size(signal, 1);
-nDur   = nLen/fs;
+if ~strcmp(ActSituation, 'all')
+    signal = signal(round(tStart*fs):round(tEnd)*fs);
+end
+signal = signal(:);
+nLen   = length(signal); % length in sec
+nDur   = nLen/fs; % length in samples
 timeVec = linspace(0, nDur, nLen);
 
 blocksize = 2048;
@@ -30,8 +89,12 @@ timeVecPitch = linspace(0, nDur, nBlocks);
 
 % plot results
 hFig = figure;
-hFig.Position(4) = 1.5*hFig.Position(4);
-hFig.Position(2) = 0.7*hFig.Position(2);
+if ~strcmp(ActSituation, 'all')
+    hFig.Position(4) = 1.5*hFig.Position(4);
+    hFig.Position(2) = 0.7*hFig.Position(2);
+else
+    hFig.Position =  get(0,'ScreenSize');
+end
 nStartPos = 0.1;
 nWidth = 0.85;
 nHeight = 0.27;
@@ -51,6 +114,17 @@ PosVecCorr = get(axCorr,'Position');
 % time signal
 axAudio = axes('Position',[nStartPos 0.72 PosVecCorr(3) nHeight]);
 plot(timeVec, signal);
+if strcmp(ActSituation, 'all')
+    hold on;
+    % get and plot labels
+    obj.fsVD = fs;
+    obj.NrOfBlocks = nDur;
+    [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
+    
+    plot(timeVec, groundTrOVS, 'r');
+    plot(timeVec, groundTrFVS, 'b');
+    legend('time signal', 'OVS', 'FVS');
+end
 set(axAudio,'ylabel', ylabel('Amplitude'));
 set(axAudio,'xlabel', xlabel('Time in sec'));
 xlim([timeVec(1) timeVec(end)]);
@@ -67,3 +141,9 @@ xlim([timeVec(1) timeVec(end)]);
 ylim([freqVec(1) 5000]);
 
 linkaxes([axCorr, axAudio, axPxx],'x');
+
+% save figure
+obj.szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch';
+exportName = [obj.szDir filesep ...
+        'OverviewPitch_' ActSituation '_'  obj.szCurrentFolder '_' obj.szNoiseConfig];
+savefig(hFig, exportName);
