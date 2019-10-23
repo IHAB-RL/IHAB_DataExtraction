@@ -4,12 +4,10 @@ function [vActivOVS,vActivFVS]=getVoiceLabels(obj)
 %
 % Parameters
 % ----------
-% inParam :  
 %	 obj - struct, contains all informations, e.g. datafolder, subject ...
 %
 % Returns
-% -------
-% outParam :  
+% ------- 
 %	 vActivOVS - logical vector, 1 = OVS
 %
 %    vActivFVS - logical vector, 1 = FVS
@@ -27,19 +25,38 @@ szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
 
 gtFile = fullfile(szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '_Voice.txt']);
 
-if isempty(gtFile)
-    %% new name
+if ~exist(gtFile)
+    % NS measured
+    isNS = 1;
+    gtFile = fullfile(szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '.txt']);
+else
+    isNS = 0;
 end
 
 vActVoice = importdata(gtFile);
 
 %% FVS
-fvsIndicator = 0; % JP
+if isNS
+    fvsIndicator = 1 ; % NS
+else
+    fvsIndicator = 0; % JP
+end
 
 idxFVS = vActVoice(:,3) == fvsIndicator;
 
-startTimeFVS = vActVoice(idxFVS, 1);
-endTimeFVS = vActVoice(idxFVS, 2);
+if ~any(idxFVS == 1)
+    % NS labeled
+    gtFile = fullfile(szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '_VoiceOthers.txt']);
+    vActVoiceFVS = importdata(gtFile);
+    
+    startTimeFVS = vActVoiceFVS(:, 1);
+    endTimeFVS = vActVoiceFVS(:, 2);
+else
+    
+    startTimeFVS = vActVoice(idxFVS, 1);
+    endTimeFVS = vActVoice(idxFVS, 2);
+end
+
 
 % check bounds
 [startIdxFVS,endIdxFVS] = checkBounds(obj,startTimeFVS,endTimeFVS);
@@ -50,8 +67,19 @@ end
 
 
 %% OVS
-startTimeOVS = vActVoice(~idxFVS,1);
-endTimeOVS = vActVoice(~idxFVS,2);
+if exist('vActVoiceFVS', 'var')
+    startTimeOVS = vActVoice(:, 1);
+    endTimeOVS = vActVoice(:, 2);
+elseif isNS
+    ovsIndicator = 0;
+    idxOVS = vActVoice(:,3) == ovsIndicator;
+    
+    startTimeOVS = vActVoice(idxOVS, 1);
+    endTimeOVS = vActVoice(idxOVS, 2);
+else
+    startTimeOVS = vActVoice(~idxFVS,1);
+    endTimeOVS = vActVoice(~idxFVS,2);
+end
 
 % check bounds
 [startIdxOVS,endIdxOVS] = checkBounds(obj,startTimeOVS,endTimeOVS);
