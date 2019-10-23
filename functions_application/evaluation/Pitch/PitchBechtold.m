@@ -4,7 +4,7 @@
 % Ver. 0.01 initial create 22-Oct-2019  Initials JP
 
 clear;
-% close all;
+close all;
 
 % choose testsignal; OLSA sentence or real measured speech
 useOLSA = 0;
@@ -20,7 +20,7 @@ if ~useOLSA
     obj.szCurrentFolder = subjectDirectories(18).name;
 
     % number of noise configuration
-    obj.szNoiseConfig = 'config3';
+    obj.szNoiseConfig = 'config1';
 
     % build the full directory
     obj.szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
@@ -71,35 +71,38 @@ if ~strcmp(ActSituation, 'all')
     signal = signal(round(tStart*fs):round(tEnd*fs));
 else
     % take first 60 sec conversation
-    signal = signal(1:round(60*fs));
+    nSec = 60;
+    signal = signal(1:round(nSec*fs));
 end
-signal = signal(:);
-nLen   = length(signal); % length in samples
-nDur   = nLen/fs; % length in sec 
+signal  = signal(:);
+nLen    = length(signal); % length in samples
+nDur    = nLen/fs; % length in sec 
 timeVec = linspace(0, nDur, nLen);
 
 blocksize = 2048;
 Overlap   = blocksize/2;
+freqVec   = linspace(0, fs/2, floor(blocksize / 2) + 1);
 tFrame    = 0.125; % in sec
 lFrame    = floor(tFrame*fs); % in samples
-hopsize   = lFrame - Overlap;
-stepSizeFreq = 1/2;
-basefrequencies = 80:stepSizeFreq:450;
-freqVec = linspace(0, fs/2, floor(blocksize / 2) + 1);
-
-% magnitude domain feature
-[correlation, spectrum] = magnitude_correlation(signal, fs, blocksize, hopsize, basefrequencies);
-
-nBlocks = size(correlation, 1);
+hopsize   = blocksize - Overlap;
+nBlocks   = ceil((nLen-blocksize) / hopsize);
 timeVecPitch = linspace(0, nDur, nBlocks);
 
+% define base frequencies
+stepSizeFreq = 1/2;
+basefrequencies = 80:stepSizeFreq:450;
+
+% magnitude domain feature - Bastian Bechtold
+[correlation, spectrum] = magnitude_correlation(signal, fs, blocksize, hopsize, basefrequencies);
+
+
 % plot results
-hFig = figure;
+hFig1 = figure;
 if ~strcmp(ActSituation, 'all')
-    hFig.Position(4) = 1.5*hFig.Position(4);
-    hFig.Position(2) = 0.7*hFig.Position(2);
+    hFig1.Position(4) = 1.5*hFig1.Position(4);
+    hFig1.Position(2) = 0.7*hFig1.Position(2);
 else
-    hFig.Position =  get(0,'ScreenSize');
+    hFig1.Position =  get(0,'ScreenSize');
 end
 nStartPos = 0.1;
 nWidth = 0.85;
@@ -155,8 +158,153 @@ ylim([freqVec(1) 5000]);
 
 linkaxes([axCorr, axAudio, axPxx],'x');
 
-% save figure
-obj.szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch';
-exportName = [obj.szDir filesep ...
+
+
+% calculate and plot distribution of Magnitude Feature
+% get labels for new blocksize
+obj.fsVD = nBlocks/nDur;
+obj.NrOfBlocks = nBlocks;
+[groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
+
+idxTrOVS = groundTrOVS == 1;
+idxTrFVS = groundTrFVS == 1;
+idxTrNone = ~idxTrOVS & ~idxTrFVS;
+
+% % check labels
+% figure;
+% imagesc(1:nBlocks, basefrequencies, correlation');
+% axis xy;
+% colorbar;
+% hold on;
+% plot(200*groundTrOVS, 'r');
+% plot(300*groundTrFVS, 'b');
+% plot(400*idxTrNone, 'g');
+
+% calculate mean on correlation for OVS | FVS | no VS
+MeanCorrOVS = mean(correlation(idxTrOVS,:));
+MeanCorrFVS = mean(correlation(idxTrFVS,:));
+MeanCorrNone = mean(correlation(idxTrNone,:));
+
+hFig2 = figure;
+hFig2.Position = hFig1.Position;
+subplot(3,1,1);
+bar(basefrequencies, MeanCorrOVS, 'FaceColor', 'r');
+title('Mean Magnitude Feature F^M_t(f_0) at OVS');
+xlabel('Fundamental Frequency in Hz');
+ylabel('Mean Magnitude Feature F^M_t(f_0)');
+
+subplot(3,1,2);
+bar(basefrequencies, MeanCorrFVS, 'FaceColor', 'b');
+title('Mean Magnitude Feature F^M_t(f_0) at FVS');
+xlabel('Fundamental Frequency in Hz');
+ylabel('Mean Magnitude Feature F^M_t(f_0)');
+
+subplot(3,1,3);
+bar(basefrequencies, MeanCorrNone, 'FaceColor', [0 0.6 0.2]);
+title('Mean Magnitude Feature F^M_t(f_0) at no VS');
+xlabel('Fundamental Frequency in Hz');
+ylabel('Mean Magnitude Feature F^M_t(f_0)');
+
+
+% calculate maximum on correlation for OVS | FVS | no VS
+MaxCorrOVS = max(correlation(idxTrOVS,:));
+MaxCorrFVS = max(correlation(idxTrFVS,:));
+MaxCorrNone = max(correlation(idxTrNone,:));
+
+hFig4 = figure;
+hFig4.Position = hFig1.Position;
+subplot(3,1,1);
+bar(basefrequencies, MaxCorrOVS, 'FaceColor', 'r');
+title('Max Magnitude Feature F^M_t(f_0) at OVS');
+xlabel('Fundamental Frequency in Hz');
+ylabel('max(Magnitude Feature F^M_t(f_0))');
+
+subplot(3,1,2);
+bar(basefrequencies, MaxCorrFVS, 'FaceColor', 'b');
+title('Max Magnitude Feature F^M_t(f_0) at FVS');
+xlabel('Fundamental Frequency in Hz');
+ylabel('max(Magnitude Feature F^M_t(f_0))');
+
+subplot(3,1,3);
+bar(basefrequencies, MaxCorrNone, 'FaceColor', [0 0.6 0.2]);
+title('Max Magnitude Feature F^M_t(f_0) at no VS');
+xlabel('Fundamental Frequency in Hz');
+ylabel('max(Magnitude Feature F^M_t(f_0))');
+
+
+% calculate p% percentile on correlation for OVS | FVS | no VS
+p = 80;
+PrcCorrOVS = prctile(correlation(idxTrOVS,:), p);
+PrcCorrFVS = prctile(correlation(idxTrFVS,:), p);
+PrcCorrNone = prctile(correlation(idxTrNone,:), p);
+
+hFig3 = figure;
+hFig3.Position = hFig1.Position;
+subplot(3,1,1);
+bar(basefrequencies, PrcCorrOVS, 'FaceColor', 'r');
+title([num2str(p) '% percentile Magnitude Feature F^M_t(f_0) at OVS']);
+xlabel('Fundamental Frequency in Hz');
+ylabel([num2str(p) '% percentile Magnitude Feature F^M_t(f_0)']);
+
+subplot(3,1,2);
+bar(basefrequencies, PrcCorrFVS, 'FaceColor', 'b');
+title([num2str(p) '% percentile Magnitude Feature F^M_t(f_0) at FVS']);
+xlabel('Fundamental Frequency in Hz');
+ylabel([num2str(p) '% percentile Magnitude Feature F^M_t(f_0)']);
+
+subplot(3,1,3);
+bar(basefrequencies, PrcCorrNone, 'FaceColor', [0 0.6 0.2]);
+title([num2str(p) '% percentile Magnitude Feature F^M_t(f_0) at no VS']);
+xlabel('Fundamental Frequency in Hz');
+ylabel([num2str(p) '% percentile Magnitude Feature F^M_t(f_0)']);
+
+
+
+% save figures
+obj.szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch\figures';
+szFolder_Output = [obj.szDir filesep obj.szCurrentFolder];
+if ~exist(szFolder_Output, 'dir')
+    mkdir(szFolder_Output);
+end
+
+if strcmp(ActSituation, 'all')
+    exportName1 = [szFolder_Output filesep ...
+        'OverviewPitch_' ActSituation num2str(nSec) 's_'  obj.szCurrentFolder '_' obj.szNoiseConfig];
+else
+    exportName1 = [szFolder_Output filesep ...
         'OverviewPitch_' ActSituation '_'  obj.szCurrentFolder '_' obj.szNoiseConfig];
-savefig(hFig, exportName);
+end
+savefig(hFig1, exportName1);
+
+exportName2 = [szFolder_Output filesep ...
+    'MeanCorr_' obj.szCurrentFolder '_' obj.szNoiseConfig];
+savefig(hFig2, exportName2);
+
+exportName3 = [szFolder_Output filesep ...
+    'Prc' num2str(p) '_' obj.szCurrentFolder '_' obj.szNoiseConfig];
+savefig(hFig3, exportName3);
+
+exportName4 = [szFolder_Output filesep ...
+    'MaxCorr_' num2str(p) '_' obj.szCurrentFolder '_' obj.szNoiseConfig];
+savefig(hFig4, exportName4);
+
+
+%--------------------Licence ---------------------------------------------
+% Copyright (c) <2019> J. Pohlhausen
+% Jade University of Applied Sciences 
+% Permission is hereby granted, free of charge, to any person obtaining 
+% a copy of this software and associated documentation files 
+% (the "Software"), to deal in the Software without restriction, including 
+% without limitation the rights to use, copy, modify, merge, publish, 
+% distribute, sublicense, and/or sell copies of the Software, and to
+% permit persons to whom the Software is furnished to do so, subject
+% to the following conditions:
+% The above copyright notice and this permission notice shall be included 
+% in all copies or substantial portions of the Software.
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+% EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
+% OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+% IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
+% CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+% TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+% SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
