@@ -1,8 +1,6 @@
 function [obj]=plotPROBANDData(obj, varargin)
-% function to
-% Usage [outParam]=plotPROBANDData(inParam)
-%
-% Usage:
+% function to plot fingerprint an analysis overview for PROBAND data
+% Usage: [obj]=plotPROBANDData(obj, varargin)
 %
 % Parameters
 % ----------
@@ -15,7 +13,6 @@ function [obj]=plotPROBANDData(obj, varargin)
 %                       screen
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
-% Source: based on
 % Version histogramory:
 % Ver. 0.01 initial create 14-Oct-2019  JP
 
