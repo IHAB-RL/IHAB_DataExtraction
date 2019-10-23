@@ -20,7 +20,7 @@ if ~useOLSA
     obj.szCurrentFolder = subjectDirectories(18).name;
 
     % number of noise configuration
-    obj.szNoiseConfig = 'config2';
+    obj.szNoiseConfig = 'config3';
 
     % build the full directory
     obj.szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
@@ -63,22 +63,28 @@ else
     tEnd = 8.3;
 end
 
+
 % read in signal
 [signal, fs] = audioread(audiofile);
 if ~strcmp(ActSituation, 'all')
-    signal = signal(round(tStart*fs):round(tEnd)*fs);
+    % one sentence
+    signal = signal(round(tStart*fs):round(tEnd*fs));
+else
+    % take first 60 sec conversation
+    signal = signal(1:round(60*fs));
 end
 signal = signal(:);
-nLen   = length(signal); % length in sec
-nDur   = nLen/fs; % length in samples
+nLen   = length(signal); % length in samples
+nDur   = nLen/fs; % length in sec 
 timeVec = linspace(0, nDur, nLen);
 
 blocksize = 2048;
 Overlap   = blocksize/2;
-tFrame    = 0.025; % in sec
+tFrame    = 0.125; % in sec
 lFrame    = floor(tFrame*fs); % in samples
 hopsize   = lFrame - Overlap;
-basefrequencies = 80:0.5:450;
+stepSizeFreq = 1/2;
+basefrequencies = 80:stepSizeFreq:450;
 freqVec = linspace(0, fs/2, floor(blocksize / 2) + 1);
 
 % magnitude domain feature
@@ -113,14 +119,21 @@ PosVecCorr = get(axCorr,'Position');
 
 % time signal
 axAudio = axes('Position',[nStartPos 0.72 PosVecCorr(3) nHeight]);
-plot(timeVec, signal);
-if strcmp(ActSituation, 'all')
+if ~strcmp(ActSituation, 'all')
+    plot(timeVec, signal);
+else
+    subsample = 10;
+    signal =  signal(1:subsample:end);
+    timeVec = timeVec(1:subsample:end);
+    nLen   = length(signal); % length in samples
+    plot(timeVec, signal);
     hold on;
     % get and plot labels
-    obj.fsVD = fs;
-    obj.NrOfBlocks = nDur;
+    obj.fsVD = 1/tFrame;
+    obj.NrOfBlocks = round(nDur/tFrame);
     [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
     
+    timeVec = linspace(timeVec(1), timeVec(end), obj.NrOfBlocks);
     plot(timeVec, groundTrOVS, 'r');
     plot(timeVec, groundTrFVS, 'b');
     legend('time signal', 'OVS', 'FVS');
