@@ -43,6 +43,8 @@ function [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
 %  'SamplesPerPixel'    number that speciefies the data point resolution in
 %                       samples per pixel; by default it is 5 samples/pixel
 %
+%  'isCompress'         logical to compress data (1, default) or not (0)
+%
 % Returns
 % -------
 % Data :  a matrix containg the feature data
@@ -93,12 +95,14 @@ p.addParameter('EndDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x));
 p.addParameter('stInfo', [], @(x) isstruct(x));
 p.addParameter('PlotWidth', iDefaultPlotWidth, @(x) isnumeric(x));
 p.addParameter('SamplesPerPixel', iDefaultSamplesPerPixel, @(x) isnumeric(x));
+p.addParameter('isCompress', true, @(x) islogical(x));
 p.parse(obj,varargin{:});
 
 % Re-assign values
 stInfo = p.Results.stInfo;
 iPlotWidth = p.Results.PlotWidth;
 iStaticSamplesPerPixel = p.Results.SamplesPerPixel;
+isCompress = p.Results.isCompress;
 
 if isempty(stInfo)
     % call function to check input date format and plausibility
@@ -206,6 +210,7 @@ if ~isempty(idxDay)
         if isFileBased
             % pre-allocation of output arguments
             NrOfDataPoints = ceil(LenOneFile_s/(stControl.DataPointRepresentation_s*(1-stControl.DataPointOverlap_percent)));
+            NrOfDataPoints = min(NrOfDataPoints, NrOfFiles*stInfoFile.nFrames);
 
             Data = zeros(NrOfDataPoints,size(FeatData,2));
             TimeVec = datetime(zeros(NrOfDataPoints,1),...
@@ -228,28 +233,36 @@ if ~isempty(idxDay)
                 DateTimeValue = dateVecAll(fileIdx);
                 TimeVecIn = linspace(DateTimeValue,DateTimeValue+minutes(1-1/ActBlockSize),ActBlockSize);
                 
-                % find time gaps between files lager than 120 sec
-                % if there is a time gap the residual values are cleared
-                if fileIdx > 1
-                    if  seconds(abs(TimeVecIn(1) - iLastTime)) > 2*LenOneFile_s
-                        TimeVecRes = [];
-                        DataVecRes = [];
+                % some steps are just for compression needed
+                if isCompress
+                    % find time gaps between files lager than 120 sec
+                    % if there is a time gap the residual values are cleared
+                    if fileIdx > 1
+                        if  seconds(abs(TimeVecIn(1) - iLastTime)) > 2*LenOneFile_s
+                            TimeVecRes = [];
+                            DataVecRes = [];
+                        end
                     end
-                end
-                
-                % save last time value
-                iLastTime = TimeVecIn(end);
+
+                    % save last time value
+                    iLastTime = TimeVecIn(end);
+
+                    % add residual values
+                    if ~isempty(DataVecRes) && ~isempty(TimeVecRes)
+                        FeatData = [DataVecRes; FeatData];
+                        TimeVecIn = [TimeVecRes TimeVecIn];
+                    end
                     
-                % add residual values
-                if ~isempty(DataVecRes) && ~isempty(TimeVecRes)
-                    FeatData = [DataVecRes; FeatData];
-                    TimeVecIn = [TimeVecRes TimeVecIn];
+                    % compress data
+                    [DataVecComp,TimeVecComp,DataVecRes,TimeVecRes] = ...
+                        DataCompactor(FeatData,TimeVecIn,stControl);
+
+                    ActBlockSize = size(DataVecComp,1);
+                else
+                    % without compression
+                    DataVecComp = FeatData;
+                    TimeVecComp = TimeVecIn;
                 end
-                
-                % compression
-                [DataVecComp,TimeVecComp,DataVecRes,TimeVecRes] = DataCompactor(FeatData,TimeVecIn,stControl);
-                
-                ActBlockSize = size(DataVecComp,1);
                 
                 TimeVec(Startindex:Startindex+ActBlockSize-1) = TimeVecComp;
                 Data(Startindex:Startindex+ActBlockSize-1,:) = DataVecComp(1:ActBlockSize,:);
