@@ -28,7 +28,7 @@ subjectDirectories = subjectDirectories(isSubject);
 nSubject = size(subjectDirectories, 1);
 
 % number of measurement configurations
-nConfig = 8;
+nConfig = 7;
 
 % use audio signal for analysis
 obj.UseAudio = 1;
@@ -45,7 +45,7 @@ for subj = 1:nSubject
     obj.stdRMSNone = [];
     
     % loop over all noise configurations
-    for config = 0:nConfig
+    for config = 1:nConfig
         close all;
         % choose noise configurations
         obj.szNoiseConfig = ['config' num2str(config)];
