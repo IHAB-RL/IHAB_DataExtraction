@@ -20,9 +20,19 @@ function [vCalibConst,szSystem]=getCalibConst(szSubjectID)
 % Version History:
 % Ver. 0.01 initial create 25-Sep-2019 JP
 % Ver. 0.02 switched to map 01-Oct-2019 JP
+% Ver. 0.03 edit default values 24-Oct-2019 JP
 
 % load assignment of IHAB systems and subjects
 load(fullfile('functions_helper', 'IHAB', 'IdentificationProbandSystem_Maps.mat'));
+
+% set default values, if szSubjectID is not found in the subject list,
+% these values are returned
+szSystem = {'System1gelb'};
+vCalibConst = values(mapSystem, szSystem);
+
+if ~isKey(mapSubject_1, {szSubjectID})
+    return;
+end
 
 % get used IHAB system
 szSystem = values(mapSubject_1, {szSubjectID});
