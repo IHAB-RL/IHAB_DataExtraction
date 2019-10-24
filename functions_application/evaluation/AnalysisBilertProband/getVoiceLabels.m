@@ -35,14 +35,26 @@ end
 
 vActVoice = importdata(gtFile);
 
-%% FVS
-if isNS
-    fvsIndicator = 1 ; % NS
-else
-    fvsIndicator = 0; % JP
+if isempty(vActVoice)
+    return;
 end
 
-idxFVS = vActVoice(:,3) == fvsIndicator;
+%% FVS
+if isNS
+    fvsIndicator = 1; % NS
+    if strcmp(obj.szNoiseConfig, 'config1') || strcmp(obj.szNoiseConfig, 'config2')
+        % in this special case the radio host was labeled with 2 and music 
+        % with 222 (config1) respectively -1 (config2) ...
+        fvsIndicator = [1 2];
+        idxFVS = vActVoice(:,3) == fvsIndicator(1) | vActVoice(:,3) == fvsIndicator(2);
+    else
+        idxFVS = vActVoice(:,3) >= fvsIndicator;
+    end
+else
+    fvsIndicator = 0; % JP
+    idxFVS = vActVoice(:,3) == fvsIndicator;
+end
+
 
 if ~any(idxFVS == 1)
     % NS labeled
