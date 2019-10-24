@@ -34,17 +34,25 @@ p.parse(obj,varargin{:});
 iPlotWidth = p.Results.PlotWidth;
 
 
-%% get recorded audio signal
-[WavData, TimeVecWav, Fs] = getAudioSignal(obj);
-
-
 %% lets start with reading objective data
 stParam.privacy = true;
-if isfield(obj, 'UseAudio')
+if isfield(obj, 'UseAudio') % NS data
+
+    % build the full directory
+    szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
+    
+    % read in audio signal
+    audiofile = fullfile(szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
+    [WavData, Fs] = audioread(audiofile);
+    
     % set parameters for processing audio data
     stParam.fs          = Fs/2;
     stParam.mSignal     = resample(WavData, stParam.fs, Fs);
-    TimeVecWav          = TimeVecWav(1:2:end);
+    
+    % calculate time vector
+    nLen                = size(stParam.mSignal,1); % length in samples
+    nDur                = nLen/stParam.fs; % duration in sec
+    TimeVecWav          = linspace(0, nDur, nLen);
     
     stParam.tFrame      = 0.025; % block length in sec 
     stParam.lFrame      = floor(stParam.tFrame*stParam.fs); % block length in samples
@@ -57,6 +65,7 @@ if isfield(obj, 'UseAudio')
     stParam.fixThresh   = 0.6; % fixed coherence threshold
     stParam.adapThreshWin  = 0.05*stParam.fs; % window length for the adaptive threshold
     stParam.winLen      = floor(stParam.nFFT/10); % normalized window length (Nils)
+    alpha               = exp(-stParam.tFrame/stParam.tauCoh);
 
     [stData] = detectOVSRealCoherence(stParam);
     Pxx = stData.Pxx';
@@ -116,6 +125,11 @@ else % with feature files
     if isempty(DataRMS)
         return;
     end
+
+    TimeVecRMS = datenum(TimeVecRMS);
+
+    % get recorded audio signal for plotting
+    [WavData, TimeVecWav, Fs] = getAudioSignal(obj);
 end
 
 isFreqLim = 0;
@@ -187,8 +201,11 @@ set(mTextTitle,'Units','normalized','Position', [0.2 0.93 0.6 0.05], 'String', s
 
 %% Coherence
 axCoher = axes('Position',[GUI_xStart 0.6 GUI_xAxesWidth 0.18]);
-
-timeVec = datenum(TimeVecPSD);
+if isfield(obj, 'UseAudio') % NS data
+    timeVec = TimeVecPSD;
+else
+    timeVec = datenum(TimeVecPSD);
+end
 if isFreqLim
     nFreqBins = size(PxxShort,2);
     freqVec = 1:nFreqBins;
@@ -220,18 +237,22 @@ PosVecCoher = get(axCoher,'Position');
 %% RMS
 Calib_RMS = 100; % needs to be changed...
 axRMS = axes('Position',[GUI_xStart 0.09 PosVecCoher(3) 0.09]);
-plot(datenum(TimeVecRMS),20*log10(DataRMS)+Calib_RMS);
+plot(TimeVecRMS, 20*log10(DataRMS)+Calib_RMS);
 
 ylim([30 100]);
 yticks([30 50 70 90])
 axRMS.YLabel = ylabel('dB SPL');
-datetickzoom(axRMS,'x','HH:MM:SS');
 xlim([timeVec(1) timeVec(end)]);
 
 
 %% audio signal with labels
 axAudio = axes('Position',[GUI_xStart 0.41  PosVecCoher(3) 0.16]);
-plot(datenum(TimeVecWav(1:100:end)),WavData(1:100:end,1));
+if isfield(obj, 'UseAudio') % NS data
+    plot(TimeVecWav(1:100:end), stParam.mSignal(1:100:end,1));
+else
+    plot(datenum(TimeVecWav(1:100:end)), WavData(1:100:end,1));
+    datetickzoom(axRMS,'x','HH:MM:SS');
+end
 hold on;
 vTimeLabels = linspace(timeVec(1),timeVec(end),obj.NrOfBlocks);
 plot(vTimeLabels, vHit.OVD, 'r', 'LineWidth', 1.5);
@@ -265,7 +286,6 @@ axOVD.YTickLabels = {'-0.5','0', '0.5', '1'};
 
 %% Pxx
 axPxx = axes('Position',[GUI_xStart 0.2 GUI_xAxesWidth 0.18]);
-timeVec = datenum(TimeVecPSD);
 
 if isFreqLim
     PxxLog = 10*log10(PxxShort)';
@@ -367,8 +387,12 @@ idxTrFVS = ~isnan(groundTrFVS);
 idxTrNone = ~idxTrOVS & ~idxTrFVS;
 
 % and ground truth labels for voice activity at time base of RMS
-obj.fsVD = ceil(stInfoRMS.nFrames / 60);
 obj.NrOfBlocks = size(DataRMS,1);
+if isfield(obj, 'UseAudio') % NS data
+    obj.fsVD = obj.NrOfBlocks / nDur;
+else
+    obj.fsVD = stInfoRMS.nFrames / 60;
+end
 [vActivOVS, vActivFVS] = getVoiceLabels(obj);
 idxTrOVS_rms = vActivOVS == 1;
 idxTrFVS_rms = vActivFVS == 1;
