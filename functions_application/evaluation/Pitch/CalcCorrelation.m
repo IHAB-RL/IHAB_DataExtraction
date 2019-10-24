@@ -22,22 +22,25 @@ function [correlation] = CalcCorrelation(spectrum, samplerate, specsize)
 % Version History:
 % Ver. 0.01 initial create 23-Oct-2019  Initials JP
 
-matfile = 'SyntheticMagnitudes.mat';
-szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch';
-
-if exist([szDir filesep matfile]) ~= 0
-    load([szDir filesep matfile]);
-else
+if ~exist('synthetic_magnitudes', 'var') 
+    szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch';
     basefrequencies = 80:0.5:450;
     [synthetic_magnitudes] = CalcSyntheticMagnitude(szDir, samplerate, specsize, basefrequencies);
 end
 
-% weigh differences according to perception:
+% weight differences according to perception:
 f = linspace(0, samplerate/2, specsize);
 log_f_weight =  1 ./ (samplerate/2).^(f / (samplerate/2));
-        
-correlation = sum(abs(spectrum) .* synthetic_magnitudes .* log_f_weight, 2)';
-        
+
+% number of blocks
+nBlocks = size(spectrum, 1);
+
+% pre allocation
+correlation = zeros(nBlocks, size(synthetic_magnitudes, 1));
+
+for iBlock = 1:nBlocks
+    correlation(iBlock, :) = sum(abs(spectrum(iBlock, :)) .* synthetic_magnitudes .* log_f_weight, 2)';
+end 
         
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
