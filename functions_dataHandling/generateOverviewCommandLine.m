@@ -136,12 +136,24 @@ for kk = 1:length(AllDates)
     
     % Filter for PSD feat files since no second arguments is given to
     % Filename2date; also get back the indices of PSD files only
-    [dateFilenames,isFeatFile] = Filename2date(stSubject.chunkID.FileName);
+    % JP 24.10.19: add if
+    if isfield(stSubject, 'chunkID')
+        [dateFilenames,isFeatFile] = Filename2date(stSubject.chunkID.FileName);
     
-    % Now since you have the indices, you have to filter the error
-    % codes to get the respective ones
-    filteredErrorCodes = stSubject.chunkID.ErrorCode(isFeatFile);
-    filteredECColors = stSubject.chunkID.PercentageError(isFeatFile);
+        % Now since you have the indices, you have to filter the error
+        % codes to get the respective ones
+        filteredErrorCodes = stSubject.chunkID.ErrorCode(isFeatFile);
+        filteredECColors = stSubject.chunkID.PercentageError(isFeatFile);
+        
+    else
+        [dateFilenames,isFeatFile] = Filename2date(stSubject.valid.FileName);
+        
+    
+        % Now since you have the indices, you have to filter the error
+        % codes to get the respective ones
+        filteredErrorCodes = stSubject.valid.ErrorCode(isFeatFile);
+        filteredECColors = stSubject.valid.PercentageError(isFeatFile);
+    end
     
     % Get only the dates of the current day ...
     currentDayIndexes = ...
