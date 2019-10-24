@@ -22,7 +22,7 @@ subjectDirectories = subjectDirectories(isValidLength);
 nSubject = size(subjectDirectories, 1);
 
 % number of noise configurations
-nConfig = 6;
+nConfig = 7;
 
 % loop over all subjects
 for subj = 1:nSubject
@@ -38,6 +38,9 @@ for subj = 1:nSubject
         
         % build the full directory
         obj.szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig]; 
+        
+        % select audio file
+        obj.audiofile = fullfile(obj.szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
         
         PitchBechtold(obj);
         

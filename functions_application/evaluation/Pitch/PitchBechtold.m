@@ -10,11 +10,8 @@ function [] = PitchBechtold(obj)
 % Version History:
 % Ver. 0.01 initial create 23-Oct-2019  JP
 
-% select audio file
-audiofile = fullfile(obj.szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
-
 % read in signal
-[signal, fs] = audioread(audiofile);
+[signal, fs] = audioread(obj.audiofile);
 
 % take first 60 sec conversation
 nSec = 60;
