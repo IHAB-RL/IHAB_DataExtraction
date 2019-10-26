@@ -4,8 +4,8 @@
 % Ver. 0.01 initial create 22-Oct-2019  JP
 % Ver. 0.1 just for subject data 23-Oct-2019 JP
 
-clear;
-close all;
+% clear;
+% close all;
 
 % path to main data folder (needs to be customized)
 obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';

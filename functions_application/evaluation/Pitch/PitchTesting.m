@@ -43,12 +43,15 @@ nLen = nSamples/stParam.fs;
 timeVec = linspace(0, nLen, nSamples);
 freqVec = 0:stParam.fs/stParam.nFFT:stParam.fs/2;
 
-% estimate pitch via PEFAC
+% estimate pitch via PEF Matlab
 [f0, idx] = pitch(stParam.mSignal, stParam.fs, ...
     'Method', 'PEF', ...
     'Range', [50 800], ...
     'WindowLength', round(stParam.fs*0.08), ...
     'OverlapLength', round(stParam.fs*0.05));
+
+% estimate pitch via S.Gonzalez and M. Brookes
+[fx,tx,pv,fv] = v_fxpefac(stParam.mSignal, stParam.fs,0.01,'G');
 
 % [stData] = detectOVSRealCoherence(stParam);
 lFeed       = stParam.lFrame - stParam.lOverlap;
