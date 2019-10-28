@@ -83,12 +83,13 @@ matfile = 'SyntheticMagnitudes.mat';
 szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch';
 load([szDir filesep matfile]);
 
-% norm spectrum to maximum value
-MaxValuesPxx = max(Pxx'); % block based
-PxxNorm = Pxx./MaxValuesPxx(:);
+% % norm spectrum to maximum value
+% MaxValuesPxx = max(Pxx'); % block based
+% PxxNorm = Pxx./MaxValuesPxx(:);
+
 
 % calculate correlation
-[correlation] = CalcCorrelation(PxxNorm, stInfoFile.fs, specsize);
+[correlation, correlationPSD, synthetic_PSD] = CalcCorrelation(Pxx, stInfoFile.fs, specsize);
 
 % calculate time vector
 if isIHAB
@@ -101,13 +102,26 @@ timeVec = linspace(0, nDur, nBlocks);
 
 % plot results
 figure;
+subplot(2,1,1);
 imagesc(timeVec, basefrequencies, correlation');
 axis xy;
 c = colorbar;
+title('feat PSD x syn Spec');
 ylabel('Fundamental Frequency in Hz');
 xlabel('Time in sec');
 ylabel(c, 'Magnitude Feature F^M_t(f_0)');
 xlim([timeVec(1) timeVec(end)]);
+
+subplot(2,1,2);
+imagesc(timeVec, basefrequencies, correlationPSD');
+axis xy;
+c = colorbar;
+title('feat PSD x syn PSD');
+ylabel('Fundamental Frequency in Hz');
+xlabel('Time in sec');
+ylabel(c, 'Magnitude Feature F^M_t(f_0)');
+xlim([timeVec(1) timeVec(end)]);
+
 
 freqs = linspace(0, stInfoFile.fs/2, specsize);
 
@@ -119,11 +133,13 @@ idxFundFreq(2) = find(basefrequencies >= FundFreq(2), 1);
 blockidx = find(timeVec >= 18.88, 1);
 Pxx_abs =  abs(Pxx(blockidx,:)./max(Pxx(blockidx,:)))';
 figure; 
-plot(freqs, Pxx_abs);
+plot(freqs, Pxx(blockidx,:), 'k');
 hold on;
 plot(freqs, synthetic_magnitudes(idxFundFreq(1),:), 'r');
 plot(freqs, synthetic_magnitudes(idxFundFreq(2),:), 'g');
-legend('Pxx', 'T^M(f, 130)', 'T^M(f, 200)');
+plot(freqs, synthetic_PSD(idxFundFreq(1),:), 'b');
+plot(freqs, synthetic_PSD(idxFundFreq(2),:), 'c');
+legend('Pxx', 'T^M(f, 130)', 'T^M(f, 200)', 'PSD(T^M(f, 130))', 'PSD(T^M(f, 200))');
 xlim([0 4000]);
 xlabel('Frequency in Hz');
 ylabel('STFT Magnitude');
