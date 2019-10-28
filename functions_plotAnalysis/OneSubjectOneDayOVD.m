@@ -229,7 +229,6 @@ PosVecCoher = get(axCoher,'Position');
 %% RMS
 Calib_RMS = getCalibConst(obj.stSubject.Name);
 axRMS = axes('Position',[GUI_xStart 0.09 PosVecCoher(3) 0.09]);
-% hRMS = plot(TimeVecRMS,20*log10(DataRMS)+Calib_RMS);
 plot(datenum(TimeVecRMS),20*log10(DataRMS)+Calib_RMS{:});
 
 ylim([30 100]);

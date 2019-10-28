@@ -4,11 +4,12 @@
 % Version History:
 % Ver. 0.01 initial create 10-Sep-2019 	JP
 
-clear; 
-close all;
+% clear; 
+% close all;
 
 % path to data folder (needs to be customized)
 szBaseDir = 'I:\IHAB_2_EMA2018\IHAB_Rohdaten_EMA2018';
+szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019\NN08IA10';
 
 % get all subject directories
 subjectDirectories = dir(szBaseDir);
@@ -19,7 +20,7 @@ subjectDirectories = subjectDirectories(isValidLength);
 
 % choose a subject randomly  (adjust for a specific subject)
 nSubject = round(size(subjectDirectories,1)*rand(1));
-nSubject = 7;
+nSubject = 1;
 
 % get one subject directoy
 szCurrentFolder = subjectDirectories(nSubject).name;
@@ -27,7 +28,7 @@ szCurrentFolder = subjectDirectories(nSubject).name;
 % get object
 [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
 
-OneSubjectOneDayOVD(obj,'StartTime',14.5 ,'Endday',1,'HigherFreqResolution',false);
+OneSubjectOneDayOVD(obj);
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> Jule Pohlhausen
