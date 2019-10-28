@@ -20,11 +20,7 @@ function [stData] = computeSpectraAndCoherence(stParam)
 %         provide the citation detail here (with equation no. if applicable)
 % Version History:
 % Ver. 0.01 first implementation 01-Dec-2017  SB
-
-% based on : detectOVSRealCoherence.m
-% Unterschiede: 
-%   winNorm Verwendung
-%   Zeile 58
+% Ver. 0.02 add winNorm, window normalization constant 26-Okt-2019 JP
 
 
 lFeed       = stParam.lFrame - stParam.lOverlap;
@@ -44,7 +40,7 @@ alphaPSD    = exp(-lFeed/(0.125*stParam.fs));
 win         = repmat((hanning(stParam.lFrame,'periodic')),1,size(stParam.mSignal,2));
 %Add by Nils
 winNorm = sum(win.^2);
-winNorm = (winNorm.* stParam.lFrame)/stParam.nFFT;
+winNorm = (winNorm.* stParam.lFrame)/stParam.nFFT/2;
 winNorm = winNorm(1);
 
 tmpX        = 0;
@@ -55,7 +51,6 @@ for iFrame = 1:nFrames
     vIDX    = ((iFrame-1)*lFeed+1):((iFrame-1)*lFeed+stParam.lFrame);
     
     mSpec   = fft(stParam.mSignal(vIDX,:).*win,stParam.nFFT,1);
-%     mSpec   = 2.*mSpec(1:stParam.nFFT/2+1,:); % Nils
     mSpec   = mSpec(1:stParam.nFFT/2+1,:);
     
     curX    = (mSpec.*conj(mSpec))./winNorm;

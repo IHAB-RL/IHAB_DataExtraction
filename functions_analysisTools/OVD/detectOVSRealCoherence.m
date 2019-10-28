@@ -43,8 +43,8 @@ end
 alphaPSD    = exp(-lFeed/(0.125*stParam.fs));
 
 win         = repmat((hanning(stParam.lFrame,'periodic')),1,size(stParam.mSignal,2));
-%Add by Nils
-winNorm = stParam.lFrame*sum(win.^2)./stParam.nFFT;
+%Add by Nils/ Jule
+winNorm = 10*stParam.lFrame*sum(win.^2)./stParam.nFFT;
 
 tmpX        = 0;
 tmpXc       = 0;
