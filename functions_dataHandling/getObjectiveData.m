@@ -227,10 +227,10 @@ if isFileBased
     Startindex = 1;
     for fileIdx = 1:NrOfFiles
         
-        szFileName =  featFilesWithoutCorrupt{fileIdx};
+        szFileName = featFilesWithoutCorrupt{fileIdx};
         
         % load data from feature file
-        [FeatData, ~,~]= LoadFeatureFileDroidAlloc([szDir filesep szFileName]);
+        [FeatData, ~,~] = LoadFeatureFileDroidAlloc([szDir filesep szFileName]);
         
         ActBlockSize = size(FeatData,1);
         
