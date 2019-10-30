@@ -31,10 +31,10 @@ function [correlation, spectrum] = magnitude_correlation(signal, samplerate, blo
     synthetic_magnitudes = synthetic_magnitude(samplerate, specsize, basefrequencies);
     
     %% Jule
-%     freqs = linspace(0, samplerate/2, specsize);
-%     FundFreq = [130 200];
-%     idxFundFreq(1) = find(basefrequencies >= FundFreq(1), 1);
-%     idxFundFreq(2) = find(basefrequencies >= FundFreq(2), 1);
+    freqs = linspace(0, samplerate/2, specsize);
+    FundFreq = [130 200];
+    idxFundFreq(1) = find(basefrequencies >= FundFreq(1), 1);
+    idxFundFreq(2) = find(basefrequencies >= FundFreq(2), 1);
 %     figure;
 %     subplot(2,1,1);
 %     plot(freqs, synthetic_magnitudes(idxFundFreq(1), :));
@@ -61,16 +61,20 @@ function [correlation, spectrum] = magnitude_correlation(signal, samplerate, blo
         correlation(blockidx, :) = sum(abs(spectrum(blockidx, :)) .* synthetic_magnitudes .* log_f_weight, 2)';
         
         %% Jule
-%         if blockidx == 143 % plot template and spectrum for speech
-%             figure; 
-%             plot(freqs, abs(spectrum(blockidx,:))');
-%             hold on;
-%             plot(freqs, synthetic_magnitudes(FundFreq(1),:), 'r');
-%             legend('Pxx', 'T^M(f, 130)');
-%             xlim([0 4000]);
-%             xlabel('Frequency in Hz');
-%             ylabel('STFT Magnitude');
-%         end
+        if blockidx == 143 % plot template and spectrum for speech
+            
+            PSD = spectrum(blockidx,:).*conj(spectrum(blockidx,:));
+            
+            figure; 
+            plot(freqs, abs(spectrum(blockidx,:)));
+            hold on;
+            plot(freqs, synthetic_magnitudes(FundFreq(1),:), 'r');
+            plot(freqs, PSD);
+            legend('STFT magnitude', 'T^M(f, 130)', 'PSD');
+            xlim([0 4000]);
+            xlabel('Frequency in Hz');
+            ylabel('STFT/ PSD Magnitude');
+        end
         %%
     end
 end
