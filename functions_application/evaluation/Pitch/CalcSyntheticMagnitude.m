@@ -31,8 +31,9 @@ end
 
 [synthetic_magnitudes] = synthetic_magnitude(samplerate, specsize, basefrequencies);
 
-save([szDir filesep 'SyntheticMagnitudes'],'synthetic_magnitudes','basefrequencies');
-
+if ~nargout
+    save([szDir filesep 'SyntheticMagnitudes'],'synthetic_magnitudes','basefrequencies');
+end
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
 % Jade University of Applied Sciences 
