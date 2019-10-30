@@ -35,14 +35,14 @@ log_f_weight =  1 ./ (samplerate/2).^(f / (samplerate/2));
 % number of blocks
 nBlocks = size(spectrum, 1);
 
-% calculate power spetral density
-synthetic_PSD = synthetic_magnitudes.*conj(synthetic_magnitudes);
+% % calculate power spetral density
+% synthetic_PSD = synthetic_magnitudes.*conj(synthetic_magnitudes);
 
 freqs = linspace(0, samplerate/2, specsize);
-figure;
-plot(freqs, synthetic_magnitudes(101,:));
-hold on;
-plot(freqs, synthetic_PSD(101,:));
+% figure;
+% plot(freqs, synthetic_magnitudes(101,:));
+% hold on;
+% plot(freqs, synthetic_PSD(101,:));
 
 % pre allocation
 correlation = zeros(nBlocks, size(synthetic_magnitudes, 1));
@@ -50,7 +50,7 @@ correlationPSD = zeros(nBlocks, size(synthetic_magnitudes, 1));
 
 for iBlock = 1:nBlocks
     correlation(iBlock, :) = sum(abs(spectrum(iBlock, :)) .* synthetic_magnitudes .* log_f_weight, 2)';
-    correlationPSD(iBlock, :) = sum(abs(spectrum(iBlock, :)) .* synthetic_PSD .* log_f_weight, 2)';
+%     correlationPSD(iBlock, :) = sum(abs(spectrum(iBlock, :)) .* synthetic_PSD .* log_f_weight, 2)';
 end 
         
 %--------------------Licence ---------------------------------------------
