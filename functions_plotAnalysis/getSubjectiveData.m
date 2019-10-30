@@ -78,11 +78,10 @@ end
 
 % get subjective data from mat file or call import_EMA2018.m
 quest = dir([obj.stSubject.Folder filesep 'Questionnaires_*.mat']);
-if ~isempty(quest)
-    load([obj.stSubject.Folder filesep quest.name]);
-else
+if isempty(quest)
     import_EMA2018(obj);
 end
+load([obj.stSubject.Folder filesep quest.name]);
 
 if isempty(QuestionnairesTable)
     hasSubjectiveData = 0;
