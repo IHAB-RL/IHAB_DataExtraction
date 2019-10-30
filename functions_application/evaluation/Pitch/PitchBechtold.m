@@ -38,6 +38,8 @@ basefrequencies = 80:stepSizeFreq:450;
 [correlation, spectrum] = magnitude_correlation(signal, fs, blocksize, hopsize, basefrequencies);
 
 
+PSD = spectrum.*conj(spectrum);
+
 % plot results
 hFig1 = figure;
 hFig1.Position =  get(0,'ScreenSize');
@@ -64,7 +66,6 @@ axAudio = axes('Position',[nStartPos 0.72 PosVecCorr(3) nHeight]);
 subsample = 10;
 signal =  signal(1:subsample:end);
 timeVec = timeVec(1:subsample:end);
-nLen   = length(signal); % length in samples
 plot(timeVec, signal);
 hold on;
 % get and plot labels
@@ -84,6 +85,7 @@ xlim([timeVec(1) timeVec(end)]);
 % Short-time Fourier Transform of the signal
 axPxx = axes('Position',[nStartPos 0.39 nWidth nHeight]);
 imagesc(timeVecPitch, freqVec, 10*log10(abs(spectrum))');
+% imagesc(timeVecPitch, freqVec, 10*log10(PSD)');
 axis xy;
 c = colorbar;
 set(axPxx,'ylabel', ylabel('Frequency in Hz'));
@@ -197,6 +199,10 @@ ylabel([num2str(p) '% percentile Magnitude Feature F^M_t(f_0)']);
 
 
 % save figures
+isSaveMode = 0;
+if ~isSaveMode
+    return;
+end
 obj.szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch\figures';
 szFolder_Output = [obj.szDir filesep obj.szCurrentFolder];
 if ~exist(szFolder_Output, 'dir')
@@ -216,7 +222,7 @@ exportName3 = [szFolder_Output filesep ...
 savefig(hFig3, exportName3);
 
 exportName4 = [szFolder_Output filesep ...
-    'MaxCorr_' num2str(p) '_' obj.szCurrentFolder '_' obj.szNoiseConfig];
+    'MaxCorr_' obj.szCurrentFolder '_' obj.szNoiseConfig];
 savefig(hFig4, exportName4);
 
 %--------------------Licence ---------------------------------------------

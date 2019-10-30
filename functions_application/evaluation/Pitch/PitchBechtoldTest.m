@@ -4,12 +4,24 @@
 % Ver. 0.01 initial create 22-Oct-2019  JP
 % Ver. 0.1 just for subject data 23-Oct-2019 JP
 
-% clear;
-% close all;
+clear;
+close all;
+
+% choose between data from Bilert or Schreiber
+isBilert = 1;
 
 % path to main data folder (needs to be customized)
-obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
-obj.szBaseDir = 'I:\IHAB_DB\OVD_nils';
+if isBilert
+    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
+    
+    % number of first and last noise configuration
+    nConfig = [1; 6];
+else
+    obj.szBaseDir = 'I:\IHAB_DB\OVD_nils';
+    
+    % number of first and last noise configuration
+    nConfig = [0; 7];
+end
  
 % get all subject directories
 subjectDirectories = dir(obj.szBaseDir);
@@ -21,8 +33,6 @@ subjectDirectories = subjectDirectories(isValidLength);
 % number of subjects
 nSubject = size(subjectDirectories, 1);
 
-% number of noise configurations
-nConfig = 7;
 
 % loop over all subjects
 for subj = 1:nSubject
@@ -31,8 +41,7 @@ for subj = 1:nSubject
     obj.szCurrentFolder = subjectDirectories(subj).name;
     
     % loop over all noise configurations
-    for config = 0:nConfig
-        close all;
+    for config = nConfig(1):nConfig(2)
         % choose noise configurations
         obj.szNoiseConfig = ['config' num2str(config)];
         
@@ -42,8 +51,10 @@ for subj = 1:nSubject
         % select audio file
         obj.audiofile = fullfile(obj.szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
         
-        PitchBechtold(obj);
+%         PitchBechtold(obj);
+        CalcCorrelationTest(obj);
         
+        close all;
     end
 end
 
