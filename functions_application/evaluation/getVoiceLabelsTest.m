@@ -1,13 +1,14 @@
-% Test script belonging to getVoiveLabelsNew.m
+% Test script belonging to getVoiveLabels.m
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Version History:
-% Ver. 0.01 initial create 15-Oct-2019 JP
+% Ver. 0.01 initial create 29-Oct-2019 JP
 
 clear;
 
 % path to main data folder (needs to be customized)
 obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
 % obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
+% obj.szBaseDir = 'I:\IHAB_DB\OVD_nils';
 
 % get all subject directories
 subjectDirectories = dir(obj.szBaseDir);
@@ -23,7 +24,7 @@ nSubject = 1;
 obj.szCurrentFolder = subjectDirectories(nSubject).name;
 
 % number of noise configuration
-nConfig = 1;
+nConfig = 2;
 
 % choose noise configurations
 obj.szNoiseConfig = ['config' num2str(nConfig)];
@@ -54,7 +55,7 @@ obj.NrOfBlocks = nBlocks;
 
 % plot time signal with labels
 figure;
-plot(timeVec, mSignal);
+plot(timeVec(1:100:end), mSignal(1:100:end, 1));
 hold on;
 plot(timeVecBlock, groundTrOVS, 'r');
 plot(timeVecBlock, groundTrFVS, 'b');

@@ -1,5 +1,7 @@
 function [vActivOVS,vActivFVS]=getVoiceLabels(obj)
 % function to return the labels of own or futher voice sequences (OVS/FVS)
+% because three different person labeled the audio data, there are
+% differences in the label settings.
 % Usage [vActivOVS,vActivFVS]=getVoiceLabels(obj)
 %
 % Parameters
@@ -20,13 +22,16 @@ function [vActivOVS,vActivFVS]=getVoiceLabels(obj)
 vActivOVS = zeros(1,obj.NrOfBlocks);
 vActivFVS = zeros(1,obj.NrOfBlocks);
 
+% list with all persons that collected and labeled audio data
+stPersons = {'Nils'; 'Sascha'; 'Jule'};
+
 % build the full directory
 szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
 
 gtFile = fullfile(szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '_Voice.txt']);
 
 if ~exist(gtFile)
-    % NS measured
+    % Nils measured
     isNS = 1;
     gtFile = fullfile(szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '.txt']);
 else
@@ -41,23 +46,22 @@ end
 
 %% FVS
 if isNS
-    fvsIndicator = 1; % NS
-    if strcmp(obj.szNoiseConfig, 'config1') || strcmp(obj.szNoiseConfig, 'config2')
-        % in this special case the radio host was labeled with 2 and music 
-        % with 222 (config1) respectively -1 (config2) ...
-        fvsIndicator = [1 2];
-        idxFVS = vActVoice(:,3) == fvsIndicator(1) | vActVoice(:,3) == fvsIndicator(2);
-    else
-        idxFVS = vActVoice(:,3) >= fvsIndicator;
-    end
+    fvsIndicator = [1 2 3];
+    
+elseif contains(obj.szBaseDir, stPersons{2})
+    fvsIndicator = 0; % JP labeled SB data
+    
 else
-    fvsIndicator = 0; % JP
-    idxFVS = vActVoice(:,3) == fvsIndicator;
+    fvsIndicator = 1:10; % JP data
 end
 
+idxFVS = vActVoice(:,3) == fvsIndicator;
+if size(idxFVS,2) > 1
+    idxFVS = logical(sum(idxFVS, 2));
+end
 
 if ~any(idxFVS == 1)
-    % NS labeled
+    % NS labeled SB data
     gtFile = fullfile(szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '_VoiceOthers.txt']);
     vActVoiceFVS = importdata(gtFile);
     
@@ -79,18 +83,20 @@ end
 
 
 %% OVS
-if exist('vActVoiceFVS', 'var')
+if contains(obj.szBaseDir, stPersons{2}) && exist('vActVoiceFVS', 'var')
+    % NS labeled SB data
     startTimeOVS = vActVoice(:, 1);
     endTimeOVS = vActVoice(:, 2);
-elseif isNS
+elseif contains(obj.szBaseDir, stPersons{2})
+    % SB labeled
+    startTimeOVS = vActVoice(~idxFVS,1);
+    endTimeOVS = vActVoice(~idxFVS,2);
+else
     ovsIndicator = 0;
     idxOVS = vActVoice(:,3) == ovsIndicator;
     
     startTimeOVS = vActVoice(idxOVS, 1);
     endTimeOVS = vActVoice(idxOVS, 2);
-else
-    startTimeOVS = vActVoice(~idxFVS,1);
-    endTimeOVS = vActVoice(~idxFVS,2);
 end
 
 % check bounds
