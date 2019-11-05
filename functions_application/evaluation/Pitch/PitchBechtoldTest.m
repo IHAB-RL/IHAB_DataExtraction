@@ -1,4 +1,5 @@
-% test script belonging to PitchBechtold.m
+% test script to loop over several parameters, e.g. number of subjects or
+% number of noise/ measurement configuration
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create 22-Oct-2019  JP
@@ -7,8 +8,9 @@
 clear;
 close all;
 
-% choose between data from Bilert or Schreiber
-isBilert = 1;
+% choose between data from Bilert or Schreiber or Pohlhausen
+isBilert = 0;
+isSchreiber = 0;
 
 % path to main data folder (needs to be customized)
 if isBilert
@@ -16,11 +18,16 @@ if isBilert
     
     % number of first and last noise configuration
     nConfig = [1; 6];
-else
+elseif isSchreiber
     obj.szBaseDir = 'I:\IHAB_DB\OVD_nils';
     
     % number of first and last noise configuration
     nConfig = [0; 7];
+else
+    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
+    
+    % number of first and last noise configuration
+    nConfig = [1; 3];
 end
  
 % get all subject directories
@@ -51,8 +58,10 @@ for subj = 1:nSubject
         % select audio file
         obj.audiofile = fullfile(obj.szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
         
+        % function call
 %         PitchBechtold(obj);
-        CalcCorrelationTest(obj);
+%         CalcCorrelationTest(obj);
+        AnalysePeaksCorrelation(obj)
         
         close all;
     end
