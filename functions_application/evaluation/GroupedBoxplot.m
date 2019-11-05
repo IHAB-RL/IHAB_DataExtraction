@@ -13,7 +13,7 @@ ACTid = ACTid(:);
 xylabel = repmat('xyz',nValues(2)*nValues(1),1);
 boxplot([X; Y; Z],{repmat(ACTid,3,1), xylabel(:)},'factorgap',15,'Whisker',1)
 xlabel(' ');
-ylim([0 1]);
+ylim([0 100]);
 % Retrieve handles to text labels
 h = allchild(findall(gca,'type','hggroup'));
 
@@ -23,14 +23,18 @@ h     = setdiff(h,throw);
 delete(throw);
 
 % Center labels
-noiseLabel = {'Ruhe','40 dB(A)','50 dB(A)','60 dB(A)','65 dB(A)','70 dB(A)'};
+if nValues(2) == 6
+    vLabels = {'Ruhe','40 dB(A)','50 dB(A)','60 dB(A)','65 dB(A)','70 dB(A)'};
+else
+    vLabels = {'1','2','3'};
+end
 hlbl   = findall(h,'type','text');
 pos    = sort(cell2mat(get(hlbl,'pos')));
 
 % New centered position for first intra-group label
 newPos = num2cell([mean(reshape(pos(:,1),3,[]))' pos(1:3:end,2:end)],2);
 % newPos = num2cell(pos(2:3:end,:),2);
-set(hlbl(2:3:end),{'pos'},newPos,{'string'},noiseLabel')
+set(hlbl(2:3:end),{'pos'},newPos,{'string'},vLabels')
 
 % delete second intra-group label
 delete(hlbl([1:3:end 3:3:end]))
@@ -44,11 +48,13 @@ end
 
 c = get(gca, 'Children');
 
-hleg1 = legend(c(1:3), 'Bitzer et al. 2016', 'Bilert 2018', 'Schreiber 2019');
-hleg1.Location = 'southoutside';
-hleg1.Location = 'northoutside';
-hleg1.NumColumns = 3;
-
+isLegend = 0;
+if isLegend
+    hleg1 = legend(c(1:3), 'Bitzer et al. 2016', 'Bilert 2018', 'Schreiber 2019');
+    hleg1.Location = 'southoutside';
+    hleg1.Location = 'northoutside';
+    hleg1.NumColumns = 3;
+end
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
