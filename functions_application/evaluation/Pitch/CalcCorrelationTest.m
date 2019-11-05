@@ -38,7 +38,7 @@ if isIHAB
 else
     % path to main data folder (needs to be customized)
     obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
-    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
+%     obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
 
     % get all subject directories
     subjectDirectories = dir(obj.szBaseDir);
@@ -54,7 +54,7 @@ else
     obj.szCurrentFolder = subjectDirectories(nSubject).name;
     
     % number of noise configuration
-    nConfig = 2;
+    nConfig = 5;
 
     % choose noise configurations
     obj.szNoiseConfig = ['config' num2str(nConfig)];
@@ -91,18 +91,17 @@ nFFT = (stInfoFile.nDimensions - 2 - 4)/2;
 specsize = nFFT/2 + 1;  
 nBlocks = size(Pxx, 1);
 
+% load basefrequencies and synthetic spectra
 szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch';
-if stInfoFile.fs ~= 24000
-    basefrequencies = 80:0.5:450;
-    synthetic_magnitudes = CalcSyntheticMagnitude(szDir, stInfoFile.fs, specsize, basefrequencies);
-else
-    matfile = 'SyntheticMagnitudes.mat';
-    load([szDir filesep matfile], 'synthetic_magnitudes', 'basefrequencies');
-end
+% matfile = 'SyntheticMagnitudes_80_450_741.mat';
+matfile = 'SyntheticMagnitudes_50_450_200.mat';
+load([szDir filesep matfile], 'basefrequencies', 'synthetic_magnitudes');
+
+
 % % norm spectrum to maximum value
 % MaxValuesPxx = max(Pxx'); % block based
 % PxxNorm = Pxx./MaxValuesPxx(:);
-Pxx = 10^5*Pxx;
+% Pxx = 10^5*Pxx;
 Cxy = 10^5*real(Cxy);
 Pyy = 10^5*Pyy;
 
@@ -133,16 +132,6 @@ xlabel('Time in sec');
 ylabel(c, 'Magnitude Feature F^M_t(f_0)');
 xlim([timeVec(1) timeVec(end)]);
 
-% subplot(2,1,2);
-% imagesc(timeVec, basefrequencies, correlationPSD');
-% axis xy;
-% c = colorbar;
-% title('feat PSD x syn PSD');
-% ylabel('Fundamental Frequency in Hz');
-% xlabel('Time in sec');
-% ylabel(c, 'Magnitude Feature F^M_t(f_0)');
-% xlim([timeVec(1) timeVec(end)]);
-
 subplot(2,1,2);
 imagesc(timeVec, freqVec, 10*log10(Pxx)');
 axis xy;
@@ -155,29 +144,25 @@ xlim([timeVec(1) timeVec(end)]);
 ylim([freqVec(1) 6000]);
 
 
-% plot template and real spectra
-FundFreq = [130 200];
-idxFundFreq(1) = find(basefrequencies >= FundFreq(1), 1);
-idxFundFreq(2) = find(basefrequencies >= FundFreq(2), 1);
+% % plot template and real spectra
+% FundFreq = [130 200];
+% idxFundFreq(1) = find(basefrequencies >= FundFreq(1), 1);
+% idxFundFreq(2) = find(basefrequencies >= FundFreq(2), 1);
 
-blockidx = find(timeVec >= 18.88, 1);
-figure; 
-plot(freqVec, real(Cohe(blockidx,:)), 'k');
-hold on;
-plot(freqVec, synthetic_magnitudes(idxFundFreq(1),:), 'r');
-plot(freqVec, synthetic_magnitudes(idxFundFreq(2),:), 'g');
-% plot(freqVec, synthetic_PSD(idxFundFreq(1),:), 'b');
-% plot(freqVec, synthetic_PSD(idxFundFreq(2),:), 'c');
-legend('Pxx', 'T^M(f, 130)', 'T^M(f, 200)', 'PSD(T^M(f, 130))', 'PSD(T^M(f, 200))');
-xlim([0 4000]);
-xlabel('Frequency in Hz');
-ylabel('STFT Magnitude');
+blockidx = find(timeVec >= 79.58, 1);
+% figure; 
+% plot(freqVec, real(Cohe(blockidx,:)), 'k');
+% hold on;
+% plot(freqVec, synthetic_magnitudes(idxFundFreq(1),:), 'r');
+% plot(freqVec, synthetic_magnitudes(idxFundFreq(2),:), 'g');
+% % plot(freqVec, synthetic_PSD(idxFundFreq(1),:), 'b');
+% % plot(freqVec, synthetic_PSD(idxFundFreq(2),:), 'c');
+% legend('Pxx', 'T^M(f, 130)', 'T^M(f, 200)', 'PSD(T^M(f, 130))', 'PSD(T^M(f, 200))');
+% xlim([0 4000]);
+% xlabel('Frequency in Hz');
+% ylabel('STFT Magnitude');
 
-if isIHAB
-    return;
-end
 
-% calculate and plot distribution of Magnitude Feature
 % get labels for new blocksize
 obj.fsVD = nBlocks/nDur;
 obj.NrOfBlocks = nBlocks;
@@ -187,15 +172,39 @@ idxTrOVS = groundTrOVS == 1;
 idxTrFVS = groundTrFVS == 1;
 idxTrNone = ~idxTrOVS & ~idxTrFVS;
 
-% check labels
-figure;
-imagesc(1:nBlocks, basefrequencies, correlation');
-axis xy;
-colorbar;
-hold on;
-plot(200*groundTrOVS, 'r');
-plot(300*groundTrFVS, 'b');
-plot(400*idxTrNone, 'g');
+% % check labels
+% figure;
+% imagesc(timeVec, basefrequencies, correlation');
+% axis xy;
+% colorbar;
+% hold on;
+% plot(200*groundTrOVS, 'r');
+% plot(300*groundTrFVS, 'b');
+% plot(400*idxTrNone, 'g');
+
+
+
+% % plot PSD and correlation for one time frame with marked peaks
+% figure;
+% subplot(2,1,1);
+% plot(basefrequencies, correlation(blockidx,:));
+% hold on;
+% plot(basefrequencies(locs), peaks, 'vr');
+% title('feat PSD x syn Spec');
+% xlabel('Fundamental Frequency in Hz');
+% ylabel('Magnitude Feature F^M_t(f_0)');
+% 
+% subplot(2,1,2);
+% plot(freqVec, 10*log10(Pxx(blockidx,:))');
+% title('scaled PSD feature');
+% xlabel('Frequency in Hz');
+% ylabel('PSD Magnitude in dB');
+
+if isIHAB
+    return;
+end
+
+%% calculate and plot distribution of Magnitude Feature
 
 % calculate mean on correlation for OVS | FVS | no VS
 MeanCorrOVS = mean(correlation(idxTrOVS,:));
@@ -279,7 +288,7 @@ ylabel([num2str(p) '% percentile Magnitude Feature F^M_t(f_0)']);
 
 
 % save figures
-isSaveMode = 1;
+isSaveMode = 0;
 if ~isSaveMode
     return;
 end
