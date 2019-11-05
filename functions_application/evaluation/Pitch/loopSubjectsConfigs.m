@@ -4,12 +4,13 @@
 % Version History:
 % Ver. 0.01 initial create 22-Oct-2019  JP
 % Ver. 0.1 just for subject data 23-Oct-2019 JP
+% Ver. 0.2 generalized loop function 05-Nov-2019 JP
 
 clear;
 close all;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
-isBilert = 0;
+isBilert = 1;
 isSchreiber = 0;
 
 % path to main data folder (needs to be customized)
@@ -61,7 +62,8 @@ for subj = 1:nSubject
         % function call
 %         PitchBechtold(obj);
 %         CalcCorrelationTest(obj);
-        AnalysePeaksCorrelation(obj)
+%         AnalysePeaksCorrelation(obj);
+        EvaluatePerformanceOVDPitch(obj);
         
         close all;
     end
