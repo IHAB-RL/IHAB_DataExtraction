@@ -1,16 +1,11 @@
-function [] = AnalysePeaksCorrelation(obj)
-% function to
+function AnalysePeaksCorrelation(obj)
+% function to analyse the peaks in the correlation (magnitude feature by 
+% Basti Bechtold)
 % Usage AnalysePeaksCorrelation(obj)
 %
 % Parameters
 % ----------
-% inParam :  type
-%	 explanation
-%
-% Returns
-% -------
-% outParam :  type
-%	 explanation
+% inParam :  obj - struct, contains all informations
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF  
 % Version History:

@@ -1,17 +1,45 @@
 function [peaks,locs,hFig,peaksOVS,peaksFVS,peaksNone] = ...
     DeterminePeaksCorrelation(correlation,basefrequencies,nBlocks,idxTrOVS,idxTrFVS,idxTrNone)
-% function to do something usefull (fill out)
-% Usage [outParam]=DeterminePeaksCorrelation(inParam)
+% function to find peaks in the correlation (magnitude feature by Bechtold)
+% If no peaks occur, NaNs are saved
+% If no labels are given only the general peaks and locs are returned
+% Usage [peaks,locs,hFig,peaksOVS,peaksFVS,peaksNone] = ...
+%    DeterminePeaksCorrelation(correlation,basefrequencies,nBlocks,idxTrOVS,idxTrFVS,idxTrNone)
 %
 % Parameters
 % ----------
-% inParam :  type
-%	 explanation
+% inParam :  
+%   correlation - len(nBlocks) x len(basefrequencies) matrix, containing 
+%                 the magnitude feature, calculated for a set of given 
+%                 basefrequencies (cf. CalcCorrelation.m)
+%
+%   basefrequencies - vector, contains the basefrequencies, e.g. 200
+%                     candidates between 50 and 450 Hz (logarithmic spaced)
+%
+%   nBlocks  - number of time frames
+%
+%   idxTrOVS - logical array len(nBlocks), 1 = OVS
+%
+%   idxTrFVS - logical array len(nBlocks), 1 = FVS
+%
+%   idxTrNone - logical array len(nBlocks), 1 = no VS
 %
 % Returns
 % -------
-% outParam :  type
-%	 explanation
+% outParam :  
+%   peaks     - matrix, contains the height of the three highest peaks for 
+%               each time frame
+%
+%   locs      - matrix, contains the corresponding basefrequency of the 
+%               three highest peaks for each time frame
+%
+%   hFig      - handle to figure
+%
+%   peaksOVS  - like peaks, just for OVS
+%
+%   peaksFVS  - like peaks, just for FVS
+%
+%   peaksNone - like peaks, just for no VS
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF  
 % Version History:
@@ -32,6 +60,14 @@ for blockidx = 1:nBlocks
         peaks(blockidx,1:nPeaks) = peaksTemp;
         locs(blockidx,1:nPeaks) = locsTemp;
     end
+end
+
+if nargin == 3
+    hFig = []; 
+    peaksOVS = []; 
+    peaksFVS = []; 
+    peaksNone = []; 
+    return;
 end
 
 % plot peak results

@@ -1,4 +1,5 @@
-% script to
+% script to analyse the distribution of peaks in the correlation (magnitude
+% feature by Basti Bechtold)
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create 04-Nov-2019  Initials JP
