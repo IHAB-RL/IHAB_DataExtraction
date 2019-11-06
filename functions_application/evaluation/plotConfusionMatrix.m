@@ -34,6 +34,11 @@ if nargin == 4
     mConfusion = [tp fp; fn tn];
 end
 
+stTitle = [];
+if nargin == 3
+    stTitle = [': ' vGroundTruth];
+end
+
 % number of labels
 numlabels = size(mConfusion, 1);
 
@@ -43,7 +48,7 @@ confpercent = 100*mConfusion./repmat(sum(mConfusion, 1),numlabels,1);
 % plotting the colors
 figure;
 imagesc(confpercent);
-title('Confusion Matrix');
+title(['Confusion Matrix' stTitle]);
 ylabel('Predicted Values'); xlabel('Actual Values');
 
 % set the colormap

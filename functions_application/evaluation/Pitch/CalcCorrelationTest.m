@@ -54,7 +54,7 @@ else
     obj.szCurrentFolder = subjectDirectories(nSubject).name;
     
     % number of noise configuration
-    nConfig = 5;
+    nConfig = 4;
 
     % choose noise configurations
     obj.szNoiseConfig = ['config' num2str(nConfig)];
@@ -101,7 +101,7 @@ load([szDir filesep matfile], 'basefrequencies', 'synthetic_magnitudes');
 % % norm spectrum to maximum value
 % MaxValuesPxx = max(Pxx'); % block based
 % PxxNorm = Pxx./MaxValuesPxx(:);
-% Pxx = 10^5*Pxx;
+Pxx = 10^5*Pxx;
 Cxy = 10^5*real(Cxy);
 Pyy = 10^5*Pyy;
 
@@ -120,28 +120,28 @@ timeVec = linspace(0, nDur, nBlocks);
 % calculate frequency vector
 freqVec = linspace(0, stInfoFile.fs/2, specsize);
 
-% plot PSD and correlation
-figure;
-subplot(2,1,1);
-imagesc(timeVec, basefrequencies, correlation');
-axis xy;
-c = colorbar;
-title('feat PSD x syn Spec');
-ylabel('Fundamental Frequency in Hz');
-xlabel('Time in sec');
-ylabel(c, 'Magnitude Feature F^M_t(f_0)');
-xlim([timeVec(1) timeVec(end)]);
-
-subplot(2,1,2);
-imagesc(timeVec, freqVec, 10*log10(Pxx)');
-axis xy;
-c = colorbar;
-title('scaled PSD feature');
-ylabel('Frequency in Hz');
-xlabel('Time in sec');
-ylabel(c, 'PSD Magnitude in dB');
-xlim([timeVec(1) timeVec(end)]);
-ylim([freqVec(1) 6000]);
+% % plot PSD and correlation
+% figure;
+% subplot(2,1,1);
+% imagesc(timeVec, basefrequencies, correlation');
+% axis xy;
+% c = colorbar;
+% title('feat PSD x syn Spec');
+% ylabel('Fundamental Frequency in Hz');
+% xlabel('Time in sec');
+% ylabel(c, 'Magnitude Feature F^M_t(f_0)');
+% xlim([timeVec(1) timeVec(end)]);
+% 
+% subplot(2,1,2);
+% imagesc(timeVec, freqVec, 10*log10(Pxx)');
+% axis xy;
+% c = colorbar;
+% title('scaled PSD feature');
+% ylabel('Frequency in Hz');
+% xlabel('Time in sec');
+% ylabel(c, 'PSD Magnitude in dB');
+% xlim([timeVec(1) timeVec(end)]);
+% ylim([freqVec(1) 6000]);
 
 
 % % plot template and real spectra
@@ -149,7 +149,7 @@ ylim([freqVec(1) 6000]);
 % idxFundFreq(1) = find(basefrequencies >= FundFreq(1), 1);
 % idxFundFreq(2) = find(basefrequencies >= FundFreq(2), 1);
 
-blockidx = find(timeVec >= 79.58, 1);
+blockidx = find(timeVec >= 15.2, 1);
 % figure; 
 % plot(freqVec, real(Cohe(blockidx,:)), 'k');
 % hold on;
@@ -184,21 +184,19 @@ idxTrNone = ~idxTrOVS & ~idxTrFVS;
 
 
 
-% % plot PSD and correlation for one time frame with marked peaks
-% figure;
-% subplot(2,1,1);
-% plot(basefrequencies, correlation(blockidx,:));
-% hold on;
-% plot(basefrequencies(locs), peaks, 'vr');
-% title('feat PSD x syn Spec');
-% xlabel('Fundamental Frequency in Hz');
-% ylabel('Magnitude Feature F^M_t(f_0)');
-% 
-% subplot(2,1,2);
-% plot(freqVec, 10*log10(Pxx(blockidx,:))');
-% title('scaled PSD feature');
-% xlabel('Frequency in Hz');
-% ylabel('PSD Magnitude in dB');
+% plot PSD and correlation for one time frame with marked peaks
+figure;
+subplot(2,1,1);
+plot(basefrequencies, correlation(blockidx,:));
+title('feat PSD x syn Spec');
+xlabel('Fundamental Frequency in Hz');
+ylabel('Magnitude Feature F^M_t(f_0)');
+
+subplot(2,1,2);
+plot(freqVec, 10*log10(Pxx(blockidx,:))');
+title('scaled PSD feature');
+xlabel('Frequency in Hz');
+ylabel('PSD Magnitude in dB');
 
 if isIHAB
     return;

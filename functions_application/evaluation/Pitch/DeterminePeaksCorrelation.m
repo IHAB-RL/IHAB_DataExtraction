@@ -45,6 +45,9 @@ function [peaks,locs,hFig,peaksOVS,peaksFVS,peaksNone] = ...
 % Version History:
 % Ver. 0.01 initial create 04-Nov-2019  Initials JP
 
+% supress warnings
+warning('off','signal:findpeaks:largeMinPeakHeight');
+
 % determine peaks in magnitude feature
 peaks = NaN(nBlocks, 3);
 locs = NaN(nBlocks, 3);

@@ -1,29 +1,27 @@
 function [estimatedOVS]=OVD_Pitch(peaks)
 % function to estimate own voice sequences (OVS) based on "Pitch"
 % work in progress
-% Usage [outParam]=OVD_Pitch(inParam)
+% Usage [estimatedOVS]=OVD_Pitch(peaks)
 %
 % Parameters
 % ----------
 % inParam :  
-%   peaks - matrix
+%   peaks - matrix, contains for each time frame the height of maximal 3 
+%           detected peaks in the correlation of PSD and synthetic spectra
 %
 % Returns
 % -------
-% outParam :  type
-%	 explanation
+% outParam :  
+%   estimatedOVS - logical array, 1 = OVS
 %
-%------------------------------------------------------------------------ 
-% Example: Provide example here if applicable (one or two lines) 
-
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF 
-% Source: If the function is based on a scientific paper or a web site, 
-%         provide the citation detail here (with equation no. if applicable)  
 % Version History:
 % Ver. 0.01 initial create 05-Nov-2019  JP
 
 % define minimum height of correlation peak
-minHeight = 2;
+minHeight = 10;
+
+% calculate harmonic ratio
 
 % detect peaks that are higher than the minimum height
 estimatedOVS = peaks(:, 1) >= minHeight;

@@ -19,8 +19,8 @@ end
 version = 1; % JP modified get_psd
 [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
 
-% % calculate coherence
-% Cohe = Cxy./(sqrt(Pxx.*Pyy) + eps);
+% call OVD by Schreiber 2019
+stDataOVD = OVD3(Cxy, Pxx, Pyy, stInfoFile.fs);
 
 nFFT = (stInfoFile.nDimensions - 2 - 4)/2;
 specsize = nFFT/2 + 1;  
@@ -46,13 +46,16 @@ correlation = CalcCorrelation(Pxx, stInfoFile.fs, specsize);
 [peaks,locs] = DeterminePeaksCorrelation(correlation,basefrequencies,nBlocks);
 
 % estimate own voice sequences
-[estimatedOVS] = OVD_Pitch(peaks);
+[estimatedOVS_Pitch] = OVD_Pitch(peaks);
+
+% combine coherence, rms, pitch
+estimatedOVS = stDataOVD.vOVS | estimatedOVS_Pitch;
 
 % duration one frame in sec
 nLenFrame = 60/stInfoFile.nFrames; 
 obj.fsVD = 1/nLenFrame;
 obj.NrOfBlocks = nBlocks;
-% get labels for new blocksize
+% get voice labels
 [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
 
 idxTrOVS = groundTrOVS == 1;
@@ -77,8 +80,9 @@ if ~exist(szFolder_Output, 'dir')
 end
 
 % save results as mat file
-szFile = ['OVD_Pitch_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
+szFile = ['OVD_Schreiber_Pitch_PH10_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
 save([szFolder_Output filesep szFile], 'stResults');
+
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
 % Institute for Hearing Technology and Audiology
