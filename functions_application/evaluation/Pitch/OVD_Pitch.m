@@ -36,6 +36,9 @@ stData.TrackMin = movmin(stData.CorrRMS, stData.winLen);
 stData.adapThreshCorr = (stData.TrackMax + stData.TrackMin)/2;
 stData.adapThreshCorr = max(stData.adapThreshCorr, MIN_CORR);
 
+% check threshold
+stData.vOVS = stData.CorrRMS >= stData.adapThreshCorr; 
+
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
 % Jade University of Applied Sciences 
