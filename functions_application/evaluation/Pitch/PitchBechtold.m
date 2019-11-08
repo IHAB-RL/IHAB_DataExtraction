@@ -1,25 +1,30 @@
-function [] = PitchBechtold(obj)
-% function to test pitch features
-% Usage PitchBechtold(obj)
-%
-% Parameters
-% ----------
-%	 obj - struct, contains all informations, e.g. datafolder, subject ...
-%
-% Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
-% Version History:
-% Ver. 0.01 initial create 23-Oct-2019  JP
+% function [] = PitchBechtold(obj)
+% % function to test pitch features
+% % Usage PitchBechtold(obj)
+% %
+% % Parameters
+% % ----------
+% %	 obj - struct, contains all informations, e.g. datafolder, subject ...
+% %
+% % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
+% % Version History:
+% % Ver. 0.01 initial create 23-Oct-2019  JP
+% 
+% % read in signal
+% [signal, fs] = audioread(obj.audiofile);
+% 
+% % take first 60 sec conversation
+% nSec = 60;
+% signal = signal(1:round(nSec*fs));
+% signal  = signal(:);
 
-% read in signal
-[signal, fs] = audioread(obj.audiofile);
+fs = 24000;
+signal = randn(2*fs,1);
 
-% take first 60 sec conversation
-nSec = 60;
-signal = signal(1:round(nSec*fs));
-signal  = signal(:);
 nLen    = length(signal); % length in samples
 nDur    = nLen/fs; % length in sec
 timeVec = linspace(0, nDur, nLen);
+
 
 blocksize = 2048;
 Overlap   = blocksize/2;
@@ -31,8 +36,9 @@ nBlocks   = ceil((nLen-blocksize) / hopsize);
 timeVecPitch = linspace(0, nDur, nBlocks);
 
 % define base frequencies
-stepSizeFreq = 1/2;
-basefrequencies = 80:stepSizeFreq:450;
+% stepSizeFreq = 1/2;
+% basefrequencies = 80:stepSizeFreq:450;
+basefrequencies = logspace(log10(50),log10(450),200);
 
 % magnitude domain feature - Bastian Bechtold
 [correlation, spectrum] = magnitude_correlation(signal, fs, blocksize, hopsize, basefrequencies);
@@ -63,19 +69,19 @@ PosVecCorr = get(axCorr,'Position');
 % time signal
 axAudio = axes('Position',[nStartPos 0.72 PosVecCorr(3) nHeight]);
 
-subsample = 10;
-signal =  signal(1:subsample:end);
-timeVec = timeVec(1:subsample:end);
+% subsample = 10;
+% signal =  signal(1:subsample:end);
+% timeVec = timeVec(1:subsample:end);
 plot(timeVec, signal);
-hold on;
-% get and plot labels
-obj.fsVD = 1/tFrame;
-obj.NrOfBlocks = round(nDur/tFrame);
-[groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
-
-timeVec = linspace(timeVec(1), timeVec(end), obj.NrOfBlocks);
-plot(timeVec, groundTrOVS, 'r');
-plot(timeVec, groundTrFVS, 'b');
+% hold on;
+% % get and plot labels
+% obj.fsVD = 1/tFrame;
+% obj.NrOfBlocks = round(nDur/tFrame);
+% [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
+% 
+% timeVec = linspace(timeVec(1), timeVec(end), obj.NrOfBlocks);
+% plot(timeVec, groundTrOVS, 'r');
+% plot(timeVec, groundTrFVS, 'b');
 legend('time signal', 'OVS', 'FVS');
 set(axAudio,'ylabel', ylabel('Amplitude'));
 set(axAudio,'xlabel', xlabel('Time in sec'));

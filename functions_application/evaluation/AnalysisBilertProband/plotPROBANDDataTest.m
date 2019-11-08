@@ -14,7 +14,8 @@ stRoots = get(0);
 iPlotWidth = stRoots.ScreenSize(3);
 
 % path to main data folder (needs to be customized)
-obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
+% obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
+    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
 
 % get all subject directories
 subjectDirectories = dir(obj.szBaseDir);
@@ -27,7 +28,7 @@ subjectDirectories = subjectDirectories(isValidLength);
 nSubject = size(subjectDirectories, 1);
 
 % number of noise configurations
-nConfig = 6;
+nConfig = 3;
 
 % loop over all subjects
 for subj = 1:nSubject
@@ -42,12 +43,13 @@ for subj = 1:nSubject
     
     % loop over all noise configurations
     for config = 1:nConfig
-        close all;
+        
         % choose noise configurations
         obj.szNoiseConfig = ['config' num2str(config)];
 
         obj = plotPROBANDData(obj, 'PlotWidth', iPlotWidth);
 
+        close all;
     end
 
 %     % display table with std of RMS

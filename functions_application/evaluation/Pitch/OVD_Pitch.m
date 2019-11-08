@@ -1,7 +1,7 @@
-function [estimatedOVS]=OVD_Pitch(peaks)
+function [stData]=OVD_Pitch(correlation, nFFT)
 % function to estimate own voice sequences (OVS) based on "Pitch"
 % work in progress
-% Usage [estimatedOVS]=OVD_Pitch(peaks)
+% Usage [stData]=OVD_Pitch(correlation, nFFT)
 %
 % Parameters
 % ----------
@@ -17,14 +17,24 @@ function [estimatedOVS]=OVD_Pitch(peaks)
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF 
 % Version History:
 % Ver. 0.01 initial create 05-Nov-2019  JP
+% Ver. 0.02 adaptive threshold rms(correlation) 08-Nov-2019  JP
 
-% define minimum height of correlation peak
-minHeight = 10;
+% define window length for tracking minima and maxima
+stData.winLen = floor(nFFT/10);
 
-% calculate harmonic ratio
+% define minimum value
+MIN_CORR = 5;
 
-% detect peaks that are higher than the minimum height
-estimatedOVS = peaks(:, 1) >= minHeight;
+% calculate the "RMS" of the correlation
+stData.CorrRMS = sqrt(sum(correlation.^2, 2));
+
+% Sliding max and min
+stData.TrackMax = movmax(stData.CorrRMS, stData.winLen);
+stData.TrackMin = movmin(stData.CorrRMS, stData.winLen);
+
+% Adaptive thresholds
+stData.adapThreshCorr = (stData.TrackMax + stData.TrackMin)/2;
+stData.adapThreshCorr = max(stData.adapThreshCorr, MIN_CORR);
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen

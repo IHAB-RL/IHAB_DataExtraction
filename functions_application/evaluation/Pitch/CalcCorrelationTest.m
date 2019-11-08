@@ -91,22 +91,33 @@ nFFT = (stInfoFile.nDimensions - 2 - 4)/2;
 specsize = nFFT/2 + 1;  
 nBlocks = size(Pxx, 1);
 
-% load basefrequencies and synthetic spectra
-szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch';
-% matfile = 'SyntheticMagnitudes_80_450_741.mat';
-matfile = 'SyntheticMagnitudes_50_450_200.mat';
-load([szDir filesep matfile], 'basefrequencies', 'synthetic_magnitudes');
-
-
 % % norm spectrum to maximum value
 % MaxValuesPxx = max(Pxx'); % block based
 % PxxNorm = Pxx./MaxValuesPxx(:);
-Pxx = 10^5*Pxx;
+Pxx = 10^3*sqrt(Pxx);
 Cxy = 10^5*real(Cxy);
 Pyy = 10^5*Pyy;
 
+
 % calculate correlation
-[correlation] = CalcCorrelation(Pxx, stInfoFile.fs, specsize);
+% % PSD
+% [correlation] = CalcCorrelation(Pxx, stInfoFile.fs, specsize);
+% Cohe
+useFilter = 0; % logical whether to highpass filter the hannwin combs
+[correlation] = CalcCorrelation(real(Cohe), stInfoFile.fs, specsize, useFilter);
+
+
+szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch';
+if stInfoFile.fs ~= 24000 || ~useFilter
+%     basefrequencies = 80:0.5:450;
+    basefrequencies = logspace(log10(50),log10(450),200);
+    synthetic_magnitudes = synthetic_magnitude(stInfoFile.fs, specsize, basefrequencies, useFilter);
+else
+%     matfile = 'SyntheticMagnitudes_80_450_741.mat';
+    matfile = 'SyntheticMagnitudes_50_450_200.mat';
+    load([szDir filesep matfile], 'synthetic_magnitudes');
+end
+
 
 % calculate time vector
 if isIHAB
@@ -120,47 +131,49 @@ timeVec = linspace(0, nDur, nBlocks);
 % calculate frequency vector
 freqVec = linspace(0, stInfoFile.fs/2, specsize);
 
-% % plot PSD and correlation
-% figure;
-% subplot(2,1,1);
-% imagesc(timeVec, basefrequencies, correlation');
-% axis xy;
-% c = colorbar;
-% title('feat PSD x syn Spec');
-% ylabel('Fundamental Frequency in Hz');
-% xlabel('Time in sec');
-% ylabel(c, 'Magnitude Feature F^M_t(f_0)');
-% xlim([timeVec(1) timeVec(end)]);
-% 
-% subplot(2,1,2);
+% plot PSD and correlation
+figure;
+subplot(2,1,1);
+imagesc(timeVec, basefrequencies, correlation');
+axis xy;
+c = colorbar;
+title('feat PSD x syn Spec');
+ylabel('Fundamental Frequency in Hz');
+xlabel('Time in sec');
+ylabel(c, 'Magnitude Feature F^M_t(f_0)');
+xlim([timeVec(1) timeVec(end)]);
+
+subplot(2,1,2);
 % imagesc(timeVec, freqVec, 10*log10(Pxx)');
-% axis xy;
-% c = colorbar;
-% title('scaled PSD feature');
-% ylabel('Frequency in Hz');
-% xlabel('Time in sec');
-% ylabel(c, 'PSD Magnitude in dB');
-% xlim([timeVec(1) timeVec(end)]);
-% ylim([freqVec(1) 6000]);
+imagesc(timeVec, freqVec, real(Cohe)');
+axis xy;
+c = colorbar;
+title('scaled PSD feature');
+ylabel('Frequency in Hz');
+xlabel('Time in sec');
+ylabel(c, 'PSD Magnitude in dB');
+xlim([timeVec(1) timeVec(end)]);
+ylim([freqVec(1) 6000]);
 
 
-% % plot template and real spectra
-% FundFreq = [130 200];
-% idxFundFreq(1) = find(basefrequencies >= FundFreq(1), 1);
-% idxFundFreq(2) = find(basefrequencies >= FundFreq(2), 1);
+% plot template and real spectra
+FundFreq = [130 200];
+idxFundFreq(1) = find(basefrequencies >= FundFreq(1), 1);
+idxFundFreq(2) = find(basefrequencies >= FundFreq(2), 1);
 
-blockidx = find(timeVec >= 15.2, 1);
-% figure; 
+blockidx = find(timeVec >= 10.8, 1);
+figure; 
+plot(freqVec, Pxx(blockidx,:), 'k');
 % plot(freqVec, real(Cohe(blockidx,:)), 'k');
-% hold on;
-% plot(freqVec, synthetic_magnitudes(idxFundFreq(1),:), 'r');
-% plot(freqVec, synthetic_magnitudes(idxFundFreq(2),:), 'g');
-% % plot(freqVec, synthetic_PSD(idxFundFreq(1),:), 'b');
-% % plot(freqVec, synthetic_PSD(idxFundFreq(2),:), 'c');
-% legend('Pxx', 'T^M(f, 130)', 'T^M(f, 200)', 'PSD(T^M(f, 130))', 'PSD(T^M(f, 200))');
-% xlim([0 4000]);
-% xlabel('Frequency in Hz');
-% ylabel('STFT Magnitude');
+hold on;
+plot(freqVec, synthetic_magnitudes(idxFundFreq(1),:), 'r');
+plot(freqVec, synthetic_magnitudes(idxFundFreq(2),:), 'g');
+% plot(freqVec, synthetic_PSD(idxFundFreq(1),:), 'b');
+% plot(freqVec, synthetic_PSD(idxFundFreq(2),:), 'c');
+legend('Pxx', 'T^M(f, 130)', 'T^M(f, 200)', 'PSD(T^M(f, 130))', 'PSD(T^M(f, 200))');
+xlim([0 4000]);
+xlabel('Frequency in Hz');
+ylabel('STFT Magnitude');
 
 
 % get labels for new blocksize
@@ -188,7 +201,7 @@ idxTrNone = ~idxTrOVS & ~idxTrFVS;
 figure;
 subplot(2,1,1);
 plot(basefrequencies, correlation(blockidx,:));
-title('feat PSD x syn Spec');
+title('feat PSD x syn Spec');%
 xlabel('Fundamental Frequency in Hz');
 ylabel('Magnitude Feature F^M_t(f_0)');
 

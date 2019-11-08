@@ -22,28 +22,25 @@ version = 1; % JP modified get_psd
 % call OVD by Schreiber 2019
 stDataOVD = OVD3(Cxy, Pxx, Pyy, stInfoFile.fs);
 
+
 nFFT = (stInfoFile.nDimensions - 2 - 4)/2;
 specsize = nFFT/2 + 1;  
 nBlocks = size(Pxx, 1);
 
 % load basefrequencies 
-if stInfoFile.fs == 24000
-    szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch';
-    % matfile = 'SyntheticMagnitudes_80_450_741.mat';
-    szFile = 'SyntheticMagnitudes_50_450_200.mat';
-    load([szDir filesep szFile], 'basefrequencies');
-else
-%     basefrequencies = 80:0.5:450;
-    basefrequencies = logspace(log10(50),log10(450),200);
-end
+basefrequencies = logspace(log10(50),log10(450),200);
 
-Pxx = 10^5*Pxx; % scale for nicer values in correlation matrix
+% scale for nicer values in correlation matrix
+Pxx = 10^5*Pxx; 
+
 
 % calculate correlation
 correlation = CalcCorrelation(Pxx, stInfoFile.fs, specsize);
 
+
 % find peaks in the correlation matrix
 [peaks,locs] = DeterminePeaksCorrelation(correlation,basefrequencies,nBlocks);
+
 
 % estimate own voice sequences
 [estimatedOVS_Pitch] = OVD_Pitch(peaks);
@@ -61,6 +58,15 @@ obj.NrOfBlocks = nBlocks;
 idxTrOVS = groundTrOVS == 1;
 idxTrFVS = groundTrFVS == 1;
 idxTrNone = ~idxTrOVS & ~idxTrFVS;
+
+
+% % SNR estimation
+% figure;
+% % imagesc(1:size(stDataOVD.snrPrio,2), 1:size(stDataOVD.snrPrio,1), stDataOVD.snrPrio);
+% plot(stDataOVD.meanLogSNRPrio);
+% hold on;
+% plot(100*idxTrOVS, 'r');
+% plot(100*idxTrFVS, 'b');
 
 
 % calculate F2-Score, precision and recall

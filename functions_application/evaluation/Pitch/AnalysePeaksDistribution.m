@@ -9,7 +9,7 @@ clear;
 % close all;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
-isBilert = 0;
+isBilert = 1;
 isSchreiber = 0;
 
 % path to main data folder (needs to be customized)
@@ -86,7 +86,7 @@ for config = nConfig(1):nConfig(2)
         
         % load analysed data
         szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep 'Pitch' filesep 'PeaksMatFiles'];
-        szFile = ['PeaksLocs_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
+        szFile = ['PeaksLocs_sqrt_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
         
         if exist([szDir filesep szFile '.mat'], 'file')
             load([szDir filesep szFile], 'peaksOVS', 'peaksFVS', 'peaksNone', 'locs');
@@ -149,27 +149,27 @@ mPeaksNone(nPeakValues+1:end, :) = [];
 
 
 % %% GroupedBoxplot(mPeaksOVS, mPeaksFVS, mPeaksNone, [nPeakValues config])
-% hFig = figure;
-% subplot(1,3,1);
-% boxplot(mPeaksOVS,'Labels',vLabels, 'Colors', 'r','Whisker', 1);
-% title('Peak Height at OVS');
-% xlabel('noise configuration');
-% ylabel('Peak Height F^M_t(f_0)');
-% ylim([0 100]);
-% 
-% subplot(1,3,2);
-% boxplot(mPeaksFVS,'Labels',vLabels, 'Colors', 'b','Whisker', 1);
-% title('Peak Height at FVS');
-% xlabel('noise configuration');
-% ylabel('Peak Height F^M_t(f_0)');
-% ylim([0 100]);
-% 
-% subplot(1,3,3);
-% boxplot(mPeaksNone,'Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
-% title('Peak Height at no VS');
-% xlabel('noise configuration');
-% ylabel('Peak Height F^M_t(f_0)');
-% ylim([0 100]);
+hFig = figure;
+subplot(1,3,1);
+boxplot(mPeaksOVS,'Labels',vLabels, 'Colors', 'r','Whisker', 1);
+title('Peak Height at OVS');
+xlabel('noise configuration');
+ylabel('Peak Height F^M_t(f_0)');
+ylim([0 100]);
+
+subplot(1,3,2);
+boxplot(mPeaksFVS,'Labels',vLabels, 'Colors', 'b','Whisker', 1);
+title('Peak Height at FVS');
+xlabel('noise configuration');
+ylabel('Peak Height F^M_t(f_0)');
+ylim([0 100]);
+
+subplot(1,3,3);
+boxplot(mPeaksNone,'Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
+title('Peak Height at no VS');
+xlabel('noise configuration');
+ylabel('Peak Height F^M_t(f_0)');
+ylim([0 100]);
 
 
 %% display distribution
@@ -185,105 +185,105 @@ mPeaksNone(nPeakValues+1:end, :) = [];
 % xlabel('Peak Height F^M_t(f_0)');
 % ylabel('number of occurrence');
 
-% 
-% %% calculate and plot results of NaN/ Peak detection
-% nCountPeakRel = 100*nCountPeaks./nCountVS; % relative values in %
-% hFig = figure;
-% % ovs
-% subplot(3,3,1);
-% if isBilert
-%     boxplot(nCountPeakRel(:,:,1,1)','Labels',vLabels, 'Colors', 'r','Whisker', 1);
-% else
-%     bar(categorical(vLabels), nCountPeakRel(:,:,1,1)','r');
-% end
-% title('at least 1 Peak at OVS');
-% xlabel('noise configuration');
-% ylabel('relative occurrence in %');
-% ylim([0 100]);
-% subplot(3,3,4);
-% if isBilert
-%     boxplot(nCountPeakRel(:,:,1,2)','Labels',vLabels, 'Colors', 'r','Whisker', 1);
-% else
-%     bar(categorical(vLabels), nCountPeakRel(:,:,1,2)','r');
-% end
-% title('at least 2 Peaks at OVS');
-% xlabel('noise configuration');
-% ylabel('relative occurrence in %');
-% ylim([0 100]);
-% subplot(3,3,7);
-% if isBilert
-%     boxplot(nCountPeakRel(:,:,1,3)','Labels',vLabels, 'Colors', 'r','Whisker', 1);
-% else
-%     bar(categorical(vLabels), nCountPeakRel(:,:,1,3)','r');
-% end
-% title('3 Peaks at OVS');
-% xlabel('noise configuration');
-% ylabel('relative occurrence in %');
-% ylim([0 100]);
-% 
-% % fvs
-% subplot(3,3,2);
-% if isBilert
-%     boxplot(nCountPeakRel(:,:,2,1)','Labels',vLabels, 'Colors', 'b','Whisker', 1);
-% else
-%     bar(categorical(vLabels), nCountPeakRel(:,:,2,1)','b');
-% end
-% title('at least 1 Peak at FVS');
-% xlabel('noise configuration');
-% ylabel('relative occurrence in %');
-% ylim([0 100]);
-% subplot(3,3,5);
-% if isBilert
-%     boxplot(nCountPeakRel(:,:,2,2)','Labels',vLabels, 'Colors', 'b','Whisker', 1);
-% else
-%     bar(categorical(vLabels), nCountPeakRel(:,:,2,2)','b');
-% end
-% title('at least 2 Peaks at FVS');
-% xlabel('noise configuration');
-% ylabel('relative occurrence in %');
-% ylim([0 100]);
-% subplot(3,3,8);
-% if isBilert
-%     boxplot(nCountPeakRel(:,:,2,3)','Labels',vLabels, 'Colors', 'b','Whisker', 1);
-% else
-%     bar(categorical(vLabels), nCountPeakRel(:,:,2,3)','b');
-% end
-% title('3 Peaks at FVS');
-% xlabel('noise configuration');
-% ylabel('relative occurrence in %');
-% ylim([0 100]);
-% 
-% % no vs
-% subplot(3,3,3);
-% if isBilert
-%     boxplot(nCountPeakRel(:,:,3,1)','Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
-% else
-%     bar(categorical(vLabels), nCountPeakRel(:,:,3,1)', 'FaceColor', [0 0.6 0.2]);
-% end
-% title('at least 1 Peak at no VS');
-% xlabel('noise configuration');
-% ylabel('relative occurrence in %');
-% ylim([0 100]);
-% subplot(3,3,6);
-% if isBilert
-%     boxplot(nCountPeakRel(:,:,3,2)','Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
-% else
-%     bar(categorical(vLabels), nCountPeakRel(:,:,3,2)', 'FaceColor', [0 0.6 0.2]);
-% end
-% title('at least 2 Peaks at no VS');
-% xlabel('noise configuration');
-% ylabel('relative occurrence in %');
-% ylim([0 100]);
-% subplot(3,3,9);
-% if isBilert
-%     boxplot(nCountPeakRel(:,:,3,3)','Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
-% else
-%     bar(categorical(vLabels), nCountPeakRel(:,:,3,3)', 'FaceColor', [0 0.6 0.2]);
-% end
-% title('3 Peaks at no VS');
-% xlabel('noise configuration');
-% ylabel('relative occurrence in %');
-% ylim([0 100]);
+
+%% calculate and plot results of NaN/ Peak detection
+nCountPeakRel = 100*nCountPeaks./nCountVS; % relative values in %
+hFig = figure;
+% ovs
+subplot(3,3,1);
+if isBilert
+    boxplot(nCountPeakRel(:,:,1,1)','Labels',vLabels, 'Colors', 'r','Whisker', 1);
+else
+    bar(categorical(vLabels), nCountPeakRel(:,:,1,1)','r');
+end
+title('at least 1 Peak at OVS');
+xlabel('noise configuration');
+ylabel('relative occurrence in %');
+ylim([0 100]);
+subplot(3,3,4);
+if isBilert
+    boxplot(nCountPeakRel(:,:,1,2)','Labels',vLabels, 'Colors', 'r','Whisker', 1);
+else
+    bar(categorical(vLabels), nCountPeakRel(:,:,1,2)','r');
+end
+title('at least 2 Peaks at OVS');
+xlabel('noise configuration');
+ylabel('relative occurrence in %');
+ylim([0 100]);
+subplot(3,3,7);
+if isBilert
+    boxplot(nCountPeakRel(:,:,1,3)','Labels',vLabels, 'Colors', 'r','Whisker', 1);
+else
+    bar(categorical(vLabels), nCountPeakRel(:,:,1,3)','r');
+end
+title('3 Peaks at OVS');
+xlabel('noise configuration');
+ylabel('relative occurrence in %');
+ylim([0 100]);
+
+% fvs
+subplot(3,3,2);
+if isBilert
+    boxplot(nCountPeakRel(:,:,2,1)','Labels',vLabels, 'Colors', 'b','Whisker', 1);
+else
+    bar(categorical(vLabels), nCountPeakRel(:,:,2,1)','b');
+end
+title('at least 1 Peak at FVS');
+xlabel('noise configuration');
+ylabel('relative occurrence in %');
+ylim([0 100]);
+subplot(3,3,5);
+if isBilert
+    boxplot(nCountPeakRel(:,:,2,2)','Labels',vLabels, 'Colors', 'b','Whisker', 1);
+else
+    bar(categorical(vLabels), nCountPeakRel(:,:,2,2)','b');
+end
+title('at least 2 Peaks at FVS');
+xlabel('noise configuration');
+ylabel('relative occurrence in %');
+ylim([0 100]);
+subplot(3,3,8);
+if isBilert
+    boxplot(nCountPeakRel(:,:,2,3)','Labels',vLabels, 'Colors', 'b','Whisker', 1);
+else
+    bar(categorical(vLabels), nCountPeakRel(:,:,2,3)','b');
+end
+title('3 Peaks at FVS');
+xlabel('noise configuration');
+ylabel('relative occurrence in %');
+ylim([0 100]);
+
+% no vs
+subplot(3,3,3);
+if isBilert
+    boxplot(nCountPeakRel(:,:,3,1)','Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
+else
+    bar(categorical(vLabels), nCountPeakRel(:,:,3,1)', 'FaceColor', [0 0.6 0.2]);
+end
+title('at least 1 Peak at no VS');
+xlabel('noise configuration');
+ylabel('relative occurrence in %');
+ylim([0 100]);
+subplot(3,3,6);
+if isBilert
+    boxplot(nCountPeakRel(:,:,3,2)','Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
+else
+    bar(categorical(vLabels), nCountPeakRel(:,:,3,2)', 'FaceColor', [0 0.6 0.2]);
+end
+title('at least 2 Peaks at no VS');
+xlabel('noise configuration');
+ylabel('relative occurrence in %');
+ylim([0 100]);
+subplot(3,3,9);
+if isBilert
+    boxplot(nCountPeakRel(:,:,3,3)','Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
+else
+    bar(categorical(vLabels), nCountPeakRel(:,:,3,3)', 'FaceColor', [0 0.6 0.2]);
+end
+title('3 Peaks at no VS');
+xlabel('noise configuration');
+ylabel('relative occurrence in %');
+ylim([0 100]);
 
 
 %% plot results harmonic ratio

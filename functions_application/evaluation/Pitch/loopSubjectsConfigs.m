@@ -10,7 +10,7 @@ clear;
 close all;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
-isBilert = 0;
+isBilert = 1;
 isSchreiber = 0;
 
 % path to main data folder (needs to be customized)
@@ -64,7 +64,8 @@ for subj = 1:nSubject
 %         CalcCorrelationTest(obj);
 %         AnalysePeaksCorrelation(obj);
 %         SaveVoiceLabels(obj)
-        EvaluatePerformanceOVDPitch(obj);
+%         EvaluatePerformanceOVDPitch(obj);
+        plotFingerprintAnalysis(obj)
         
         close all;
     end

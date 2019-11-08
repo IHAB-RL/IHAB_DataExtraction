@@ -1,20 +1,25 @@
-function [magnitudes] = synthetic_magnitude(samplerate, specsize, basefrequencies)
+function [magnitudes] = synthetic_magnitude(samplerate, specsize, basefrequencies, useFilter)
     % Synthetic magnitude spectra of a range of tone complexes.
     %
     % samplerate: The sampling rate of the tone complexes.
     % specsize: The length of each spectrum.
     % basefrequencies: An ordered vector of tone complex base
     %     frequencies in Hz.
+    % useFilter: logical whether to filter the hannwin_comb
     %
     % Returns a len(basefrequencies) x specsize matrix of tone complex spectra.
+    
+    if nargin == 3
+        useFilter = 1;
+    end
 
     magnitudes = zeros(length(basefrequencies), specsize);
     for freqidx = 1:length(basefrequencies)
-        magnitudes(freqidx, :) = hannwin_comb(samplerate, basefrequencies(freqidx), specsize);
+        magnitudes(freqidx, :) = hannwin_comb(samplerate, basefrequencies(freqidx), specsize, useFilter);
     end
 end
 
-function [comb_spectrum] = hannwin_comb(samplerate, basefrequency, specsize)
+function [comb_spectrum] = hannwin_comb(samplerate, basefrequency, specsize, useFilter)
     % Approximate a speech-like correlation spectrum of a tone complex.
     %
     % This is an approximation of time_domain_comb that runs much
@@ -61,8 +66,14 @@ function [comb_spectrum] = hannwin_comb(samplerate, basefrequency, specsize)
     comb_spectrum = abs(hannwin_spectrum(local_angular_freq, specsize));
     % normalize to zero mean:
     comb_spectrum = comb_spectrum - mean(comb_spectrum);
+    
     % attenuate high frequencies:
-    comb_spectrum(freqs>1000) = comb_spectrum(freqs>1000) ./ 10.^(log2(freqs(freqs>1000)/1000)*24/20);
+    if useFilter
+        f_cut = 1500; % cut off frequency
+    else
+        f_cut = 1000; % cut off frequency
+    end
+    comb_spectrum(freqs>f_cut) = comb_spectrum(freqs>f_cut) ./ 10.^(log2(freqs(freqs>f_cut)/f_cut)*24/20);
 end
 
 function [spectrum] = hannwin_spectrum(angular_freq, specsize)

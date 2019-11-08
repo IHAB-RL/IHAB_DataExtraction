@@ -1,4 +1,4 @@
-function [correlation] = CalcCorrelation(spectrum, samplerate, specsize)
+function [correlation] = CalcCorrelation(spectrum, samplerate, specsize, useFilter)
 % function to calculate the correlation between a complex spectrum and a
 % series of synthetic magnitude spectra
 % Usage: [correlation] = CalcCorrelation(spectrum, samplerate, specsize)
@@ -20,13 +20,17 @@ function [correlation] = CalcCorrelation(spectrum, samplerate, specsize)
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF  
 % Source: magnitude_correlation.m - Bastian Bechtold
 % Version History:
-% Ver. 0.01 initial create 23-Oct-2019  Initials JP
+% Ver. 0.01 initial create 23-Oct-2019  JP    
+
+if nargin == 3
+    useFilter = 1;
+end
 
 szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch';
-if samplerate ~= 24000
+if samplerate ~= 24000 || ~useFilter
 %     basefrequencies = 80:0.5:450;
     basefrequencies = logspace(log10(50),log10(450),200);
-    synthetic_magnitudes = CalcSyntheticMagnitude(szDir, samplerate, specsize, basefrequencies);
+    synthetic_magnitudes = synthetic_magnitude(samplerate, specsize, basefrequencies, useFilter);
 else
 %     matfile = 'SyntheticMagnitudes_80_450_741.mat';
     matfile = 'SyntheticMagnitudes_50_450_200.mat';
