@@ -102,7 +102,7 @@ else % with feature files
 
     % set frequency specific parameters
     stParam.fs = stInfoPSD.fs;
-    stParam.nFFT = 1024;
+    stParam.nFFT = (stInfoPSD.nDimensions - 2 - 4)/2;
     stParam.vFreqRange  = [400 1000]; % frequency range in Hz
     stParam.vFreqIdx = round(stParam.nFFT*stParam.vFreqRange./stParam.fs);
 
@@ -175,16 +175,10 @@ obj.NrOfBlocks = size(stDataFVD.vFVS, 2);
 vOVS = double(stDataOVD.vOVS)';
 vFVS = double(stDataFVD.vFVS);
 
-% pre allocation
-vHit.OVD = zeros(size(vOVS));
-vFalseAlarm.OVD = zeros(size(vOVS));
-vHit.FVD = zeros(size(vFVS));
-vFalseAlarm.FVD = zeros(size(vFVS));
-
-vHit.OVD(groundTrOVS == vOVS) = groundTrOVS(groundTrOVS == vOVS);
-vFalseAlarm.OVD(groundTrOVS ~= vOVS) = vOVS(groundTrOVS ~= vOVS);
-vHit.FVD(groundTrFVS == vFVS) = groundTrFVS(groundTrFVS == vFVS);
-vFalseAlarm.FVD(groundTrFVS ~= vFVS) = vFVS(groundTrFVS ~= vFVS);
+vHit.OVD = groundTrOVS == 1 & vOVS == 1;
+vFalseAlarm.OVD = groundTrOVS == 0 & vOVS == 1;
+vHit.FVD = groundTrFVS == 1 & vFVS == 1;
+vFalseAlarm.FVD = groundTrFVS == 0 & vFVS == 1;
 
 
 %% plot objective Data
@@ -250,32 +244,33 @@ axAudio = axes('Position',[GUI_xStart 0.41  PosVecCoher(3) 0.16]);
 if isfield(obj, 'UseAudio') % NS data
     plot(TimeVecWav(1:100:end), stParam.mSignal(1:100:end,1));
 else
-    plot(datenum(TimeVecWav(1:100:end)), WavData(1:100:end,1));
+    WavData = WavData(1:100:end,1);
+    TimeVecWav = linspace(timeVec(1),timeVec(end),length(WavData));
+    plot(TimeVecWav, WavData);
     datetickzoom(axRMS,'x','HH:MM:SS');
 end
 hold on;
-vTimeLabels = linspace(timeVec(1),timeVec(end),obj.NrOfBlocks);
-plot(vTimeLabels, vHit.OVD, 'r', 'LineWidth', 1.5);
-plot(vTimeLabels, vFalseAlarm.OVD, 'Color', [0.65 0.65 0.65]);
-plot(vTimeLabels, vHit.FVD, 'b', 'LineWidth', 1.5);
-plot(vTimeLabels, vFalseAlarm.FVD, 'Color', [0.85 0.85 0.85]);
+plot(timeVec, vHit.OVD, 'r', 'LineWidth', 1.5);
+plot(timeVec, vFalseAlarm.OVD, 'Color', [0.65 0.65 0.65]);
+plot(timeVec, vHit.FVD, 'b', 'LineWidth', 1.5);
+plot(timeVec, vFalseAlarm.FVD, 'Color', [0.85 0.85 0.85]);
 % patch('Faces',vTimeLabels,'Vertices',vHit.OVD,'FaceColor','red','FaceAlpha',.3);
 % siehe IHABdata Ziele 1547ff ...
 
+xlim([timeVec(1) timeVec(end)]);
 set(axAudio,'XTick',[]);
 axAudio.YLabel = ylabel('amplitude');
-xlim([timeVec(1) timeVec(end)]);
 
 
 %% Results Voice Detection with mean smooted coherence
 axOVD = axes('Position',[GUI_xStart 0.8 PosVecCoher(3) 0.13]);
 hold on;
-hOVD = plot(datenum(TimeVecPSD),MeanCoheTimeSmoothed);
+hOVD = plot(timeVec, MeanCoheTimeSmoothed);
 hOVD.Color = [0 0 0];
 groundTrOVS(groundTrOVS == 0) = NaN;
 groundTrFVS(groundTrFVS == 0) = NaN;
-plot(vTimeLabels, 1.15*groundTrOVS, 'rx');
-plot(vTimeLabels, 1.25*groundTrFVS, 'bx');
+plot(timeVec, 1.15*groundTrOVS, 'rx');
+plot(timeVec, 1.25*groundTrFVS, 'bx');
 set(axOVD,'XTick',[]);
 axOVD.YLabel = ylabel('avg. Re\{Coherence\}');
 xlim([timeVec(1) timeVec(end)]);
@@ -305,6 +300,7 @@ if isFreqLim
 end
 set(axPxx ,'ylabel', ylabel('frequency in Hz'))
 set(axPxx,'CLim',[-110 -55]);
+xlim([timeVec(1) timeVec(end)]);
 
 
 set(axOVD,'XTickLabel','');
@@ -363,9 +359,7 @@ annotationRMS.FontSize = 12;
 annotationRMS.Position = [iStartAnno 0.112 0.0251 0.0411];
 
 
-
 set(gcf,'PaperPositionMode', 'auto');
-
 
 linkaxes([axOVD,axRMS,axAudio,axPxx,axCoher],'x');
 % dynamicDateTicks([axOVD,axRMS,axPxx,axCoher,axCoherInvalid,axPxxInvalid],'linked');
