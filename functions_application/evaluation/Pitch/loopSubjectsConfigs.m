@@ -7,10 +7,10 @@
 % Ver. 0.2 generalized loop function 05-Nov-2019 JP
 
 clear;
-close all;
+% close all;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
-isBilert = 1;
+isBilert = 0;
 isSchreiber = 0;
 
 % path to main data folder (needs to be customized)

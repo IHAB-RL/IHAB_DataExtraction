@@ -8,7 +8,7 @@ clear;
 % close all;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
-isBilert = 1;
+isBilert = 0;
 isSchreiber = 0;
 
 % path to main data folder (needs to be customized)

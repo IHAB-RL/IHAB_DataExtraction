@@ -4,7 +4,7 @@
 % Ver. 0.01 initial create 05-Nov-2019 	JP
 
 clear;
-close all;
+% close all;
 
 % choose between data from Bilert or Pohlhausen
 isBilert = 0;
@@ -63,7 +63,7 @@ for subj = 1:nSubject
         obj.szNoiseConfig = ['config' num2str(config)];
         
         % construct name of desired matfile
-        szFile = ['OVD_Schreiber_Pitch_PH10_' obj.szCurrentFolder '_'  obj.szNoiseConfig '.mat'];
+        szFile = ['OVD_Cohe_rmsCorr_' obj.szCurrentFolder '_'  obj.szNoiseConfig '.mat'];
         
         if exist([szDir filesep szFile])
             load([szDir filesep szFile], 'stResults');
@@ -121,7 +121,7 @@ ylim([0 1]);
 
 % call function to plot confusion matrix for all subjects and configs
 vLabels = {'OVS', 'no OVS'};
-plotConfusionMatrix(mConfusion, vLabels, 'Pitch - Peak Height');
+plotConfusionMatrix(mConfusion, vLabels, 'Cohe + rmsCorr');
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen

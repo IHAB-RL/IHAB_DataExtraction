@@ -109,8 +109,12 @@ stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate);
 %% calculate RMS of Correlation with hannwin combs
 [correlation] = CalcCorrelation(Pxx.*10^5, samplerate, specsize);
 
-% calculate the "RMS" of the correlation
-CorrRMS = sqrt(sum(correlation.^2, 2));
+
+%% PITCH FEATURE
+[stDataPitch] = OVD_Pitch(correlation, nFFT, stDataOVD.movAvgSNR);
+
+%% estimate ovs by combining coherence and pitch
+vOVS_JP = stDataOVD.meanCoheTimesCxy >= stDataOVD.adapThreshCohe & stDataPitch.vEstOVS;
 
 
 %% get ground truth labels for voice activity
@@ -120,10 +124,15 @@ obj.NrOfBlocks = nBlocks;
 
 % look for hits, misses and false alarms
 vOVS = double(stDataOVD.vOVS)';
+vOVS_JP = double(vOVS_JP)';
 
 vHitOVD = double(groundTrOVS == 1 & vOVS == 1);
 vMissOVD = double(groundTrOVS == 1 & vOVS == 0);
 vFalseAlarmOVD = double(groundTrOVS == 0 & vOVS == 1);
+
+vHitOVD_JP = double(groundTrOVS == 1 & vOVS_JP == 1);
+vMissOVD_JP = double(groundTrOVS == 1 & vOVS_JP == 0);
+vFalseAlarmOVD_JP = double(groundTrOVS == 0 & vOVS_JP == 1);
 
 % % nLen = length(WavData);
 % % WavData = WavData(1:100:end,1);
@@ -139,6 +148,9 @@ vFalseAlarmOVD = double(groundTrOVS == 0 & vOVS == 1);
 vHitOVD(vHitOVD == 0) = NaN;
 vMissOVD(vMissOVD  == 0) = NaN;
 vFalseAlarmOVD(vFalseAlarmOVD  == 0) = NaN;
+vHitOVD_JP(vHitOVD_JP == 0) = NaN;
+vMissOVD_JP(vMissOVD_JP  == 0) = NaN;
+vFalseAlarmOVD_JP(vFalseAlarmOVD_JP  == 0) = NaN;
 groundTrFVS(groundTrFVS == 0) = NaN;
 
 
@@ -215,7 +227,13 @@ xlim([TimeVec(1) TimeVec(end)]);
 
 %% RMS of Correlation with hannwin combs
 axCorrRMS = axes('Position',[nStartPos 0.075 PosVecPxx(3) nHeight]);
-plot(TimeVec, CorrRMS);
+plot(TimeVec, stDataPitch.CorrRMS);
+hold on;
+plot(TimeVec, stDataPitch.adapThreshCorr, 'r');
+hHit = plot(TimeVec, max(stDataPitch.CorrRMS)*vHitOVD_JP, 'rx', 'LineWidth', 1.25);
+hMiss = plot(TimeVec, max(stDataPitch.CorrRMS)*vMissOVD_JP, 'mx', 'LineWidth', 1.25);
+hFA = plot(TimeVec, max(stDataPitch.CorrRMS)*vFalseAlarmOVD_JP, 'x', 'Color', [0.65 0.65 0.65]);
+% legend([hHit, hMiss, hFA], 'OVS hit', 'OVS miss', 'OVS false alarm','NumColumns',3);
 if ~isfield(obj, 'UseAudio') 
     datetickzoom(axCorrRMS,'x','HH:MM:SS');
 end
@@ -223,18 +241,20 @@ axCorrRMS.YLabel = ylabel('rms\{Correlation\}');
 xlim([TimeVec(1) TimeVec(end)]);
 set(axCorrRMS ,'xlabel', xlabel('Time \rightarrow'));
 
-
 set(axPxx,'XTickLabel',[]);
 set(axCohe,'XTickLabel',[]);
 set(axRMS,'XTickLabel','');
 
-
 set(gcf,'PaperPositionMode', 'auto');
 
-
-linkaxes([axRMS,axCorrRMS,axPxx,axCohe],'x');
+linkaxes([axRMS, axCorrRMS, axPxx, axCohe], 'x');
 % dynamicDateTicks([axRMS,axCorrRMS,axPxx,axCohe],'linked');
 
+
+%% plot confusion matrix
+vLabels = {'OVS', 'no OVS'};
+plotConfusionMatrix([], vLabels, groundTrOVS, vOVS);
+plotConfusionMatrix([], vLabels, groundTrOVS, vOVS_JP);
 
 % logical to save figure
 bPrint = 1;

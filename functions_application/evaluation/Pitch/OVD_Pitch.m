@@ -1,4 +1,4 @@
-function [stData]=OVD_Pitch(correlation, nFFT)
+function [stData]=OVD_Pitch(correlation, nFFT, movAvgSNR)
 % function to estimate own voice sequences (OVS) based on "Pitch"
 % work in progress
 % Usage [stData]=OVD_Pitch(correlation, nFFT)
@@ -6,24 +6,27 @@ function [stData]=OVD_Pitch(correlation, nFFT)
 % Parameters
 % ----------
 % inParam :  
-%   peaks - matrix, contains for each time frame the height of maximal 3 
-%           detected peaks in the correlation of PSD and synthetic spectra
+%   correlation
+%   nFFT
+%   movAvgSNR
 %
 % Returns
 % -------
 % outParam :  
-%   estimatedOVS - logical array, 1 = OVS
+%   stData
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF 
 % Version History:
 % Ver. 0.01 initial create 05-Nov-2019  JP
 % Ver. 0.02 adaptive threshold rms(correlation) 08-Nov-2019  JP
+% Ver. 0.03 add SNR dependency 09-Nov-2019  JP
 
 % define window length for tracking minima and maxima
-stData.winLen = floor(nFFT/10);
+stData.winLen = floor(nFFT/50);
 
-% define minimum value
-MIN_CORR = 5;
+% define minimum value dependent on averaged SNR
+MIN_CORR = ones(size(correlation,1), 1);
+MIN_CORR(movAvgSNR <= 30) = 10;
 
 % calculate the "RMS" of the correlation
 stData.CorrRMS = sqrt(sum(correlation.^2, 2));
@@ -33,11 +36,11 @@ stData.TrackMax = movmax(stData.CorrRMS, stData.winLen);
 stData.TrackMin = movmin(stData.CorrRMS, stData.winLen);
 
 % Adaptive thresholds
-stData.adapThreshCorr = (stData.TrackMax + stData.TrackMin)/2;
+stData.adapThreshCorr = 0.1*stData.TrackMax + 0.9*stData.TrackMin;
 stData.adapThreshCorr = max(stData.adapThreshCorr, MIN_CORR);
 
 % check threshold
-stData.vOVS = stData.CorrRMS >= stData.adapThreshCorr; 
+stData.vEstOVS = stData.CorrRMS >= stData.adapThreshCorr; 
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen

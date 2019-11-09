@@ -38,35 +38,23 @@ Pxx = 10^5*Pxx;
 correlation = CalcCorrelation(Pxx, stInfoFile.fs, specsize);
 
 
-% find peaks in the correlation matrix
-[peaks,locs] = DeterminePeaksCorrelation(correlation,basefrequencies,nBlocks);
+% % find peaks in the correlation matrix
+% [peaks,locs] = DeterminePeaksCorrelation(correlation,basefrequencies,nBlocks);
 
 
-% estimate own voice sequences
-[estimatedOVS_Pitch] = OVD_Pitch(peaks);
+% estimate own voice sequences based on pitch
+[stDataPitch] = OVD_Pitch(correlation, nFFT, stDataOVD.movAvgSNR);
 
 % combine coherence, rms, pitch
-estimatedOVS = stDataOVD.vOVS | estimatedOVS_Pitch;
+% estimatedOVS = stDataOVD.vOVS | stDataPitch.vEstOVS;
+estimatedOVS = stDataOVD.meanCoheTimesCxy >= stDataOVD.adapThreshCohe & stDataPitch.vEstOVS;
 
 % duration one frame in sec
 nLenFrame = 60/stInfoFile.nFrames; 
 obj.fsVD = 1/nLenFrame;
 obj.NrOfBlocks = nBlocks;
 % get voice labels
-[groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
-
-idxTrOVS = groundTrOVS == 1;
-idxTrFVS = groundTrFVS == 1;
-idxTrNone = ~idxTrOVS & ~idxTrFVS;
-
-
-% % SNR estimation
-% figure;
-% % imagesc(1:size(stDataOVD.snrPrio,2), 1:size(stDataOVD.snrPrio,1), stDataOVD.snrPrio);
-% plot(stDataOVD.meanLogSNRPrio);
-% hold on;
-% plot(100*idxTrOVS, 'r');
-% plot(100*idxTrFVS, 'b');
+[groundTrOVS, ~] = getVoiceLabels(obj);
 
 
 % calculate F2-Score, precision and recall
@@ -86,7 +74,7 @@ if ~exist(szFolder_Output, 'dir')
 end
 
 % save results as mat file
-szFile = ['OVD_Schreiber_Pitch_PH10_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
+szFile = ['OVD_Cohe_rmsCorr_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
 save([szFolder_Output filesep szFile], 'stResults');
 
 %--------------------Licence ---------------------------------------------
