@@ -22,25 +22,59 @@ function [stData]=OVD_Pitch(correlation, nFFT, movAvgSNR)
 % Ver. 0.03 add SNR dependency 09-Nov-2019  JP
 
 % define window length for tracking minima and maxima
-stData.winLen = floor(nFFT/50);
+stData.winLen = floor(nFFT/25);
 
-% define minimum value dependent on averaged SNR
-MIN_CORR = ones(size(correlation,1), 1);
+% number of blocks
+nBlocks = size(correlation,1);
+
+% define minimum threshold dependent on averaged SNR
+MIN_CORR = ones(nBlocks, 1);
 MIN_CORR(movAvgSNR <= 30) = 10;
 
 % calculate the "RMS" of the correlation
 stData.CorrRMS = sqrt(sum(correlation.^2, 2));
 
-% Sliding max and min
+% Sliding max, mean and min
 stData.TrackMax = movmax(stData.CorrRMS, stData.winLen);
+stData.TrackMean = movmean(stData.CorrRMS, 2*stData.winLen);
 stData.TrackMin = movmin(stData.CorrRMS, stData.winLen);
 
 % Adaptive thresholds
-stData.adapThreshCorr = 0.1*stData.TrackMax + 0.9*stData.TrackMin;
+% stData.adapThreshCorr = 0.1*stData.TrackMax + 0.9*stData.TrackMin;
+stData.adapThreshCorr = 0.3*stData.TrackMean + 0.7*stData.TrackMin;
 stData.adapThreshCorr = max(stData.adapThreshCorr, MIN_CORR);
 
+
+%__________________________________________________________________________
+% find peaks in the correlation matrix
+basefrequencies = logspace(log10(50),log10(450),200);
+[stData.PeaksCorr, stData.LocsPeak] = ...
+    DeterminePeaksCorrelation(correlation, basefrequencies, nBlocks);
+
+% define critical value for peak height, peaks heigher than this value 
+% corresponds to ovs
+stData.nCritHeight = 25;
+stData.vCritHeight = stData.PeaksCorr(:,1) >= stData.nCritHeight;
+
+% Sliding max, mean and min
+stData.TrackMax = movmax(stData.PeaksCorr(:,1), stData.winLen);
+stData.TrackMean = movmean(stData.PeaksCorr(:,1), stData.winLen);
+stData.TrackMin = movmin(stData.PeaksCorr(:,1), stData.winLen);
+
+% find NaNs in moving mean, and set at these blocks the threshold to the
+% minimum value
+idxNaN = isnan(stData.TrackMean);
+
+% Adaptive thresholds
+stData.adapThreshPeakHeight = 0.1*stData.TrackMean + 0.9*stData.TrackMin;
+stData.adapThreshPeakHeight(idxNaN) = MIN_CORR(idxNaN);
+stData.adapThreshPeakHeight = max(stData.adapThreshPeakHeight, MIN_CORR);
+stData.adapThreshPeakHeight = min(stData.adapThreshPeakHeight, stData.nCritHeight);
+
+%__________________________________________________________________________
 % check threshold
 stData.vEstOVS = stData.CorrRMS >= stData.adapThreshCorr; 
+% stData.vEstOVS = stData.PeaksCorr(:,1) >= stData.adapThreshPeakHeight; 
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
