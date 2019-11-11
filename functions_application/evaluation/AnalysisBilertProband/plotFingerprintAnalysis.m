@@ -116,6 +116,10 @@ stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate);
 %% estimate ovs by combining coherence and pitch
 vOVS_JP = stDataOVD.meanCoheTimesCxy >= stDataOVD.adapThreshCohe & stDataPitch.vEstOVS;
 
+% critical value for peak height, peaks heigher than this value corresponds
+% to ovs
+vOVS_JP(stDataPitch.vCritHeight) = 1;
+
 
 %% get ground truth labels for voice activity
 obj.fsVD = ceil(stInfoPSD.nFrames / 60);
@@ -226,20 +230,26 @@ xlim([TimeVec(1) TimeVec(end)]);
 
 
 %% RMS of Correlation with hannwin combs
-axCorrRMS = axes('Position',[nStartPos 0.075 PosVecPxx(3) nHeight]);
-plot(TimeVec, stDataPitch.CorrRMS);
+axCorr = axes('Position',[nStartPos 0.075 PosVecPxx(3) nHeight]);
+% plot(TimeVec, stDataPitch.CorrRMS);
+plot(TimeVec, stDataPitch.PeaksCorr(:,1));
 hold on;
-plot(TimeVec, stDataPitch.adapThreshCorr, 'r');
-hHit = plot(TimeVec, max(stDataPitch.CorrRMS)*vHitOVD_JP, 'rx', 'LineWidth', 1.25);
-hMiss = plot(TimeVec, max(stDataPitch.CorrRMS)*vMissOVD_JP, 'mx', 'LineWidth', 1.25);
-hFA = plot(TimeVec, max(stDataPitch.CorrRMS)*vFalseAlarmOVD_JP, 'x', 'Color', [0.65 0.65 0.65]);
+% plot(TimeVec, stDataPitch.adapThreshCorr, 'r');
+plot(TimeVec, stDataPitch.adapThreshPeakHeight, 'r');
+plot(TimeVec, stDataPitch.TrackMin, 'b:');
+plot(TimeVec, stDataPitch.TrackMean, 'c:');
+% nScaling = max(stDataPitch.CorrRMS);
+nScaling = max(stDataPitch.PeaksCorr(:,1));
+hHit = plot(TimeVec, nScaling*vHitOVD_JP, 'rx', 'LineWidth', 1.25);
+hMiss = plot(TimeVec, nScaling*vMissOVD_JP, 'mx', 'LineWidth', 1.25);
+hFA = plot(TimeVec, nScaling*vFalseAlarmOVD_JP, 'x', 'Color', [0.65 0.65 0.65]);
 % legend([hHit, hMiss, hFA], 'OVS hit', 'OVS miss', 'OVS false alarm','NumColumns',3);
 if ~isfield(obj, 'UseAudio') 
-    datetickzoom(axCorrRMS,'x','HH:MM:SS');
+    datetickzoom(axCorr,'x','HH:MM:SS');
 end
-axCorrRMS.YLabel = ylabel('rms\{Correlation\}');
+axCorr.YLabel = ylabel('rms\{Correlation\}');
 xlim([TimeVec(1) TimeVec(end)]);
-set(axCorrRMS ,'xlabel', xlabel('Time \rightarrow'));
+set(axCorr ,'xlabel', xlabel('Time \rightarrow'));
 
 set(axPxx,'XTickLabel',[]);
 set(axCohe,'XTickLabel',[]);
@@ -247,7 +257,7 @@ set(axRMS,'XTickLabel','');
 
 set(gcf,'PaperPositionMode', 'auto');
 
-linkaxes([axRMS, axCorrRMS, axPxx, axCohe], 'x');
+linkaxes([axRMS, axCorr, axPxx, axCohe], 'x');
 % dynamicDateTicks([axRMS,axCorrRMS,axPxx,axCohe],'linked');
 
 
@@ -257,7 +267,7 @@ plotConfusionMatrix([], vLabels, groundTrOVS, vOVS);
 plotConfusionMatrix([], vLabels, groundTrOVS, vOVS_JP);
 
 % logical to save figure
-bPrint = 1;
+bPrint = 0;
 if bPrint
     szDir = [obj.szBaseDir filesep obj.szCurrentFolder];
     sDataFolder_Output = [szDir filesep 'Overviews'];
