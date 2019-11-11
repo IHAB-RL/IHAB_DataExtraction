@@ -19,13 +19,14 @@ end
 version = 1; % JP modified get_psd
 [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
 
-% call OVD by Schreiber 2019
-stDataOVD = OVD3(Cxy, Pxx, Pyy, stInfoFile.fs);
-
-
 nFFT = (stInfoFile.nDimensions - 2 - 4)/2;
 specsize = nFFT/2 + 1;  
 nBlocks = size(Pxx, 1);
+
+
+% call OVD by Schreiber 2019
+stDataOVD = OVD3(Cxy, Pxx, Pyy, stInfoFile.fs);
+
 
 % load basefrequencies 
 basefrequencies = logspace(log10(50),log10(450),200);
@@ -46,8 +47,9 @@ correlation = CalcCorrelation(Pxx, stInfoFile.fs, specsize);
 [stDataPitch] = OVD_Pitch(correlation, nFFT, stDataOVD.movAvgSNR);
 
 % combine coherence, rms, pitch
-% estimatedOVS = stDataOVD.vOVS | stDataPitch.vEstOVS;
-estimatedOVS = stDataOVD.meanCoheTimesCxy >= stDataOVD.adapThreshCohe & stDataPitch.vEstOVS;
+% estimatedOVS = stDataOVD.vOVS;
+estimatedOVS = stDataOVD.vOVS | stDataPitch.vEstOVS;
+% estimatedOVS = stDataOVD.meanCoheTimesCxy >= stDataOVD.adapThreshCohe & stDataPitch.vEstOVS;
 
 % duration one frame in sec
 nLenFrame = 60/stInfoFile.nFrames; 
@@ -74,7 +76,7 @@ if ~exist(szFolder_Output, 'dir')
 end
 
 % save results as mat file
-szFile = ['OVD_Cohe_rmsCorr_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
+szFile = ['OVD_Schreiber_Pitch_rmsCorr_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
 save([szFolder_Output filesep szFile], 'stResults');
 
 %--------------------Licence ---------------------------------------------

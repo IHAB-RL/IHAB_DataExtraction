@@ -40,6 +40,11 @@ subjectDirectories = subjectDirectories(isValidLength);
 % number of subjects
 nSubject = size(subjectDirectories, 1);
 
+% select parameter condition
+% szCondition = 'OVD_Schreiber_Min03_';
+% szCondition = 'OVD_Cohe_Min03_rmsCorr_movmean';
+szCondition = 'OVD_Schreiber_Pitch_rmsCorr_';
+
 % preallocate result vectors
 F2OVS = NaN(nSubject, nConfig(2));
 precOVS = NaN(nSubject, nConfig(2));
@@ -63,7 +68,7 @@ for subj = 1:nSubject
         obj.szNoiseConfig = ['config' num2str(config)];
         
         % construct name of desired matfile
-        szFile = ['OVD_Cohe_rmsCorr_' obj.szCurrentFolder '_'  obj.szNoiseConfig '.mat'];
+        szFile = [szCondition obj.szCurrentFolder '_'  obj.szNoiseConfig '.mat'];
         
         if exist([szDir filesep szFile])
             load([szDir filesep szFile], 'stResults');
@@ -78,7 +83,7 @@ for subj = 1:nSubject
 end
 
 
-figure;
+hFig1 = figure;
 % F2 score
 subplot(1,3,1);
 if isBilert
@@ -121,7 +126,29 @@ ylim([0 1]);
 
 % call function to plot confusion matrix for all subjects and configs
 vLabels = {'OVS', 'no OVS'};
-plotConfusionMatrix(mConfusion, vLabels, 'Cohe + rmsCorr');
+hFig2 = plotConfusionMatrix(mConfusion, vLabels, strrep(szCondition,'_',' '));
+
+
+% logical to save figure
+bPrint = 1;
+if bPrint
+    szDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019\Pitch\Results';
+    
+    if strcmp(szCondition(end), '_') 
+        szCondition = szCondition(1:end-1);
+    end
+    if ~isBilert
+        szCondition = [szCondition '_JP'];
+    end
+    
+    exportName1 = [szDir filesep 'Results_' szCondition];
+    
+    savefig(hFig1, exportName1);
+    
+    exportName2 = [szDir filesep 'ConfMatrix_' szCondition];
+    
+    savefig(hFig2, exportName2);
+end
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen

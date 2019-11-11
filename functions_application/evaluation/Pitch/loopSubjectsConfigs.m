@@ -10,61 +10,91 @@ clear;
 % close all;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
-isBilert = 0;
+isBilert = 1;
+isOutdoor = 1;
 isSchreiber = 0;
 
 % path to main data folder (needs to be customized)
 if isBilert
-    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
+    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB';
     
-    % number of first and last noise configuration
-    nConfig = [1; 6];
+    if isOutdoor
+        obj.szBaseDir = [obj.szBaseDir filesep 'OUTDOOR'];
+        
+        % list of measurement configurations
+        nConfig = [2; 4];
+        vConfig = {'CAR'; 'CITY'; 'COFFEE'; 'STREET'};
+        
+    else
+        obj.szBaseDir = [obj.szBaseDir filesep 'PROBAND'];
+        
+        % number of first and last noise configuration
+        nConfig = [1; 6];
+    end
+    
 elseif isSchreiber
     obj.szBaseDir = 'I:\IHAB_DB\OVD_nils';
     
     % number of first and last noise configuration
     nConfig = [0; 7];
+    
 else
     obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
     
     % number of first and last noise configuration
     nConfig = [1; 3];
 end
- 
+
 % get all subject directories
 subjectDirectories = dir(obj.szBaseDir);
 
 % sort for correct subjects
 isValidLength = arrayfun(@(x)(length(x.name) == 8), subjectDirectories);
 subjectDirectories = subjectDirectories(isValidLength);
+isDirectory = arrayfun(@(x)(x.isdir == 1), subjectDirectories);
+subjectDirectories = subjectDirectories(isDirectory);
 
 % number of subjects
-nSubject = size(subjectDirectories, 1);
+nSubject = max(size(subjectDirectories, 1), 1);
 
 
 % loop over all subjects
 for subj = 1:nSubject
     
     % choose one subject directoy
-    obj.szCurrentFolder = subjectDirectories(subj).name;
+    if ~isempty(subjectDirectories)
+        obj.szCurrentFolder = subjectDirectories(subj).name;
+    end
     
     % loop over all noise configurations
     for config = nConfig(1):nConfig(2)
-        % choose noise configurations
-        obj.szNoiseConfig = ['config' num2str(config)];
         
-        % build the full directory
-        obj.szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig]; 
-        
-        % select audio file
-        obj.audiofile = fullfile(obj.szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
+        if isOutdoor
+            % choose measurement configuration
+            obj.szNoiseConfig = vConfig{config};
+            
+            % build the full directory
+            obj.szDir = [obj.szBaseDir filesep obj.szNoiseConfig];
+            
+            % select audio file
+            obj.audiofile = fullfile(obj.szDir, ['IHAB_' obj.szNoiseConfig '.wav']);
+        else
+            % choose noise/ measurement configuration
+            obj.szNoiseConfig = ['config' num2str(config)];
+            
+            % build the full directory
+            obj.szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
+            
+            % select audio file
+            obj.audiofile = fullfile(obj.szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
+        end
         
         % function call
-%         PitchBechtold(obj);
-%         CalcCorrelationTest(obj);
-%         AnalysePeaksCorrelation(obj);
-%         SaveVoiceLabels(obj)
-%         EvaluatePerformanceOVDPitch(obj);
+        %         PitchBechtold(obj);
+        %         CalcCorrelationTest(obj);
+        %         AnalysePeaksCorrelation(obj);
+        %         SaveVoiceLabels(obj)
+        %         EvaluatePerformanceOVDPitch(obj);
         plotFingerprintAnalysis(obj)
         
         close all;
