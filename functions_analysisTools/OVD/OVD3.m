@@ -23,8 +23,11 @@ curCxy = zeros(nFrames, nFreqBins);
 curPxx = zeros(nFrames, nFreqBins);
 curPyy = zeros(nFrames, nFreqBins);
 
-
-MIN_COH = 0.1;
+% %% NS
+% MIN_COH = 0.1;
+% MIN_RMS = 10^(-40/20);
+%% JP
+MIN_COH = 0.3;
 MIN_RMS = 10^(-45/20);
 
 % smoothing PSD data for 3 adjacent frames respectively
