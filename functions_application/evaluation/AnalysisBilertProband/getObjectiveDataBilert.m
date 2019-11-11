@@ -41,11 +41,9 @@ p.KeepUnmatched = true;
 p.addRequired('obj', @(x) isstruct(x) && ~isempty(x));
 p.parse(obj);
 
-% build the full directory
-szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
 
 % List all feat files
-AllFeatFiles = listFiles(szDir,'*.feat');
+AllFeatFiles = listFiles(obj.szDir,'*.feat');
 AllFeatFiles = {AllFeatFiles.name}';
 
 if isempty(AllFeatFiles)
@@ -73,7 +71,7 @@ NrOfFiles = numel(AllFeatFiles);
 if ~isempty(AllFeatFiles)
     
     % get infos about feature file for pre-allocation
-    [~,~,stInfoFile]=LoadFeatureFileDroidAlloc([szDir filesep AllFeatFiles{1}]);
+    [~,~,stInfoFile]=LoadFeatureFileDroidAlloc([obj.szDir filesep AllFeatFiles{1}]);
     
     
     % pre-allocation of output arguments
@@ -89,7 +87,7 @@ if ~isempty(AllFeatFiles)
         szFileName =  AllFeatFiles{fileIdx};
         
         % load data from feature file
-        [FeatData, ~,stInfo] = LoadFeatureFileDroidAlloc([szDir filesep szFileName]);
+        [FeatData, ~,stInfo] = LoadFeatureFileDroidAlloc([obj.szDir filesep szFileName]);
         
         if stInfo.nFrames < stInfoFile.nFrames
             % sometimes the last recorded feature file contains fewer values
