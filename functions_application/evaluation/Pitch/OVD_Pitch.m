@@ -6,14 +6,18 @@ function [stData]=OVD_Pitch(correlation, nFFT, movAvgSNR)
 % Parameters
 % ----------
 % inParam :  
-%   correlation
-%   nFFT
-%   movAvgSNR
+%   correlation - an len(blocks) x len(basefrequencies) matrix of 
+%                 correlation values (cf. CalCCorrelation.m)
+%
+%   nFFT        - size of the FFT
+%
+%   movAvgSNR   - vector containing the moving average of the estimated
+%                 segmental apriori SNR (cf. timoundjoergNils.m)
 %
 % Returns
 % -------
 % outParam :  
-%   stData
+%   stData - struct containing calculated results
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF 
 % Version History:

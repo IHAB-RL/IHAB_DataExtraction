@@ -1,4 +1,4 @@
-% Script to plot the results
+% Script to plot the results of OVD
 % Author: J. Pohlhausen (c) IHA @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create 05-Nov-2019 	JP

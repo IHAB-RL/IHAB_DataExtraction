@@ -4,8 +4,8 @@
 % Version History:
 % Ver. 0.01 initial create 10-Sep-2019 	JP
 
-% clear; 
-% close all;
+clear; 
+close all;
 
 % path to data folder (needs to be customized)
 szBaseDir = 'I:\IHAB_2_EMA2018\IHAB_Rohdaten_EMA2018';

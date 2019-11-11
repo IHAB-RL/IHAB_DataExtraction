@@ -1,5 +1,11 @@
 function EvaluatePerformanceOVDPitch(obj)
-% function to evaluate the performance of OVD with pitch
+% function to evaluate the performance of OVD (with pitch)
+% Usage: EvaluatePerformanceOVDPitch(obj)
+%
+% Parameters
+% ----------
+% obj : struct, contains all informations
+%
 % Author: J. Pohlhausen (c) IHA @ Jade Hochschule applied licence see EOF 
 % Version History: (based on AnalysePeaksCorrelation.m)
 % Ver. 0.01 initial create 05-Nov-2019 	JP

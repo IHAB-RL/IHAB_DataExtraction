@@ -1,16 +1,11 @@
 function plotFingerprintAnalysis(obj)
-% function to plot fingerprint an analysis overview for PROBAND data
-% Usage: [obj]=plotPROBANDData(obj, varargin)
+% function to plot fingerprint an analysis overview for objective data
+% figure displays PSD, Re(Cohe), RMS, Correlation
+% Usage: plotFingerprintAnalysis(obj)
 %
 % Parameters
 % ----------
 % obj : struct, contains all informations
-%
-% varargin :  specifies optional parameter name/value pairs.
-%             getObjectiveData(obj 'PARAM1', val1, 'PARAM2', val2, ...)
-%  'PlotWidth'          number that speciefies the width of the desired
-%                       figure in pixels; by default it is set to full
-%                       screen
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Version histogramory:
