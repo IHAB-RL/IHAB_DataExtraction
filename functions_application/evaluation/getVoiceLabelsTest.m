@@ -6,7 +6,8 @@
 clear;
 
 % path to main data folder (needs to be customized)
-obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
+% obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
+obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\OUTDOOR';
 % obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
 % obj.szBaseDir = 'I:\IHAB_DB\OVD_nils';
 
@@ -16,24 +17,29 @@ subjectDirectories = dir(obj.szBaseDir);
 % sort for correct subjects
 isValidLength = arrayfun(@(x)(length(x.name) == 8), subjectDirectories);
 subjectDirectories = subjectDirectories(isValidLength);
+isDirectory = arrayfun(@(x)(x.isdir == 1), subjectDirectories);
+subjectDirectories = subjectDirectories(isDirectory);
 
 % number of subjects
 nSubject = 1;
 
 % choose one subject directoy
-obj.szCurrentFolder = subjectDirectories(nSubject).name;
+% obj.szCurrentFolder = subjectDirectories(nSubject).name;
 
 % number of noise configuration
-nConfig = 2;
+nConfig = 3;
 
 % choose noise configurations
-obj.szNoiseConfig = ['config' num2str(nConfig)];
+% obj.szNoiseConfig = ['config' num2str(nConfig)];
+obj.szNoiseConfig = 'STREET';
 
 % build the full directory
-szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
+% obj.szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
+obj.szDir = [obj.szBaseDir filesep obj.szNoiseConfig];
 
 % read in audio signal
-audiofile = fullfile(szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
+% audiofile = fullfile(obj.szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
+audiofile = fullfile(obj.szDir, ['IHAB_' obj.szNoiseConfig '.wav']);
 [WavData, Fs_in] = audioread(audiofile);
 
 % set parameters for processing audio data

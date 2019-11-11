@@ -9,7 +9,7 @@ function [vActivOVS,vActivFVS]=getVoiceLabels(obj)
 %	 obj - struct, contains all informations, e.g. datafolder, subject ...
 %
 % Returns
-% ------- 
+% -------
 %	 vActivOVS - logical vector, 1 = OVS
 %
 %    vActivFVS - logical vector, 1 = FVS
@@ -23,19 +23,19 @@ vActivOVS = zeros(1,obj.NrOfBlocks);
 vActivFVS = zeros(1,obj.NrOfBlocks);
 
 % list with all persons that collected and labeled audio data
-stPersons = {'Nils'; 'Sascha'; 'Jule'};
+stPersons = {'nils'; 'PROBAND'; 'OUTDOOR'; 'Jule'};
 
-% build the full directory
-szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
 
-gtFile = fullfile(szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '_Voice.txt']);
-
-if ~exist(gtFile)
-    % Nils measured
-    isNS = 1;
-    gtFile = fullfile(szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '.txt']);
+% open file with labeled ground truth data
+if contains(obj.szBaseDir, stPersons{1}) % NS measured
+    gtFile = fullfile(obj.szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '.txt']);
+    
+elseif contains(obj.szBaseDir, stPersons{3}) % SB Outdoor
+    gtFile = fullfile(obj.szDir,['IHAB_' obj.szNoiseConfig '_Voice.txt']);
+    
 else
-    isNS = 0;
+    gtFile = fullfile(obj.szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '_Voice.txt']);
+    
 end
 
 vActVoice = importdata(gtFile);
@@ -45,10 +45,10 @@ if isempty(vActVoice)
 end
 
 %% FVS
-if isNS
+if contains(obj.szBaseDir, stPersons{1})
     fvsIndicator = [1 2 3];
     
-elseif contains(obj.szBaseDir, stPersons{2})
+elseif contains(obj.szBaseDir, stPersons{2}) || contains(obj.szBaseDir, stPersons{3})
     fvsIndicator = 0; % JP labeled SB data
     
 else
@@ -60,9 +60,9 @@ if size(idxFVS,2) > 1
     idxFVS = logical(sum(idxFVS, 2));
 end
 
-if ~any(idxFVS == 1)
+if ~any(idxFVS == 1) && contains(obj.szBaseDir, stPersons{2})
     % NS labeled SB data
-    gtFile = fullfile(szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '_VoiceOthers.txt']);
+    gtFile = fullfile(obj.szDir,[obj.szCurrentFolder '_' obj.szNoiseConfig '_VoiceOthers.txt']);
     vActVoiceFVS = importdata(gtFile);
     
     startTimeFVS = vActVoiceFVS(:, 1);
@@ -87,11 +87,12 @@ if contains(obj.szBaseDir, stPersons{2}) && exist('vActVoiceFVS', 'var')
     % NS labeled SB data
     startTimeOVS = vActVoice(:, 1);
     endTimeOVS = vActVoice(:, 2);
-elseif contains(obj.szBaseDir, stPersons{2})
+elseif contains(obj.szBaseDir, stPersons{2}) || contains(obj.szBaseDir, stPersons{3})
     % SB labeled
     startTimeOVS = vActVoice(~idxFVS,1);
     endTimeOVS = vActVoice(~idxFVS,2);
 else
+    % JP or NS data
     ovsIndicator = 0;
     idxOVS = vActVoice(:,3) == ovsIndicator;
     
