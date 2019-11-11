@@ -1,6 +1,7 @@
-function [] = plotConfusionMatrix(mConfusion, vLabels, vGroundTruth, vPredicted)
+function [hFig] = plotConfusionMatrix(mConfusion, vLabels, vGroundTruth, vPredicted)
 %% function to plot a confusion matrix
-% Usage : plotConfusionMatrix(confmat, labels)
+% Usage : [hFig] = plotConfusionMatrix(mConfusion, vLabels, szTitle)
+% Usage2 : [hFig] = plotConfusionMatrix([], vLabels, vGroundTruth, vPredicted)
 %
 % Parameters
 % ----------
@@ -9,6 +10,8 @@ function [] = plotConfusionMatrix(mConfusion, vLabels, vGroundTruth, vPredicted)
 %            vLabels    : string array, containing N class labels
 %            vGroundTruth :  vector, containing ground truth data (1 || 0)
 %            vPredicted   :  vector, containing predicted data (1 || 0)
+%
+% outParam : hFig : handle to confusion plot figure 
 %------------------------------------------------------------------------
 % Example 1: confmat = magic(3);
 %            labels = {'Dog', 'Cat', 'Horse'};
@@ -46,7 +49,7 @@ numlabels = size(mConfusion, 1);
 confpercent = 100*mConfusion./repmat(sum(mConfusion, 1),numlabels,1);
 
 % plotting the colors
-figure;
+hFig = figure;
 imagesc(confpercent);
 title(['Confusion Matrix' stTitle]);
 ylabel('Predicted Values'); xlabel('Actual Values');
