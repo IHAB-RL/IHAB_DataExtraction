@@ -111,6 +111,30 @@ if ~isempty(AllFeatFiles)
         Startindex = Startindex + stInfoFile.nFrames;
     end
     
+    
+    
+    % compression
+    if isfield(obj, 'isCompression')
+        % set parameters for data compression
+        stControl.DataPointOverlap_percent = 0;
+        stControl.szTimeCompressionMode = 'mean';
+        stControl.DataPointRepresentation_s = 0.125;
+        
+        % new number of frames per minute
+        nFrames = round(stInfoFile.nFrames/10);
+        
+        nRemain = rem(size(Data, 1), 10*nFrames);
+        if nRemain ~= 0
+            Data(end-nRemain+1:end, :) = [];
+            TimeVec(end-nRemain+1:end) = [];
+        end
+        stControl.DataLen_min = size(Data, 1)/(10*nFrames);
+        stControl.DataLen_s = stControl.DataLen_min*60;
+        stControl.NrOfDataPoints = stControl.DataLen_min * nFrames;
+        
+        [Data, TimeVec] = DataCompactor(Data, TimeVec, stControl);
+    end
+    
 end % if: ~isempty(AllFeatFiles)
 
 %--------------------Licence ---------------------------------------------
