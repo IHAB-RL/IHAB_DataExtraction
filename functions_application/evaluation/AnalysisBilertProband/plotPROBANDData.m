@@ -45,8 +45,11 @@ szFeature = 'PSD';
 version = 1; % JP modified get_psd
 [Cxy,Pxx,Pyy] = get_psd(DataPSD, version);
 
+% set minimum time length in blocks
+nMinLen = 960;
+
 % if no feature files are stored, extracted PSD from audio signals
-if isempty(DataPSD) || size(Cxy, 1) <= 960
+if isempty(DataPSD) || size(Cxy, 1) <= nMinLen
     
     if size(Cxy, 1) <= 960
         DataPSD = [];
@@ -172,7 +175,11 @@ hFig1 = figure('PaperPosition',[0 0 1 1],'Position',[0 0 iPlotWidth iPlotHeight]
 GUI_xStart = 0.05;
 GUI_xAxesWidth = 0.9;
 mTextTitle = uicontrol(gcf,'style','text');
-szTitle = [obj.szCurrentFolder ' ' obj.szNoiseConfig];
+if isfield(obj, 'szCurrentFolder')
+    szTitle = [obj.szCurrentFolder ' ' obj.szNoiseConfig];
+else
+    szTitle = obj.szNoiseConfig;
+end
 set(mTextTitle,'Units','normalized','Position', [0.2 0.93 0.6 0.05], 'String', szTitle,'FontSize',16);
 
 
@@ -416,7 +423,7 @@ STDEnvFVS = calcSTDEnv(MSPower(idxTrFVS_rms,1), EnvelopeFromRMS(idxTrFVS_rms,1),
 STDEnvNone = calcSTDEnv(MSPower(idxTrNone_rms,1), EnvelopeFromRMS(idxTrNone_rms,1), alpha);
 
 
-obj.FigTitle = [obj.szCurrentFolder ' ' obj.szNoiseConfig];
+% % % obj.FigTitle = [obj.szCurrentFolder ' ' obj.szNoiseConfig];
 % % % % % % [obj] = getGUI(obj);
 vScreenSize = get(0,'screensize');
 nBottomFig = 45;
@@ -425,7 +432,7 @@ nLeftFig = (vScreenSize(3)-nWidthFig)/2;
 nHeightFig = vScreenSize(4)-130;
 hFig2 = figure();
 hFig2.Position = [nLeftFig, nBottomFig, nWidthFig, nHeightFig];
-hFig2.Name = obj.FigTitle;
+hFig2.Name = szTitle;
 nRowsPlot = 3;
 nColumnsPlot = 5;
 
