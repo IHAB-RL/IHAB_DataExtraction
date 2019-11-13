@@ -12,17 +12,25 @@ function plotFingerprintAnalysis(obj)
 % Ver. 0.01 initial create 08-Nov-2019  JP
 
 
-%% lets start with reading objective data
-
-
 % reading objective data, desired feature PSD
 szFeature = 'PSD';
 
 % get all available feature file data
 [DataPSD, TimeVec, stInfoFile] = getObjectiveDataBilert(obj, szFeature);
 
+% extract PSD data
+version = 1; % JP modified get_psd
+[Cxy,Pxx,Pyy] = get_psd(DataPSD, version);
+
+% set minimum time length in blocks
+nMinLen = 960;
+
 % if no feature files are stored, extracted PSD from audio signals
-if isempty(DataPSD)
+if isempty(DataPSD) || size(Cxy, 1) <= nMinLen
+    
+    if size(Cxy, 1) <= nMinLen
+        DataPSD = [];
+    end
     
     % call funtion to calculate PSDs
     stData = detectOVSRealCoherence([], obj);
@@ -31,6 +39,7 @@ if isempty(DataPSD)
     Pxx = stData.Pxx';
     Pyy = stData.Pyy';
     Cxy = stData.Cxy';
+    mRMS = stData.mRMS;
     nFFT = stData.nFFT;
     samplerate = stData.fs;
     
@@ -42,11 +51,8 @@ if isempty(DataPSD)
     
     % duration one frame in sec
     nLenFrame = stData.tFrame;
-else
     
-    % extract PSD data
-    version = 1; % JP modified get_psd
-    [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
+else
     
     % sampling frequency in Hz
     samplerate = stInfoFile.fs;
@@ -59,6 +65,15 @@ else
     
     % duration one frame in sec
     nLenFrame = 60/stInfoFile.nFrames;
+    
+    % desired feature PSD
+    szFeature = 'RMS';
+
+    % set compression on
+    obj.isCompression = true;
+
+    % get all available feature file data
+    mRMS = getObjectiveDataBilert(obj, szFeature);
 end
 
 % size of frequency bins
@@ -81,8 +96,28 @@ if isFreqLim
 end
 
 
+% load subject and system specific calibration constants
+szFile = 'I:\IdentificationSystems\IdentificationProbandSystem.mat';
+load(szFile, 'stSubject_3', 'stSystem');
+
+% subject - system
+if isfield(obj, 'szCurrentFolder')
+    idxSubj = strcmp({stSubject_3.ID}, obj.szCurrentFolder);
+    szSystem = stSubject_3(idxSubj).System;
+else
+    % Outdoor by SB
+    szSystem = 'SystemSB';
+end
+
+% system - calib constant
+Calib_RMS = stSystem(strcmp({stSystem.System}, szSystem)).Calib;
+
+% transfer to dB SPL
+mRMS_dBSPL = 20*log10(mRMS(:,1)) + Calib_RMS(:,1);
+
+
 %% VOICE DETECTION by Schreiber 2019
-stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate);
+stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate, mRMS_dBSPL);
 
 
 %% calculate RMS of Correlation with hannwin combs
@@ -206,11 +241,12 @@ ylim([-0.2 1]);
 
 %% RMS
 axRMS = axes('Position',[nStartPos 0.3 PosVecPxx(3) nHeight]);
-plot(TimeVec, stDataOVD.curRMSfromPxx, 'k');
+plot(TimeVec, mRMS_dBSPL, 'k');
 hold on;
 plot(TimeVec, stDataOVD.adapThreshRMS, 'r');
-axRMS.YLabel = ylabel('RMS');
+axRMS.YLabel = ylabel('RMS in dB SPL');
 xlim([TimeVec(1) TimeVec(end)]);
+ylim([20 110]);
 
 
 %% RMS of Correlation with hannwin combs
@@ -258,7 +294,7 @@ plotConfusionMatrix([], vLabels, groundTrOVS, vOVS);
 plotConfusionMatrix([], vLabels, groundTrOVS, vOVS_JP);
 
 % logical to save figure
-bPrint = 1;
+bPrint = 0;
 if bPrint
     if isfield(obj, 'szCurrentFolder')
         szDir = [obj.szBaseDir filesep obj.szCurrentFolder];
