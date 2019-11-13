@@ -20,13 +20,13 @@ function [DataVecOut,TimeVecOut,DataVecRes,TimeVecRes,NrOfDataPoints]=DataCompac
 %
 % TimeVec :  datetime vector
 %	 The new timeline
-% 
+%
 % DataVecRes :  matrix
-%	 contains residual values of input data matrix 
+%	 contains residual values of input data matrix
 %
 % TimeVecRes : datetime vector
 %    contains residual values of input datetime vector
-% 
+%
 % NrOfDataPoints : number of data points
 %
 % Author: J. Bitzer (c) TGM @ Jade Hochschule applied licence see EOF
@@ -42,9 +42,14 @@ TimeVecRes = [];
 DataVecRes = [];
 
 if ~isfield(stControl, 'NrOfDataPoints')
-    DataLen_s = seconds(TimeVec(end)-TimeVec(1) + TimeVec(end)-TimeVec(end-1));
+    if isfield(stControl, 'DataLen_s')
+        DataLen_s = stControl.DataLen_s;
+    else
+        DataLen_s = seconds(TimeVec(end)-TimeVec(1) + TimeVec(end)-TimeVec(end-1));
+    end
     NrOfDataPoints = ceil(DataLen_s/(stControl.DataPointRepresentation_s*(1-stControl.DataPointOverlap_percent)));
 else
+    DataLen_s = stControl.DataLen_s;
     NrOfDataPoints = stControl.NrOfDataPoints;
 end
 
@@ -84,9 +89,9 @@ if strcmpi(stControl.szTimeCompressionMode,'mean')
         BlockIndex = BlockIndex + BlockFeed;
         Counter = Counter + 1;
         
-        if BlockIndex(end) > length(TimeVec) 
+        if BlockIndex(end) > length(TimeVec)
             BlockIndex(BlockIndex > length(TimeVec)) = [];
-            if ~isempty(BlockIndex) 
+            if ~isempty(BlockIndex)
                 % save residuals
                 TimeVecRes = TimeVec(BlockIndex);
                 DataVecRes = DataVec(BlockIndex,:);
