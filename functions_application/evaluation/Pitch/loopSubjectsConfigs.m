@@ -11,7 +11,7 @@ clear;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
 isBilert = 1;
-isOutdoor = 1;
+isOutdoor = 0;
 isSchreiber = 0;
 
 % path to main data folder (needs to be customized)
@@ -22,7 +22,7 @@ if isBilert
         obj.szBaseDir = [obj.szBaseDir filesep 'OUTDOOR'];
         
         % list of measurement configurations
-        nConfig = [2; 4];
+        nConfig = [1; 4];
         vConfig = {'CAR'; 'CITY'; 'COFFEE'; 'STREET'};
         
     else
@@ -36,7 +36,7 @@ elseif isSchreiber
     obj.szBaseDir = 'I:\IHAB_DB\OVD_nils';
     
     % number of first and last noise configuration
-    nConfig = [0; 7];
+    nConfig = [1; 6];
     
 else
     obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
@@ -44,6 +44,7 @@ else
     % number of first and last noise configuration
     nConfig = [1; 3];
 end
+   
 
 % get all subject directories
 subjectDirectories = dir(obj.szBaseDir);
@@ -92,12 +93,13 @@ for subj = 1:nSubject
         % function call
         %         PitchBechtold(obj);
         %         CalcCorrelationTest(obj);
-        %         AnalysePeaksCorrelation(obj);
-        %         SaveVoiceLabels(obj)
-        %         EvaluatePerformanceOVDPitch(obj);
-        plotFingerprintAnalysis(obj)
+                AnalysePeaksCorrelation(obj);
+%                 SaveVoiceLabels(obj)
+%                 EvaluatePerformanceOVDPitch(obj);
+%             plotPROBANDData(obj);
+%         plotFingerprintAnalysis(obj)
         
-        close all;
+           close all;
     end
 end
 

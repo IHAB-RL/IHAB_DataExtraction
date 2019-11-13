@@ -10,9 +10,9 @@ clear;
 % close all;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
-isBilert = 0;
+isBilert = 1;
 isOutdoor = 0;
-isSchreiber = 1;
+isSchreiber = 0;
 
 % path to main data folder (needs to be customized)
 if isBilert
@@ -109,7 +109,7 @@ for config = nConfig(1):nConfig(2)
         else
             szDir = [obj.szBaseDir filesep 'Pitch' filesep 'PeaksMatFiles'];
             
-            szFile = ['PeaksLocs_'  obj.szNoiseConfig];
+            szFile = ['PeaksLocs_Cxy_'  obj.szNoiseConfig];
             
             szVoiceFile = ['VoiceLabels_' obj.szNoiseConfig];
             szVoiceFile = [obj.szBaseDir filesep obj.szNoiseConfig filesep szVoiceFile];
@@ -367,9 +367,9 @@ bPrint = 1;
 if bPrint
     szDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019\Pitch\Distribution';
     
-    exportNames = {[szDir filesep 'DistributionHeightFirstPeakMagnitudeFeature'];...
-        [szDir filesep 'RelOccurrencePeaksMagnitudeFeature'];...
-        [szDir filesep 'DistributionRatioPeaksMagnitudeFeature']};
+    exportNames = {[szDir filesep 'DistributionHeightFirstPeakCxyMagnitudeFeature'];...
+        [szDir filesep 'RelOccurrencePeaksCxyMagnitudeFeature'];...
+        [szDir filesep 'DistributionRatioPeaksCxyMagnitudeFeature']};
     if isSchreiber
         exportNames = strcat(exportNames, '_NS');
     elseif isOutdoor

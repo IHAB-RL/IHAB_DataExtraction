@@ -7,9 +7,9 @@ clear;
 % close all;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
-isBilert = 0;
+isBilert = 1;
 isOutdoor = 0;
-isSchreiber = 1;
+isSchreiber = 0;
 
 if isBilert
     % path to main data folder (needs to be customized)
@@ -71,7 +71,7 @@ subjectDirectories = subjectDirectories(isDirectory);
 nSubject = max(size(subjectDirectories, 1), 1);
 
 % select parameter condition
-szCondition = 'OVD_AllwaysTrue_';
+% szCondition = 'OVD_AllwaysTrue_';
 % szCondition = 'OVD_Bitzer2016_';
 % szCondition = 'OVD_Bilert2018_';
 % szCondition = 'OVD_Schreiber2019_';
@@ -80,6 +80,7 @@ szCondition = 'OVD_AllwaysTrue_';
 % szCondition = 'OVD_Cohe_Pitch_rmsCorr';
 % szCondition = 'OVD_Cohe_Min03_rmsCorr_movmean';
 % szCondition = 'OVD_Schreiber_Pitch_rmsCorr_';
+szCondition = 'OVD_Schreiber_RMSdBSPL_';
 
 % preallocate result vectors
 F2OVS = NaN(nSubject, nConfig(2));

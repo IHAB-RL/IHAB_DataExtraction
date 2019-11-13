@@ -17,8 +17,15 @@ szFeature = 'PSD';
 % get all available feature file data
 [DataPSD,~,stInfoFile] = getObjectiveDataBilert(obj, szFeature);
 
+% extract PSD data
+version = 1; % JP modified get_psd
+[Cxy,Pxx,Pyy] = get_psd(DataPSD, version);
+
+% set minimum time length in blocks
+nMinLen = 960;
+
 % if no feature files are stored, extracted PSD from audio signals
-if isempty(DataPSD) 
+if isempty(DataPSD) || size(Cxy, 1) <= nMinLen
     
     % call funtion to calculate PSDs
     stData = detectOVSRealCoherence([], obj);
@@ -35,12 +42,6 @@ if isempty(DataPSD)
     
     clear stData
 else
-    
-    % extract PSD data
-    version = 1; % JP modified get_psd
-    [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
-    
-    clear DataPSD
     
     % sampling frequency in Hz
     samplerate = stInfoFile.fs;
@@ -59,13 +60,13 @@ specsize = nFFT/2 + 1;
 nBlocks = size(Pxx, 1);
 
 
-Pxx = 10^5*Pxx;
-% Cxy = 10^5*real(Cxy);
+% Pxx = 10^5*Pxx;
+Cxy = real(Cxy)./sum(real(Cxy),2);
 % Pyy = 10^5*Pyy;
 
 % calculate correlation
 % PSD
-[correlation] = CalcCorrelation(Pxx, samplerate, specsize);
+[correlation] = CalcCorrelation(Cxy, samplerate, specsize);
 % % Cohe
 % useFilter = 0; % logical whether to highpass filter the hannwin combs
 % [correlation] = CalcCorrelation(real(Cohe), samplerate, specsize, useFilter);
@@ -114,12 +115,12 @@ if ~exist(szFolder_Output, 'dir')
 end
 
 % save results as mat file
-szFile = ['PeaksLocs_' szFileEnd];
+szFile = ['PeaksLocs_Cxy_scaled_' szFileEnd];
 save([szFolder_Output filesep szFile], 'peaks', 'locs', 'peaksOVS', 'peaksFVS', 'peaksNone');
 savefig(hFig, [szFolder_Output filesep szFile]);
 
 % save results as mat file
-szFile = ['CorrelationRMS_' szFileEnd];
+szFile = ['CorrelationRMS_Cxy_scaled_' szFileEnd];
 save([szFolder_Output filesep szFile], 'CorrRMS_OVS', 'CorrRMS_FVS', 'CorrRMS_None');
 
 

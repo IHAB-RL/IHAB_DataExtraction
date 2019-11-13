@@ -16,8 +16,15 @@ szFeature = 'PSD';
 % get all available feature file data
 [DataPSD, ~, stInfoFile] = getObjectiveDataBilert(obj, szFeature);
 
+% extract PSD data
+version = 1; % JP modified get_psd
+[Cxy,Pxx,Pyy] = get_psd(DataPSD, version);
+
+% set minimum time length in blocks
+nMinLen = 960;
+
 % if no feature files are stored, extracted PSD from audio signals
-if isempty(DataPSD) 
+if isempty(DataPSD) || size(Cxy, 1) <= nMinLen
     
     % call funtion to calculate PSDs
     stData = detectOVSRealCoherence([], obj);
@@ -26,6 +33,7 @@ if isempty(DataPSD)
     Pxx = stData.Pxx';
     Pyy = stData.Pyy';
     Cxy = stData.Cxy';
+    mRMS = stData.mRMS;
     nFFT = stData.nFFT;
     samplerate = stData.fs;
     
@@ -35,12 +43,6 @@ if isempty(DataPSD)
     clear stData
 else
     
-    % extract PSD data
-    version = 1; % JP modified get_psd
-    [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
-    
-    clear DataPSD
-    
     % sampling frequency in Hz
     samplerate = stInfoFile.fs;
     
@@ -49,6 +51,15 @@ else
     
     % duration one frame in sec
     nLenFrame = 60/stInfoFile.nFrames;
+    
+    % desired feature PSD
+    szFeature = 'RMS';
+
+    % set compression on
+    obj.isCompression = true;
+
+    % get all available feature file data
+    mRMS = getObjectiveDataBilert(obj, szFeature);
 end
 
 % size of frequency bins
@@ -58,16 +69,36 @@ specsize = nFFT/2 + 1;
 nBlocks = size(Pxx, 1);
 
 
-% % call OVD by Schreiber 2019
-% stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate);
-% 
-% % % % call OVD by Bilert 2018
-% % % stParam = setParamsFeatureExtraction(obj);
-% % % stDataOVD = OVD_Bilert(stParam, stData);
-% 
-% % scale for nicer values in correlation matrix
-% Pxx = 10^5*Pxx;
-% 
+% load subject and system specific calibration constants
+szFile = 'I:\IdentificationSystems\IdentificationProbandSystem.mat';
+load(szFile, 'stSubject_3', 'stSystem');
+
+% subject - system
+if isfield(obj, 'szCurrentFolder')
+    idxSubj = strcmp({stSubject_3.ID}, obj.szCurrentFolder);
+    szSystem = stSubject_3(idxSubj).System;
+else
+    % Outdoor by SB
+    szSystem = 'SystemSB';
+end
+
+% system - calib constant
+Calib_RMS = stSystem(strcmp({stSystem.System}, szSystem)).Calib;
+
+% transfer to dB SPL
+mRMS_dBSPL = 20*log10(mRMS(:,1)) + Calib_RMS(:,1);
+
+
+% call OVD by Schreiber 2019
+stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate, mRMS_dBSPL);
+
+% % % call OVD by Bilert 2018
+% % stParam = setParamsFeatureExtraction(obj);
+% % stDataOVD = OVD_Bilert(stParam, stData);
+
+% scale for nicer values in correlation matrix
+Pxx = 10^5*Pxx;
+
 % % calculate correlation of PSD with hannwin combs
 % correlation = CalcCorrelation(Pxx, samplerate, specsize);
 % 
@@ -78,11 +109,11 @@ nBlocks = size(Pxx, 1);
 
 % combine coherence, rms, pitch
 % estimatedOVS = stDataPitch.vEstOVS;
-% estimatedOVS = stDataOVD.vOVS;
+estimatedOVS = stDataOVD.vOVS;
 % estimatedOVS = stDataOVD.vOVS_adap';
 % estimatedOVS = stDataOVD.vOVS | stDataPitch.vEstOVS;
 % estimatedOVS = stDataOVD.meanCoheTimesCxy >= stDataOVD.adapThreshCohe & stDataPitch.vEstOVS;
-estimatedOVS = ones(nBlocks,1);
+% estimatedOVS = ones(nBlocks,1);
 
 
 % get ground truth voice labels
@@ -101,7 +132,7 @@ stResults.mConfusion_Pitch = getConfusionMatrix(estimatedOVS', groundTrOVS);
 vLabels = {'OVS', 'no OVS'};
 plotConfusionMatrix(stResults.mConfusion_Pitch, vLabels);
 
-szCondition = 'OVD_AllwaysTrue_';
+szCondition = 'OVD_Schreiber_RMSdBSPL_';
 % build the full directory
 if isfield(obj, 'szCurrentFolder')
     szDir = [obj.szBaseDir filesep obj.szCurrentFolder];

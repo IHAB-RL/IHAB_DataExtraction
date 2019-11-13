@@ -48,13 +48,21 @@ function [peaks,locs,hFig,peaksOVS,peaksFVS,peaksNone] = ...
 % supress warnings
 warning('off','signal:findpeaks:largeMinPeakHeight');
 
-% determine peaks in magnitude feature
+% pre allocate output args
 peaks = NaN(nBlocks, 3);
 locs = NaN(nBlocks, 3);
+
+% peak definition
+MaxNrOfPeaks = 3; % find maximal 3 peaks
+MinPeakHeight = 1; % minimum peak height
+MinPeakHeight = 0.05; % minimum peak height
+MinPeakDistance = 20; % minimum peak distance in Hz
+
+% determine peaks in magnitude feature
 for blockidx = 1:nBlocks
     [peaksTemp, locsTemp] = findpeaks(correlation(blockidx,:), ...
-        basefrequencies, 'NPeaks', 3, 'MinPeakHeight', 1, ...
-        'SortStr', 'descend', 'MinPeakDistance', 20);
+        basefrequencies, 'NPeaks', MaxNrOfPeaks, 'MinPeakHeight', MinPeakHeight, ...
+        'SortStr', 'descend', 'MinPeakDistance', MinPeakDistance);
     
     % actual number of peaks
     nPeaks = size(peaksTemp, 2);

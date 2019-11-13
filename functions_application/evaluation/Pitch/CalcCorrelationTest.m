@@ -1,68 +1,72 @@
 function [] = CalcCorrelationTest(obj)
 % function belonging to CalcCorrelation.m
 % uses PSD features
-% Author: J. Pohlhausen (c) IHA @ Jade Hochschule applied licence see EOF 
+% Author: J. Pohlhausen (c) IHA @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create 23-Oct-2019  JP
 
 if ~exist('obj', 'var')
-% logical witch data should be analysed: IHAB (1) or Bilert (0)
-isIHAB = 0;
-if isIHAB
-    % path to data folder (needs to be customized)
-    szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
-
-    % get all subject directories
-    subjectDirectories = dir(szBaseDir);
-
-    % sort for correct subjects
-    isValidLength = arrayfun(@(x)(length(x.name) == 18), subjectDirectories);
-    subjectDirectories = subjectDirectories(isValidLength);
-
-    % choose a subject number (adjust for a specific subject)
-    nSubject = 1;
-
-    % get one subject directoy
-    szCurrentFolder = subjectDirectories(nSubject).name;
-
-    % get object
-    [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
-
-    % call function to check input date format and plausibility
-    StartTime = duration(10,50,0);
-    EndTime = duration(10,55,0);
-    StartDay = 1;
-    EndDay = 1;
-    stInfo = checkInputFormat(obj, StartTime, EndTime, StartDay, EndDay);
+    % logical witch data should be analysed: IHAB (1) or Bilert (0)
+    isIHAB = 0;
+    if isIHAB
+        % path to data folder (needs to be customized)
+        szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
+        
+        % get all subject directories
+        subjectDirectories = dir(szBaseDir);
+        
+        % sort for correct subjects
+        isValidLength = arrayfun(@(x)(length(x.name) == 18), subjectDirectories);
+        subjectDirectories = subjectDirectories(isValidLength);
+        
+        % choose a subject number (adjust for a specific subject)
+        nSubject = 1;
+        
+        % get one subject directoy
+        szCurrentFolder = subjectDirectories(nSubject).name;
+        
+        % get object
+        [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
+        
+        % call function to check input date format and plausibility
+        StartTime = duration(10,50,0);
+        EndTime = duration(10,55,0);
+        StartDay = 1;
+        EndDay = 1;
+        stInfo = checkInputFormat(obj, StartTime, EndTime, StartDay, EndDay);
+        
+    else
+        % path to main data folder (needs to be customized)
+        obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
+        %     obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
+        
+        % get all subject directories
+        subjectDirectories = dir(obj.szBaseDir);
+        
+        % sort for correct subjects
+        isValidLength = arrayfun(@(x)(length(x.name) == 8), subjectDirectories);
+        subjectDirectories = subjectDirectories(isValidLength);
+        
+        % number of subjects
+        nSubject = 1;
+        
+        % choose one subject directoy
+        obj.szCurrentFolder = subjectDirectories(nSubject).name;
+        
+        % number of noise configuration
+        nConfig = 4;
+        
+        % choose noise configurations
+        obj.szNoiseConfig = ['config' num2str(nConfig)];
+    end
     
-else
-    % path to main data folder (needs to be customized)
-    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
-%     obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
-
-    % get all subject directories
-    subjectDirectories = dir(obj.szBaseDir);
-
-    % sort for correct subjects
-    isValidLength = arrayfun(@(x)(length(x.name) == 8), subjectDirectories);
-    subjectDirectories = subjectDirectories(isValidLength);
-
-    % number of subjects
-    nSubject = 1;
-
-    % choose one subject directoy
-    obj.szCurrentFolder = subjectDirectories(nSubject).name;
-    
-    % number of noise configuration
-    nConfig = 4;
-
-    % choose noise configurations
-    obj.szNoiseConfig = ['config' num2str(nConfig)];
-end
-
 else
     isIHAB = 0;
 end
+
+% build the full directory
+obj.szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
+
 
 % lets start with reading objective data
 % desired feature PSD
@@ -88,34 +92,36 @@ version = 1; % JP modified get_psd
 Cohe = Cxy./(sqrt(Pxx.*Pyy) + eps);
 
 nFFT = (stInfoFile.nDimensions - 2 - 4)/2;
-specsize = nFFT/2 + 1;  
+specsize = nFFT/2 + 1;
 nBlocks = size(Pxx, 1);
 
 % % norm spectrum to maximum value
 % MaxValuesPxx = max(Pxx'); % block based
 % PxxNorm = Pxx./MaxValuesPxx(:);
 Pxx = 10^3*sqrt(Pxx);
-Cxy = 10^5*real(Cxy);
+% Cxy = real(Cxy);
+Cxy = real(Cxy)./sum(real(Cxy),2);
 Pyy = 10^5*Pyy;
 
 
 % calculate correlation
-% % PSD
-% [correlation] = CalcCorrelation(Pxx, stInfoFile.fs, specsize);
-% Cohe
-useFilter = 0; % logical whether to highpass filter the hannwin combs
-[correlation] = CalcCorrelation(real(Cohe), stInfoFile.fs, specsize, useFilter);
+% PSD
+[correlation] = CalcCorrelation(Cxy, stInfoFile.fs, specsize);
+
+% % Cohe
+% useFilter = 0; % logical whether to highpass filter the hannwin combs
+% [correlation] = CalcCorrelation(real(Cohe), stInfoFile.fs, specsize, useFilter);
 
 
 szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch';
-if stInfoFile.fs ~= 24000 || ~useFilter
-%     basefrequencies = 80:0.5:450;
+if stInfoFile.fs ~= 24000 || exist('useFilter', 'var')
+    %     basefrequencies = 80:0.5:450;
     basefrequencies = logspace(log10(50),log10(450),200);
     synthetic_magnitudes = synthetic_magnitude(stInfoFile.fs, specsize, basefrequencies, useFilter);
 else
-%     matfile = 'SyntheticMagnitudes_80_450_741.mat';
+    %     matfile = 'SyntheticMagnitudes_80_450_741.mat';
     matfile = 'SyntheticMagnitudes_50_450_200.mat';
-    load([szDir filesep matfile], 'synthetic_magnitudes');
+    load([szDir filesep matfile], 'synthetic_magnitudes', 'basefrequencies');
 end
 
 
@@ -161,16 +167,16 @@ FundFreq = [130 200];
 idxFundFreq(1) = find(basefrequencies >= FundFreq(1), 1);
 idxFundFreq(2) = find(basefrequencies >= FundFreq(2), 1);
 
-blockidx = find(timeVec >= 10.8, 1);
-figure; 
-plot(freqVec, Pxx(blockidx,:), 'k');
+% blockidx = find(timeVec >= 11.6, 1); % OVS1
+blockidx = find(timeVec >= 9.6, 1); % OVS4
+figure;
+% plot(freqVec, Pxx(blockidx,:), 'k');
+plot(freqVec, Cxy(blockidx,:), 'k');
 % plot(freqVec, real(Cohe(blockidx,:)), 'k');
 hold on;
 plot(freqVec, synthetic_magnitudes(idxFundFreq(1),:), 'r');
 plot(freqVec, synthetic_magnitudes(idxFundFreq(2),:), 'g');
-% plot(freqVec, synthetic_PSD(idxFundFreq(1),:), 'b');
-% plot(freqVec, synthetic_PSD(idxFundFreq(2),:), 'c');
-legend('Pxx', 'T^M(f, 130)', 'T^M(f, 200)', 'PSD(T^M(f, 130))', 'PSD(T^M(f, 200))');
+legend('Cxy', 'T^M(f, 130)', 'T^M(f, 200)');
 xlim([0 4000]);
 xlabel('Frequency in Hz');
 ylabel('STFT Magnitude');
@@ -201,15 +207,33 @@ idxTrNone = ~idxTrOVS & ~idxTrFVS;
 figure;
 subplot(2,1,1);
 plot(basefrequencies, correlation(blockidx,:));
-title('feat PSD x syn Spec');%
+title('feat Cxy x syn Spec at OVS');%
 xlabel('Fundamental Frequency in Hz');
 ylabel('Magnitude Feature F^M_t(f_0)');
 
 subplot(2,1,2);
-plot(freqVec, 10*log10(Pxx(blockidx,:))');
-title('scaled PSD feature');
+% plot(freqVec, 10*log10(Pxx(blockidx,:))');
+plot(freqVec, 10*log10(real(Cxy(blockidx,:)))');
+title('scaled Cxy in dB');
 xlabel('Frequency in Hz');
 ylabel('PSD Magnitude in dB');
+
+
+blockidx = find(timeVec >= 10.8, 1); % no VS
+figure;
+subplot(2,1,1);
+plot(basefrequencies, correlation(blockidx,:));
+title('feat Cxy x syn Spec at no VS');%
+xlabel('Fundamental Frequency in Hz');
+ylabel('Magnitude Feature F^M_t(f_0)');
+
+subplot(2,1,2);
+% plot(freqVec, 10*log10(Pxx(blockidx,:))');
+plot(freqVec, 10*log10(real(Cxy(blockidx,:)))');
+title('scaled Cxy in dB');
+xlabel('Frequency in Hz');
+ylabel('PSD Magnitude in dB');
+
 
 if isIHAB
     return;
@@ -330,20 +354,20 @@ savefig(hFig4, exportName4);
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
-% Jade University of Applied Sciences 
-% Permission is hereby granted, free of charge, to any person obtaining 
-% a copy of this software and associated documentation files 
-% (the "Software"), to deal in the Software without restriction, including 
-% without limitation the rights to use, copy, modify, merge, publish, 
+% Jade University of Applied Sciences
+% Permission is hereby granted, free of charge, to any person obtaining
+% a copy of this software and associated documentation files
+% (the "Software"), to deal in the Software without restriction, including
+% without limitation the rights to use, copy, modify, merge, publish,
 % distribute, sublicense, and/or sell copies of the Software, and to
 % permit persons to whom the Software is furnished to do so, subject
 % to the following conditions:
-% The above copyright notice and this permission notice shall be included 
+% The above copyright notice and this permission notice shall be included
 % in all copies or substantial portions of the Software.
-% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
-% EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
-% OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-% IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
-% CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-% TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+% EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+% OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+% IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+% CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+% TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 % SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
