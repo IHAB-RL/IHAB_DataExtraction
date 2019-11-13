@@ -29,12 +29,7 @@ function [hFig] = plotConfusionMatrix(mConfusion, vLabels, vGroundTruth, vPredic
 
 if nargin == 4
     % calculate confusion matrix
-    tp = sum((vPredicted == 1) & (vGroundTruth == 1));
-    tn = sum((vPredicted == 0) & (vGroundTruth == 0));
-    fp = sum((vPredicted == 1) & (vGroundTruth == 0));
-    fn = sum((vPredicted == 0) & (vGroundTruth == 1));
-    
-    mConfusion = [tp fp; fn tn];
+    [mConfusion] = getConfusionMatrix(vPredicted, vGroundTruth);
 end
 
 stTitle = [];
