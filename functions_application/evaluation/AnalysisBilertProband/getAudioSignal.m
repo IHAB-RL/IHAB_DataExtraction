@@ -24,11 +24,8 @@ function [Data,TimeVec,Fs]=getAudioSignal(obj)
 Data = [];
 TimeVec = datetime(0,0,0,0,0,0);
 
-% build the full directory
-szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
-
 % List all wav files
-AllWavFiles = listFiles(szDir,'*.wav');
+AllWavFiles = listFiles(obj.szDir,'*.wav');
 AllWavFiles = {AllWavFiles.name}';
 
 % Get names wo. path
@@ -42,7 +39,7 @@ AllWavFiles = strcat(AllWavFiles,'.wav');
 
 if isempty(dateVecAll)
     % load data from wav file
-    [Data, Fs] = audioread([szDir filesep AllWavFiles{1}]);
+    [Data, Fs] = audioread([obj.szDir filesep AllWavFiles{1}]);
         
     ActBlockSize = size(Data,1);
     nDur = minutes(ActBlockSize/Fs);
@@ -71,7 +68,7 @@ if ~isempty(AllWavFiles)
         szFileName =  AllWavFiles{fileIdx};
         
         % load data from wav file
-        [WavData, Fs] = audioread([szDir filesep szFileName]);
+        [WavData, Fs] = audioread([obj.szDir filesep szFileName]);
         
         ActBlockSize = size(WavData,1);
         
