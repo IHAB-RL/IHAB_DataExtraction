@@ -1,21 +1,22 @@
-function [F1Score,precision,recall] = F1M(x, vResampledGroundTruth, fBeta, precision, recall)
+function [F1Score,precision,recall,accuracy] = F1M(vPredicted, vGroundTruth, fBeta, precision, recall)
 
 if nargin == 2
     fBeta = 2;
 end
 
 if ~exist('precision')
-    vResampledGroundTruth(isnan(vResampledGroundTruth)) = 0;
-    x(isnan(x))= 0;
-    x = double(x);
+    vGroundTruth(isnan(vGroundTruth)) = 0;
+    vPredicted(isnan(vPredicted))= 0;
+    vPredicted = double(vPredicted);
     
-    tp = sum((x == 1) & (vResampledGroundTruth == 1));
-    tn = sum((x == 0) & (vResampledGroundTruth == 0));
-    fp = sum((x == 1) & (vResampledGroundTruth == 0));
-    fn = sum((x == 0) & (vResampledGroundTruth == 1));
+    tp = sum((vPredicted == 1) & (vGroundTruth == 1));
+    tn = sum((vPredicted == 0) & (vGroundTruth == 0));
+    fp = sum((vPredicted == 1) & (vGroundTruth == 0));
+    fn = sum((vPredicted == 0) & (vGroundTruth == 1));
     
     precision = tp/(tp + fp);
     recall    = tp/(tp + fn);
+    accuracy  = (tp + tn)/(tp + fp + tn + fn);
 end
 
 F1Score =(1+fBeta^2)*((precision.*recall) ./ (fBeta^2 * precision + recall));
