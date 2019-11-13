@@ -6,34 +6,44 @@
 clear;
 % close all;
 
+
 % choose between data from Bilert or Schreiber or Pohlhausen
 isBilert = 0;
-isSchreiber = 0;
+isOutdoor = 0;
+isSchreiber = 1;
 
 % path to main data folder (needs to be customized)
 if isBilert
-    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
+    % path to main data folder (needs to be customized)
+    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB';
     
-    % number of first and last noise configuration
-    nConfig = [1; 6];
-    
-    % labels of all noise configurations
-    vLabels = {'Ruhe';'40 dB(A)';'50 dB(A)';'60 dB(A)';'65 dB(A)';'70 dB(A)'};
-    
-    % define maximum number of blocks
-    nBlocksMax = 5*60/0.125; % 5 minutes recorded frames a 0.125 ms
+    if isOutdoor
+        obj.szBaseDir = [obj.szBaseDir filesep 'OUTDOOR'];
+        
+        % list of measurement configurations
+        nConfig = [1; 4];
+        
+        % labels of all noise configurations
+        vLabels = {'CAR'; 'CITY'; 'COFFEE'; 'STREET'};
+        
+    else
+        obj.szBaseDir = [obj.szBaseDir filesep 'PROBAND'];
+        
+        % number of first and last noise configuration
+        nConfig = [1; 6];
+        
+        % labels of all noise configurations
+        vLabels = {'Ruhe';'40 dB(A)';'50 dB(A)';'60 dB(A)';'65 dB(A)';'70 dB(A)'};
+    end
     
 elseif isSchreiber
     obj.szBaseDir = 'I:\IHAB_DB\OVD_nils';
     
     % number of first and last noise configuration
-    nConfig = [0; 7];
+    nConfig = [1; 6];
     
     % labels of all noise configurations
-    vLabels = {'friend';'car+friend';'car+friend';'kitchen';'conv.+music';'canteen';'silence';'canteen'};
-    
-    % define maximum number of blocks
-    nBlocksMax = 25*60/0.125; % 25 minutes recorded frames a 0.125 ms
+    vLabels = {'CAR+friend';'car+friend';'kitchen';'conv.+music';'canteen';'silence'};
 else
     obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
     
@@ -42,11 +52,10 @@ else
     
     % labels of all noise configurations
     vLabels = {'office';'canteen';'by foot'};
-    
-    % define maximum number of blocks
-    nBlocksMax = 25*60/0.125; % 25 minutes recorded frames a 0.125 ms
-    
 end
+
+% define maximum number of blocks
+nBlocksMax = 25*60/0.125; % 25 minutes recorded frames a 0.125 ms
 
 % get all subject directories
 subjectDirectories = dir(obj.szBaseDir);
@@ -54,9 +63,11 @@ subjectDirectories = dir(obj.szBaseDir);
 % sort for correct subjects
 isValidLength = arrayfun(@(x)(length(x.name) == 8), subjectDirectories);
 subjectDirectories = subjectDirectories(isValidLength);
+isDirectory = arrayfun(@(x)(x.isdir == 1), subjectDirectories);
+subjectDirectories = subjectDirectories(isDirectory);
 
 % number of subjects
-nSubject = size(subjectDirectories, 1);
+nSubject = max(size(subjectDirectories, 1), 1);
 
 % preallocate result matrix
 nValuesMax = nSubject * nBlocksMax;
@@ -72,14 +83,32 @@ nCountVS = zeros(nConfig(2), nSubject, 3);
 % loop over all noise configurations
 for config = nConfig(1):nConfig(2)
     % choose noise configurations
-    obj.szNoiseConfig = ['config' num2str(config)];
+    if isOutdoor
+        obj.szNoiseConfig = vLabels{config};
+    else
+        obj.szNoiseConfig = ['config' num2str(config)];
+    end
     
     StartIdx = ones(3,1);
     % loop over all subjects
     for subj = 1:nSubject
         
         % choose one subject directoy
-        obj.szCurrentFolder = subjectDirectories(subj).name;
+        if ~isempty(subjectDirectories)
+            obj.szCurrentFolder = subjectDirectories(subj).name;
+            
+            % build the full directory
+            obj.szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
+            
+            % select audio file
+            obj.audiofile = fullfile(obj.szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
+        else
+            % build the full directory
+            obj.szDir = [obj.szBaseDir filesep obj.szNoiseConfig];
+            
+            % select audio file
+            obj.audiofile = fullfile(obj.szDir, ['IHAB_' obj.szNoiseConfig '.wav']);
+        end
         
         % desired feature PSD
         szFeature = 'PSD';
@@ -87,31 +116,60 @@ for config = nConfig(1):nConfig(2)
         % get all available feature file data
         [DataPSD,TimeVec,stInfoPSD] = getObjectiveDataBilert(obj, szFeature);
         
-        if ~isempty(DataPSD)
+        % if no feature files are stored, extracted PSD from audio signals
+        if isempty(DataPSD)
+            
+            % call funtion to calculate PSDs
+            stData = detectOVSRealCoherence([], obj);
+            
+            % re-assign values
+            Pxx = stData.Pxx';
+            Pyy = stData.Pyy';
+            Cxy = stData.Cxy';
+            nFFT = stData.nFFT;
+            samplerate = stData.fs;
+            
+            % duration one frame in sec
+            nLenFrame = stData.tFrame;
+            
+            clear stData
+        else
+            
+            % extract PSD data
+            version = 1; % JP modified get_psd
+            [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
+            
+            clear DataPSD
+            
+            % sampling frequency in Hz
+            samplerate = stInfoPSD.fs;
+            
+            % number of fast Fourier transform points
+            nFFT = (stInfoPSD.nDimensions - 2 - 4)/2;
+            
+            % duration one frame in sec
+            nLenFrame = 60/stInfoPSD.nFrames;
+        end
         
-        version = 1; % JP modified get_psd
-        [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
-        clear DataPSD;
-        nFFT = (stInfoPSD.nDimensions - 2 - 4)/2;
+        
         
         %% VOICE DETECTION by Schreiber 2019
-        stDataOVD = OVD3(Cxy, Pxx, Pyy, stInfoPSD.fs);
+        stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate);
         
         % a posteriori speech presence probability
         vFreqRange = [120 1000];
-        vFreqBins = round(vFreqRange./stInfoPSD.fs*nFFT);
+        vFreqBins = round(vFreqRange./samplerate*nFFT);
         meanSPP = mean(stDataOVD.PH1(vFreqBins(1):vFreqBins(2),:),1);
         
         
         %% get ground truth labels for voice activity
-        obj.fsVD = ceil(stInfoPSD.nFrames / 60);
+        obj.fsVD = 1/nLenFrame;
         obj.NrOfBlocks = size(Pxx, 1);
         [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
         
         idxTrOVS = groundTrOVS == 1;
         idxTrFVS = groundTrFVS == 1;
         idxTrNone = ~idxTrOVS & ~idxTrFVS;
-        
         
         % count number of specific voice sequences
         nCountVS(config, subj, 1) = sum(idxTrOVS);
@@ -134,9 +192,7 @@ for config = nConfig(1):nConfig(2)
         StartIdx(2) = StartIdx(2) + nCountVS(config, subj, 2);
         StartIdx(3) = StartIdx(3) + nCountVS(config, subj, 3);
         
-        end
     end
-    
 end
 
 
@@ -189,6 +245,26 @@ title('a posteriori SPP at no VS');
 xlabel('noise configuration');
 ylabel('speech presence probability');
 ylim([0 1]);
+
+
+% logical to save figures
+bPrint = 1;
+if bPrint
+    szDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019\Pitch\Distribution';
+    
+    exportNames = {[szDir filesep 'DistributionPrioriSNR'];...
+        [szDir filesep 'DistributionPosterioriSPP']};
+    if isSchreiber
+        exportNames = strcat(exportNames, '_NS');
+    elseif isOutdoor
+        exportNames = strcat(exportNames, '_OD');
+    elseif ~isBilert
+        exportNames = strcat(exportNames, '_JP');
+    end
+    
+    savefig(hFig1, exportNames{1});
+    savefig(hFig2, exportNames{2});
+end
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen

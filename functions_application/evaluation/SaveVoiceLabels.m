@@ -16,19 +16,35 @@ szFeature = 'PSD';
 % get all available feature file data
 [DataPSD,~,stInfoFile] = getObjectiveDataBilert(obj, szFeature);
 
-if isempty(DataPSD)
-    return;
+% if no feature files are stored, extracted PSD from audio signals
+if isempty(DataPSD) 
+    
+    % call funtion to calculate PSDs
+    stData = detectOVSRealCoherence([], obj);
+    
+    % re-assign values
+    Pxx = stData.Pxx';
+    
+    % duration one frame in sec
+    nLenFrame = stData.tFrame;
+    
+    clear stData
+else
+    
+    % extract PSD data
+    version = 1; % JP modified get_psd
+    [~, Pxx, ~] = get_psd(DataPSD, version);
+    
+    clear DataPSD
+    
+    % duration one frame in sec
+    nLenFrame = 60/stInfoFile.nFrames;
 end
 
-% extract PSD data
-version = 1; % JP modified get_psd
-[Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
-
-nFFT = (stInfoFile.nDimensions - 2 - 4)/2;
+% number of time frames
 nBlocks = size(Pxx, 1);
 
-% duration one frame in sec
-nLenFrame = 60/stInfoFile.nFrames; 
+% get ground truth voice labels
 obj.fsVD = 1/nLenFrame;
 obj.NrOfBlocks = nBlocks;
 % get labels for new blocksize
@@ -37,12 +53,20 @@ obj.NrOfBlocks = nBlocks;
 idxTrOVS = groundTrOVS == 1;
 idxTrFVS = groundTrFVS == 1;
 idxTrNone = ~idxTrOVS & ~idxTrFVS;
-                     
-% build the full directory
-szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
+
+if isfield(obj, 'szCurrentFolder')                     
+    % build the full directory
+    szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
+
+    szFile = ['VoiceLabels_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
+else
+    % build the full directory
+    szDir = [obj.szBaseDir filesep obj.szNoiseConfig];
+
+    szFile = ['VoiceLabels_' obj.szNoiseConfig];
+end
 
 % save results as mat file
-szFile = ['VoiceLabels_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
 save([szDir filesep szFile], 'idxTrOVS', 'idxTrFVS', 'idxTrNone', 'nLenFrame', 'nBlocks');
 
 %--------------------Licence ---------------------------------------------

@@ -9,32 +9,41 @@ clear;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
 isBilert = 0;
-isSchreiber = 0;
+isOutdoor = 0;
+isSchreiber = 1;
 
 % path to main data folder (needs to be customized)
 if isBilert
-    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
+    % path to main data folder (needs to be customized)
+    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB';
     
-    % number of first and last noise configuration
-    nConfig = [1; 6];
-    
-    % labels of all noise configurations
-    vLabels = {'Ruhe';'40 dB(A)';'50 dB(A)';'60 dB(A)';'65 dB(A)';'70 dB(A)'};
-    
-    % define maximum number of blocks
-    nBlocksMax = 5*60/0.125; % 5 minutes recorded frames a 0.125 ms
+    if isOutdoor
+        obj.szBaseDir = [obj.szBaseDir filesep 'OUTDOOR'];
+        
+        % list of measurement configurations
+        nConfig = [1; 4];
+        
+        % labels of all noise configurations
+        vLabels = {'CAR'; 'CITY'; 'COFFEE'; 'STREET'};
+        
+    else
+        obj.szBaseDir = [obj.szBaseDir filesep 'PROBAND'];
+        
+        % number of first and last noise configuration
+        nConfig = [1; 6];
+        
+        % labels of all noise configurations
+        vLabels = {'Ruhe';'40 dB(A)';'50 dB(A)';'60 dB(A)';'65 dB(A)';'70 dB(A)'};
+    end
     
 elseif isSchreiber
     obj.szBaseDir = 'I:\IHAB_DB\OVD_nils';
     
     % number of first and last noise configuration
-    nConfig = [0; 7];
+    nConfig = [1; 6];
     
     % labels of all noise configurations
-    vLabels = {'friend';'car+friend';'car+friend';'kitchen';'conv.+music';'canteen';'silence';'canteen'};
-    
-    % define maximum number of blocks
-    nBlocksMax = 25*60/0.125; % 25 minutes recorded frames a 0.125 ms
+    vLabels = {'CAR+friend';'car+friend';'kitchen';'conv.+music';'canteen';'silence';};
 else
     obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
     
@@ -43,11 +52,10 @@ else
     
     % labels of all noise configurations
     vLabels = {'office';'canteen';'by foot'};
-    
-    % define maximum number of blocks
-    nBlocksMax = 25*60/0.125; % 25 minutes recorded frames a 0.125 ms
-    
 end
+
+% define maximum number of blocks
+nBlocksMax = 25*60/0.125; % 25 minutes recorded frames a 0.125 ms
 
 % get all subject directories
 subjectDirectories = dir(obj.szBaseDir);
@@ -55,9 +63,11 @@ subjectDirectories = dir(obj.szBaseDir);
 % sort for correct subjects
 isValidLength = arrayfun(@(x)(length(x.name) == 8), subjectDirectories);
 subjectDirectories = subjectDirectories(isValidLength);
+isDirectory = arrayfun(@(x)(x.isdir == 1), subjectDirectories);
+subjectDirectories = subjectDirectories(isDirectory);
 
 % number of subjects
-nSubject = size(subjectDirectories, 1);
+nSubject = max(size(subjectDirectories, 1), 1);
 
 % preallocate result matrix
 nValuesMax = nSubject * nBlocksMax;
@@ -70,18 +80,29 @@ nCountVS = zeros(nConfig(2), nSubject, 3);
 % loop over all noise configurations
 for config = nConfig(1):nConfig(2)
     % choose noise configurations
-    obj.szNoiseConfig = ['config' num2str(config)];
+    if isOutdoor
+        obj.szNoiseConfig = vLabels{config};
+    else
+        obj.szNoiseConfig = ['config' num2str(config)];
+    end
     
     StartIdx = ones(3,1);
     % loop over all subjects
     for subj = 1:nSubject
         
         % choose one subject directoy
-        obj.szCurrentFolder = subjectDirectories(subj).name;
+        if ~isempty(subjectDirectories)
+            obj.szCurrentFolder = subjectDirectories(subj).name;
+            
+            szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep 'Pitch' filesep 'PeaksMatFiles'];
+            
+            szFile = ['CorrelationRMS_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
+        else
+            szDir = [obj.szBaseDir filesep 'Pitch' filesep 'PeaksMatFiles'];
+            
+            szFile = ['CorrelationRMS_'  obj.szNoiseConfig];
+        end
         
-        % load analysed data
-        szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep 'Pitch' filesep 'PeaksMatFiles'];
-        szFile = ['CorrelationRMS_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
         
         if exist([szDir filesep szFile '.mat'], 'file')
             load([szDir filesep szFile], 'CorrRMS_OVS', 'CorrRMS_FVS', 'CorrRMS_None');
@@ -141,6 +162,22 @@ ylabel('RMS Correlation');
 ylim([0 650]);
 
 
+% logical to save figure
+bPrint = 1;
+if bPrint
+    szDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019\Pitch\Distribution';
+    
+    exportName = {[szDir filesep 'DistributionRMSCorrelationMagnitudeFeature']};
+    if isSchreiber
+        exportName = strcat(exportName, '_NS');
+    elseif isOutdoor
+        exportName = strcat(exportName, '_OD');
+    elseif ~isBilert
+        exportName = strcat(exportName, '_JP');
+    end
+    
+    savefig(hFig, exportName{1});
+end
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen

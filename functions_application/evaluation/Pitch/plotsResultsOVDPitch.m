@@ -6,20 +6,48 @@
 clear;
 % close all;
 
-% choose between data from Bilert or Pohlhausen
+% choose between data from Bilert or Schreiber or Pohlhausen
 isBilert = 0;
+isOutdoor = 0;
+isSchreiber = 1;
 
-% path to main data folder (needs to be customized)
 if isBilert
-    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB\PROBAND';
+    % path to main data folder (needs to be customized)
+    obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Sascha_Bilert2018\OVD_Data\IHAB';
+    
+    if isOutdoor
+        obj.szBaseDir = [obj.szBaseDir filesep 'OUTDOOR'];
+        
+        % list of measurement configurations
+        nConfig = [1; 4];
+        
+        % labels of all noise configurations
+        vConfigLabels = {'CAR'; 'CITY'; 'COFFEE'; 'STREET'};
+        
+    else
+        obj.szBaseDir = [obj.szBaseDir filesep 'PROBAND'];
+        
+        % number of first and last noise configuration
+        nConfig = [1; 6];
+        
+        % labels of all noise configurations
+        vConfigLabels = {'Ruhe';'40 dB(A)';'50 dB(A)';'60 dB(A)';'65 dB(A)';'70 dB(A)'};
+    end
+    
+elseif isSchreiber
+    obj.szBaseDir = 'I:\IHAB_DB\OVD_nils';
     
     % number of first and last noise configuration
+    %     nConfig = [0; 7];
     nConfig = [1; 6];
     
     % labels of all noise configurations
-    vConfigLabels = {'Ruhe';'40 dB(A)';'50 dB(A)';'60 dB(A)';'65 dB(A)';'70 dB(A)'};
+    %     vConfigLabels = {'friend';'car+friend';'car+friend';'kitchen';'conv.+music';'canteen';'silence';'canteen'};
+    vConfigLabels = {'CAR+friend';'car+friend';'kitchen';'friend+music';'canteen';'silence'};
+    
     
 else
+    % path to main data folder (needs to be customized)
     obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
     
     % number of first and last noise configuration
@@ -36,39 +64,63 @@ subjectDirectories = dir(obj.szBaseDir);
 % sort for correct subjects
 isValidLength = arrayfun(@(x)(length(x.name) == 8), subjectDirectories);
 subjectDirectories = subjectDirectories(isValidLength);
+isDirectory = arrayfun(@(x)(x.isdir == 1), subjectDirectories);
+subjectDirectories = subjectDirectories(isDirectory);
 
 % number of subjects
-nSubject = size(subjectDirectories, 1);
+nSubject = max(size(subjectDirectories, 1), 1);
 
 % select parameter condition
+szCondition = 'OVD_AllwaysTrue_';
+% szCondition = 'OVD_Bitzer2016_';
+% szCondition = 'OVD_Bilert2018_';
+% szCondition = 'OVD_Schreiber2019_';
+% szCondition = 'OVD_Schreiber_Pitch_PeakHeight10';
 % szCondition = 'OVD_Schreiber_Min03_';
+% szCondition = 'OVD_Cohe_Pitch_rmsCorr';
 % szCondition = 'OVD_Cohe_Min03_rmsCorr_movmean';
-szCondition = 'OVD_Schreiber_Pitch_rmsCorr_';
+% szCondition = 'OVD_Schreiber_Pitch_rmsCorr_';
 
 % preallocate result vectors
 F2OVS = NaN(nSubject, nConfig(2));
 precOVS = NaN(nSubject, nConfig(2));
 recOVS = NaN(nSubject, nConfig(2));
+accOVS = NaN(nSubject, nConfig(2));
 mConfusion = zeros(2,2);
 
-idx = 1;
+
 % loop over all subjects
 for subj = 1:nSubject
     
     % choose one subject directoy
-    obj.szCurrentFolder = subjectDirectories(subj).name;
+    if ~isempty(subjectDirectories)
+        obj.szCurrentFolder = subjectDirectories(subj).name;
+        
+        % build the full directory
+        szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep 'Pitch' filesep 'OVDPitchMatFiles'];
+    else
+        
+        % build the full directory
+        szDir = [obj.szBaseDir filesep 'Pitch' filesep 'OVDPitchMatFiles'];
+    end
     
-    % build the full directory
-    szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep 'Pitch' filesep 'OVDPitchMatFiles'];
     
     % loop over all noise configurations
     for config = nConfig(1):nConfig(2)
         
-        % choose noise configurations
-        obj.szNoiseConfig = ['config' num2str(config)];
+        if isOutdoor
+            % choose measurement configuration
+            obj.szNoiseConfig = vConfigLabels{config};
         
-        % construct name of desired matfile
-        szFile = [szCondition obj.szCurrentFolder '_'  obj.szNoiseConfig '.mat'];
+            % construct name of desired matfile
+            szFile = [szCondition  obj.szNoiseConfig '.mat'];
+        else
+            % choose noise configurations
+            obj.szNoiseConfig = ['config' num2str(config)];
+        
+            % construct name of desired matfile
+            szFile = [szCondition obj.szCurrentFolder '_'  obj.szNoiseConfig '.mat'];
+        end
         
         if exist([szDir filesep szFile])
             load([szDir filesep szFile], 'stResults');
@@ -77,6 +129,7 @@ for subj = 1:nSubject
             F2OVS(subj, config)   = stResults.F2ScoreOVS_Pitch;
             precOVS(subj, config) = stResults.precOVS_Pitch;
             recOVS(subj, config)  = stResults.recOVS_Pitch;
+            accOVS(subj, config)  = stResults.accOVS_Pitch;
             mConfusion = mConfusion + stResults.mConfusion_Pitch;
         end
     end
@@ -85,41 +138,50 @@ end
 
 hFig1 = figure;
 % F2 score
-subplot(1,3,1);
-if isBilert
+subplot(1,4,1);
+if isBilert && ~isOutdoor
     boxplot(F2OVS,'Labels',vConfigLabels,'Whisker', 1);
-    title('F_2-Score OVD with Pitch PROBAND');
 else
     bar(categorical(vConfigLabels), F2OVS);
-    title('F_2-Score OVD with Pitch JP');
 end
-xlabel('noise level');
+title('F_2-Score OVD');
+xlabel('noise configuration');
 ylabel('F_2-Score');
 ylim([0 1]);
 
 % precision
-subplot(1,3,2);
-if isBilert
+subplot(1,4,2);
+if isBilert && ~isOutdoor
     boxplot(precOVS,'Labels',vConfigLabels,'Whisker', 1);
-    title('precision OVD with Pitch PROBAND');
 else
     bar(categorical(vConfigLabels), precOVS);
-    title('precision OVD with Pitch JP');
 end
-xlabel('noise level');
+title('precision OVD');
+xlabel('noise configuration');
 ylabel('precision OVS');
 ylim([0 1]);
 
 % recall
-subplot(1,3,3);
-if isBilert
+subplot(1,4,3);
+if isBilert && ~isOutdoor
     boxplot(recOVS,'Labels',vConfigLabels,'Whisker', 1);
-    title('recall OVD with Pitch PROBAND');
 else
     bar(categorical(vConfigLabels), recOVS);
-    title('recall OVD with Pitch JP');
 end
-xlabel('noise level');
+title('recall OVD');
+xlabel('noise configuration');
+ylabel('recall OVS');
+ylim([0 1]);
+
+% accuracy
+subplot(1,4,4);
+if isBilert && ~isOutdoor
+    boxplot(accOVS,'Labels',vConfigLabels,'Whisker', 1);
+else
+    bar(categorical(vConfigLabels), accOVS);
+end
+title('accuracy OVD');
+xlabel('noise configuration');
 ylabel('recall OVS');
 ylim([0 1]);
 
@@ -134,10 +196,14 @@ bPrint = 1;
 if bPrint
     szDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019\Pitch\Results';
     
-    if strcmp(szCondition(end), '_') 
+    if strcmp(szCondition(end), '_')
         szCondition = szCondition(1:end-1);
     end
-    if ~isBilert
+    if isSchreiber
+        szCondition = [szCondition '_NS'];
+    elseif isOutdoor
+        szCondition = [szCondition '_OD'];
+    elseif ~isBilert
         szCondition = [szCondition '_JP'];
     end
     

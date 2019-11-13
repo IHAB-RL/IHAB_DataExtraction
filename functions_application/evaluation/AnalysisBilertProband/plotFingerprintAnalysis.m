@@ -13,69 +13,56 @@ function plotFingerprintAnalysis(obj)
 
 
 %% lets start with reading objective data
-stParam.privacy = true;
-if isfield(obj, 'UseAudio') % NS data
 
-    % build the full directory
-    szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
-    
-    % read in audio signal
-    audiofile = fullfile(szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
-    [WavData, Fs] = audioread(audiofile);
-    
-    % set parameters for processing audio data
-    samplerate          = Fs/2;
-    stParam.fs          = samplerate;
-    stParam.mSignal     = resample(WavData, stParam.fs, Fs);
-    
-    % calculate time vector
-    nLen                = size(stParam.mSignal,1); % length in samples
-    nDur                = nLen/stParam.fs; % duration in sec
-    TimeVecWav          = linspace(0, nDur, nLen);
-    
-    stParam.tFrame      = 0.025; % block length in sec 
-    stParam.lFrame      = floor(stParam.tFrame*stParam.fs); % block length in samples
-    stParam.lOverlap    = stParam.lFrame/2; % overlap adjacent blocks
-    stParam.nFFT        = 1024; % number of fast Fourier transform points
-    stParam.vFreqRange  = [400 1000]; % frequency range of interest in Hz
-    stParam.vFreqBins   = round(stParam.vFreqRange./stParam.fs*stParam.nFFT);
-    stParam.tFrame      = 0.125; % Nils
-    stParam.tauCoh      = 0.1; % Nils
-    stParam.fixThresh   = 0.6; % fixed coherence threshold
-    stParam.adapThreshWin  = 0.05*stParam.fs; % window length for the adaptive threshold
-    stParam.winLen      = floor(stParam.nFFT/10); % normalized window length (Nils)
-    alpha               = exp(-stParam.tFrame/stParam.tauCoh);
 
-    [stData] = detectOVSRealCoherence(stParam);
+% reading objective data, desired feature PSD
+szFeature = 'PSD';
+
+% get all available feature file data
+[DataPSD, TimeVec, stInfoFile] = getObjectiveDataBilert(obj, szFeature);
+
+% if no feature files are stored, extracted PSD from audio signals
+if isempty(DataPSD)
+    
+    % call funtion to calculate PSDs
+    stData = detectOVSRealCoherence([], obj);
+    
+    % re-assign values
     Pxx = stData.Pxx';
     Pyy = stData.Pyy';
     Cxy = stData.Cxy';
+    nFFT = stData.nFFT;
+    samplerate = stData.fs;
     
-    stInfoPSD.nFrames = 480;
-    stInfoRMS.nFrames = 4799;
-    TimeVec = linspace(TimeVecWav(1), TimeVecWav(end), size(Pxx,1));
+    % number of time frames
+    nBlocks = size(Pxx, 1);
     
-else % with feature files
+    % adjust time vector
+    TimeVec = linspace(stData.TimeVec(1), stData.TimeVec(end), nBlocks);
     
-    % desired feature PSD
-    szFeature = 'PSD';
-
-    % get all available feature file data
-    [DataPSD,TimeVec,stInfoPSD] = getObjectiveDataBilert(obj, szFeature);
-
-    if isempty(DataPSD)
-        return;
-    end
-
+    % duration one frame in sec
+    nLenFrame = stData.tFrame;
+else
+    
+    % extract PSD data
     version = 1; % JP modified get_psd
-    [Cxy,Pxx,Pyy] = get_psd(DataPSD, version);
-    clear DataPSD;
+    [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
     
-    samplerate = stInfoPSD.fs;
+    % sampling frequency in Hz
+    samplerate = stInfoFile.fs;
     
-% %     % get recorded audio signal for plotting
-% %     [WavData, TimeVecWav, Fs] = getAudioSignal(obj);
+    % number of fast Fourier transform points
+    nFFT = (stInfoFile.nDimensions - 2 - 4)/2;
+    
+    % number of time frames
+    nBlocks = size(Pxx, 1);
+    
+    % duration one frame in sec
+    nLenFrame = 60/stInfoFile.nFrames;
 end
+
+% size of frequency bins
+specsize = nFFT/2 + 1;
 
 isFreqLim = 0;
 if isFreqLim
@@ -84,18 +71,15 @@ if isFreqLim
     stBandDef.EndFreq = 8000;
     stBandDef.Mode = 'onethird';
     stBandDef.fs = samplerate;
-    [stBandDef] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
+    [stBandDef] = fftbin2freqband(nFFT/2+1,stBandDef);
     stBandDef.skipFrequencyNormalization = 1;
-    [stBandDefCohe] = fftbin2freqband(stParam.nFFT/2+1,stBandDef);
+    [stBandDefCohe] = fftbin2freqband(nFFT/2+1,stBandDef);
     
     PxxShort = Pxx*stBandDefCohe.ReGroupMatrix;
     CoheShort = Cohe*stBandDefCohe.ReGroupMatrix;
-    clear Cohe MeanCohe;
+    clear Cohe
 end
 
-nFFT = (stInfoPSD.nDimensions - 2 - 4)/2;
-specsize = nFFT/2 + 1;  
-nBlocks = size(Pxx, 1);
 
 %% VOICE DETECTION by Schreiber 2019
 stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate);
@@ -117,7 +101,7 @@ vOVS_JP(stDataPitch.vCritHeight) = 1;
 
 
 %% get ground truth labels for voice activity
-obj.fsVD = ceil(stInfoPSD.nFrames / 60);
+obj.fsVD = 1/nLenFrame;
 obj.NrOfBlocks = nBlocks;
 [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
 
@@ -133,6 +117,9 @@ vHitOVD_JP = double(groundTrOVS == 1 & vOVS_JP == 1);
 vMissOVD_JP = double(groundTrOVS == 1 & vOVS_JP == 0);
 vFalseAlarmOVD_JP = double(groundTrOVS == 0 & vOVS_JP == 1);
 
+
+% % % get recorded audio signal for plotting
+% % [WavData, TimeVecWav, Fs] = getAudioSignal(obj);
 % % nLen = length(WavData);
 % % WavData = WavData(1:100:end,1);
 % % TimeVecWav = linspace(0, nLen/samplerate, length(WavData));
@@ -142,6 +129,7 @@ vFalseAlarmOVD_JP = double(groundTrOVS == 0 & vOVS_JP == 1);
 % % hold on;
 % % plot(Time, groundTrFVS, 'b');
 % % plot(Time, groundTrOVS, 'r');
+
 
 % for optical reasons replace 0 with NaN
 vHitOVD(vHitOVD == 0) = NaN;
@@ -178,7 +166,7 @@ else
     
     PxxLog = 10*log10(Pxx)';
 end
-if ~isfield(obj, 'UseAudio') 
+if ~isempty(DataPSD)
     TimeVec = datenum(TimeVec);
 end
 imagesc(TimeVec, freqVec, PxxLog);
@@ -196,7 +184,7 @@ else
 end
 psdText.FontSize = 12;
 set(axPxx ,'ylabel', ylabel('frequency in Hz'))
-set(axPxx,'CLim',[-110 -55]);
+% set(axPxx,'CLim',[-110 -55]);
 drawnow;
 PosVecPxx = get(axPxx,'Position');
 
@@ -213,6 +201,7 @@ hFA = plot(TimeVec, vFalseAlarmOVD, 'x', 'Color', [0.65 0.65 0.65]);
 legend([hHit, hMiss, hFA, hFVS], 'OVS hit', 'OVS miss', 'OVS false alarm', 'FVS','Location','southeast','NumColumns',4);
 set(axCohe ,'ylabel', ylabel('mean Re\{Coherence\}'));
 xlim([TimeVec(1) TimeVec(end)]);
+ylim([-0.2 1]);
 
 
 %% RMS
@@ -225,26 +214,33 @@ xlim([TimeVec(1) TimeVec(end)]);
 
 
 %% RMS of Correlation with hannwin combs
+useRMS = 1;
 axCorr = axes('Position',[nStartPos 0.075 PosVecPxx(3) nHeight]);
-% plot(TimeVec, stDataPitch.CorrRMS);
-plot(TimeVec, stDataPitch.PeaksCorr(:,1));
-hold on;
-% plot(TimeVec, stDataPitch.adapThreshCorr, 'r');
-plot(TimeVec, stDataPitch.adapThreshPeakHeight, 'r');
+if useRMS
+    plot(TimeVec, stDataPitch.CorrRMS);
+    hold on;
+    plot(TimeVec, stDataPitch.adapThreshCorr, 'r');
+    nScaling = max(stDataPitch.CorrRMS);
+else
+    plot(TimeVec, stDataPitch.PeaksCorr(:,1));
+    hold on;
+    plot(TimeVec, stDataPitch.adapThreshPeakHeight, 'r');
+    nScaling = max(stDataPitch.PeaksCorr(:,1));
+end
 plot(TimeVec, stDataPitch.TrackMin, 'b:');
 plot(TimeVec, stDataPitch.TrackMean, 'c:');
-% nScaling = max(stDataPitch.CorrRMS);
-nScaling = max(stDataPitch.PeaksCorr(:,1));
 hHit = plot(TimeVec, nScaling*vHitOVD_JP, 'rx', 'LineWidth', 1.25);
 hMiss = plot(TimeVec, nScaling*vMissOVD_JP, 'mx', 'LineWidth', 1.25);
 hFA = plot(TimeVec, nScaling*vFalseAlarmOVD_JP, 'x', 'Color', [0.65 0.65 0.65]);
 % legend([hHit, hMiss, hFA], 'OVS hit', 'OVS miss', 'OVS false alarm','NumColumns',3);
-if ~isfield(obj, 'UseAudio') 
+if ~isempty(DataPSD)
     datetickzoom(axCorr,'x','HH:MM:SS');
+    set(axCorr, 'xlabel', xlabel('Time \rightarrow'));
+else
+    set(axCorr, 'xlabel', xlabel('Time in sec \rightarrow'));
 end
 axCorr.YLabel = ylabel('rms\{Correlation\}');
 xlim([TimeVec(1) TimeVec(end)]);
-set(axCorr ,'xlabel', xlabel('Time \rightarrow'));
 
 set(axPxx,'XTickLabel',[]);
 set(axCohe,'XTickLabel',[]);
@@ -262,9 +258,13 @@ plotConfusionMatrix([], vLabels, groundTrOVS, vOVS);
 plotConfusionMatrix([], vLabels, groundTrOVS, vOVS_JP);
 
 % logical to save figure
-bPrint = 0;
+bPrint = 1;
 if bPrint
-    szDir = [obj.szBaseDir filesep obj.szCurrentFolder];
+    if isfield(obj, 'szCurrentFolder')
+        szDir = [obj.szBaseDir filesep obj.szCurrentFolder];
+    else
+        szDir = obj.szBaseDir;
+    end
     sDataFolder_Output = [szDir filesep 'Overviews'];
     if ~exist(sDataFolder_Output, 'dir')
         mkdir(sDataFolder_Output);
@@ -272,8 +272,14 @@ if bPrint
     
     set(0,'DefaultFigureColor','remove');
     
-    exportName = [szDir filesep 'Overviews' filesep ...
-        'Fingerprint_PSD_Cohe_CorrRMS_' obj.szCurrentFolder '_' obj.szNoiseConfig];
+    
+    if isfield(obj, 'szCurrentFolder')
+        exportName = [sDataFolder_Output filesep ...
+            'Fingerprint_PSD_Cohe_CorrRMS_' obj.szCurrentFolder '_' obj.szNoiseConfig];
+    else
+        exportName = [sDataFolder_Output filesep ...
+            'Fingerprint_PSD_Cohe_CorrRMS_' obj.szNoiseConfig];
+    end
     
     savefig(hFig, exportName);
 end

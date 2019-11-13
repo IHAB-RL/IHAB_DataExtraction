@@ -15,21 +15,47 @@ function AnalysePeaksCorrelation(obj)
 szFeature = 'PSD';
 
 % get all available feature file data
-[DataPSD,TimeVecPSD,stInfoFile] = getObjectiveDataBilert(obj, szFeature);
+[DataPSD,~,stInfoFile] = getObjectiveDataBilert(obj, szFeature);
 
-if isempty(DataPSD)
-    return;
+% if no feature files are stored, extracted PSD from audio signals
+if isempty(DataPSD) 
+    
+    % call funtion to calculate PSDs
+    stData = detectOVSRealCoherence([], obj);
+    
+    % re-assign values
+    Pxx = stData.Pxx';
+    Pyy = stData.Pyy';
+    Cxy = stData.Cxy';
+    nFFT = stData.nFFT;
+    samplerate = stData.fs;
+    
+    % duration one frame in sec
+    nLenFrame = stData.tFrame;
+    
+    clear stData
+else
+    
+    % extract PSD data
+    version = 1; % JP modified get_psd
+    [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
+    
+    clear DataPSD
+    
+    % sampling frequency in Hz
+    samplerate = stInfoFile.fs;
+    
+    % number of fast Fourier transform points
+    nFFT = (stInfoFile.nDimensions - 2 - 4)/2;
+    
+    % duration one frame in sec
+    nLenFrame = 60/stInfoFile.nFrames;
 end
 
-% extract PSD data
-version = 1; % JP modified get_psd
-[Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
+% size of frequency bins
+specsize = nFFT/2 + 1;
 
-% calculate coherence
-Cohe = Cxy./(sqrt(Pxx.*Pyy) + eps);
-
-nFFT = (stInfoFile.nDimensions - 2 - 4)/2;
-specsize = nFFT/2 + 1;  
+% number of time frames
 nBlocks = size(Pxx, 1);
 
 
@@ -39,21 +65,19 @@ Pxx = 10^5*Pxx;
 
 % calculate correlation
 % PSD
-[correlation] = CalcCorrelation(Pxx, stInfoFile.fs, specsize);
+[correlation] = CalcCorrelation(Pxx, samplerate, specsize);
 % % Cohe
 % useFilter = 0; % logical whether to highpass filter the hannwin combs
-% [correlation] = CalcCorrelation(real(Cohe), stInfoFile.fs, specsize, useFilter);
+% [correlation] = CalcCorrelation(real(Cohe), samplerate, specsize, useFilter);
 
 
 % load basefrequencies 
 basefrequencies = logspace(log10(50),log10(450),200);
 
 
-% duration one frame in sec
-nLenFrame = 60/stInfoFile.nFrames; 
+% get ground truth voice labels
 obj.fsVD = 1/nLenFrame;
 obj.NrOfBlocks = nBlocks;
-% get labels for new blocksize
 [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
 
 idxTrOVS = groundTrOVS == 1;
@@ -61,12 +85,12 @@ idxTrFVS = groundTrFVS == 1;
 idxTrNone = ~idxTrOVS & ~idxTrFVS;
 
 
-% % calculate the "RMS" of the correlation
-% CorrRMS = sqrt(sum(correlation.^2, 2));
-% 
-% CorrRMS_OVS = CorrRMS(idxTrOVS, :);
-% CorrRMS_FVS = CorrRMS(idxTrFVS, :);
-% CorrRMS_None = CorrRMS(idxTrNone, :);
+% calculate the "RMS" of the correlation
+CorrRMS = sqrt(sum(correlation.^2, 2));
+
+CorrRMS_OVS = CorrRMS(idxTrOVS, :);
+CorrRMS_FVS = CorrRMS(idxTrFVS, :);
+CorrRMS_None = CorrRMS(idxTrNone, :);
 
 
 % determine peaks of correlation
@@ -75,20 +99,28 @@ idxTrNone = ~idxTrOVS & ~idxTrFVS;
 
                         
 % build the full directory
-szDir = [obj.szBaseDir filesep obj.szCurrentFolder];
+if isfield(obj, 'szCurrentFolder')
+    szDir = [obj.szBaseDir filesep obj.szCurrentFolder];
+
+    szFileEnd = [obj.szCurrentFolder '_'  obj.szNoiseConfig];
+else
+    szDir = obj.szBaseDir;
+    
+    szFileEnd = obj.szNoiseConfig;
+end
 szFolder_Output = [szDir filesep 'Pitch' filesep 'PeaksMatFiles'];
 if ~exist(szFolder_Output, 'dir')
     mkdir(szFolder_Output);
 end
 
 % save results as mat file
-szFile = ['PeaksLocs_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
+szFile = ['PeaksLocs_' szFileEnd];
 save([szFolder_Output filesep szFile], 'peaks', 'locs', 'peaksOVS', 'peaksFVS', 'peaksNone');
 savefig(hFig, [szFolder_Output filesep szFile]);
 
-% % save results as mat file
-% szFile = ['CorrelationRMS_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
-% save([szFolder_Output filesep szFile], 'CorrRMS_OVS', 'CorrRMS_FVS', 'CorrRMS_None');
+% save results as mat file
+szFile = ['CorrelationRMS_' szFileEnd];
+save([szFolder_Output filesep szFile], 'CorrRMS_OVS', 'CorrRMS_FVS', 'CorrRMS_None');
 
 
 %--------------------Licence ---------------------------------------------

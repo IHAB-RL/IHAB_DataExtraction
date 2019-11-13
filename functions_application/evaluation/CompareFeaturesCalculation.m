@@ -29,7 +29,7 @@ nConfig = 2;
 obj.szNoiseConfig = ['config' num2str(nConfig)];
     
 % build the full directory
-szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
+obj.szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
 
 
 % desired feature PSD
@@ -48,7 +48,7 @@ nBlocks = size(Pxx, 1);
 
 
 % read in audio signal 
-audiofile = fullfile(szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
+audiofile = fullfile(obj.szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
 [mSignal, fs] = audioread(audiofile);
 stParam.mSignal = resample(mSignal, stInfoFile.fs, fs);
 
