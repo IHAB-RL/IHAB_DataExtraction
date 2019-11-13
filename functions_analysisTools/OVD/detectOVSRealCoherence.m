@@ -1,4 +1,4 @@
-function [stData] = detectOVSRealCoherence(stParam)
+function [stData] = detectOVSRealCoherence(stParam, obj)
 % function to detect the real part of the coherence using the auto- and
 % cross spectral power density
 % Usage [stData] = detectOVSRealCoherence(stParam)
@@ -13,14 +13,18 @@ function [stData] = detectOVSRealCoherence(stParam)
 % stData :  type
 %	 explanation
 %
-%------------------------------------------------------------------------
-
 % Author: J.Bitzer (c) TGM @ Jade Hochschule applied licence see EOF
 % Source: If the function is based on a scientific paper or a web site,
 %         provide the citation detail here (with equation no. if applicable)
 % Version History:
 % Ver. 0.01 first implementation 01-Dec-2017  SB
-% modified by NS
+% Ver. 1.0 modified by NS 2018/2019
+% Ver. 1.1 add setParamsFeatureExtraction 12-Nov-2019  JP
+
+if nargin == 2 && isempty(stParam)
+    % call funtion to set parameters for processing audio data
+    stParam = setParamsFeatureExtraction(obj);
+end
 
 lFeed       = stParam.lFrame - stParam.lOverlap;
 nFrames     = floor((size(stParam.mSignal,1)-stParam.lOverlap)/(lFeed));
@@ -90,12 +94,13 @@ vCohMeanReal    = mean(real(mCoherence(vFreqIDX(1):vFreqIDX(2),:)),1);
 alphaCoh            = exp(-stParam.tFrame./stParam.tauCoh);
 vCohMeanRealSmooth  = filter(1-alphaCoh,[1 -alphaCoh],vCohMeanReal);
 
-stData.mCoherence           = mCoherence;
-stData.vCohMeanReal         = vCohMeanReal;
-stData.vCohMeanRealSmooth   = vCohMeanRealSmooth;
-stData.Pxx = Pxx;
-stData.Pyy = Pyy;
-stData.Cxy = Cxy;
+stData                    = stParam;
+stData.mCoherence         = mCoherence;
+stData.vCohMeanReal       = vCohMeanReal;
+stData.vCohMeanRealSmooth = vCohMeanRealSmooth;
+stData.Pxx  = Pxx;
+stData.Pyy  = Pyy;
+stData.Cxy  = Cxy;
 stData.mRMS = mRMS;
 
 end
