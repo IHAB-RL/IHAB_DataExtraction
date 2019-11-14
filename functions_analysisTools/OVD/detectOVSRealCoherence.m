@@ -24,6 +24,10 @@ function [stData] = detectOVSRealCoherence(stParam, obj)
 if nargin == 2 && isempty(stParam)
     % call funtion to set parameters for processing audio data
     stParam = setParamsFeatureExtraction(obj);
+    
+    if isfield(obj, 'isPrivacy')
+        stParam.privacy = obj.isPrivacy;
+    end
 end
 
 lFeed       = stParam.lFrame - stParam.lOverlap;
