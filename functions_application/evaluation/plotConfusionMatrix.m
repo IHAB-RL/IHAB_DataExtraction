@@ -47,7 +47,7 @@ confpercent = 100*mConfusion./repmat(sum(mConfusion, 1),numlabels,1);
 hFig = figure;
 imagesc(confpercent);
 title(['Confusion Matrix' stTitle]);
-ylabel('Predicted Values'); xlabel('Actual Values');
+ylabel('Predicted Values'); xlabel('True Values');
 
 % set the colormap
 colormap(flipud(autumn));
