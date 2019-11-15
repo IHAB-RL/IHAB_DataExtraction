@@ -16,7 +16,7 @@ nConfig = [1; 6];
 
 StartIdx = 1;
 % loop over all noise configurations
-for config = nConfig(1):nConfig(2)
+for config = 4:nConfig(2)
 
     % choose noise/ measurement configuration
     obj.szNoiseConfig = ['config' num2str(config)];
@@ -35,11 +35,21 @@ for config = nConfig(1):nConfig(2)
 
     % re-assign values
     vCohMeanReal(StartIdx:StartIdx+nBlocks-1, 1) = stData.vCohMeanReal';
+    mRMS(StartIdx:StartIdx+nBlocks-1, 1) = stData.mRMS(:,1);
 %     Pxx(StartIdx:StartIdx+nBlocks-1) = stData.Pxx;
 %     Pyy(StartIdx:StartIdx+nBlocks-1) = stData.Pyy;
-%     Cxy(StartIdx:StartIdx+nBlocks-1) = stData.Cxy;
-    mRMS(StartIdx:StartIdx+nBlocks-1, 1) = stData.mRMS(:,1);
 
+    % weight real CPSD and build sum over all frequencies
+    Cxy = real(stData.Cxy)';
+    [Cxy_Weighted] = weightingFrequency(Cxy, stData.fs, stData.nFFT/2+1);
+    mCPSD(StartIdx:StartIdx+nBlocks-1, 1) = sum(Cxy_Weighted, 2);
+
+    % calculate correlation of CPSD with hannwin combs
+    correlation = CalcCorrelation(Cxy, stData.fs, stData.nFFT/2+1);
+    % find peaks in the correlation matrix
+    basefrequencies = logspace(log10(50),log10(450),200);
+    PeaksCorr(StartIdx:StartIdx+nBlocks-1, :) = DeterminePeaksCorrelation(correlation, basefrequencies, nBlocks);
+    
     % duration one frame in sec
     nLenFrame = stData.tFrame;
 
@@ -47,28 +57,38 @@ for config = nConfig(1):nConfig(2)
     obj.fsVD = 1/nLenFrame;
     obj.NrOfBlocks = nBlocks;
     [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
-    groundTrFVS(groundTrFVS == 1) = 2;
-    vVoiceLabels(StartIdx:StartIdx+nBlocks-1, 1) = groundTrOVS';
-
+    groundTrFVS = 2*groundTrFVS; % set label for fvs to 2
+    
+    % combine OV and FV labels
+    vGroundTruthVS = groundTrOVS; % first ovs
+    % at no ovs look for fvs
+    vGroundTruthVS(vGroundTruthVS == 0) = groundTrFVS(vGroundTruthVS == 0); 
+%     % at ovs look for additional fvs
+%     groundTrVS(groundTrVS == 1 & groundTrFVS == 2) = 3;
+    vVoiceLabels(StartIdx:StartIdx+nBlocks-1, 1) = vGroundTruthVS;
+    
     % adjust index
     StartIdx = StartIdx + nBlocks;
+    
+    figure;plot(PeaksCorr(:,1)); hold on;plot(groundTrOVS,'r');
 end
 
 
 % create training data set
-mDataSet = [vCohMeanReal, mRMS];
-vNames = {'Re(Cohe)'; 'RMS'};
+mDataSet = [vCohMeanReal, mRMS, mCPSD, PeaksCorr];
+vNames = {'Re(Cohe)'; 'RMS'; 'CPSD'; 'PH1'; 'PH2'; 'PH3'};
 
 % set number of trees
 nTrees = 50;
 
 %% Train an ensemble of bagged classification trees using the entire data set.
+tic
 Mdl = TreeBagger(nTrees, mDataSet, vVoiceLabels, 'OOBPrediction', 'On',...
     'Method', 'classification', 'OOBPredictorImportance', 'On',...
     'PredictorNames', vNames); % 'Prior', 'Uniform'
-
-% view decision tree
-view(Mdl.Trees{1},'Mode','graph');
+toc
+% % view decision tree
+% view(Mdl.Trees{1},'Mode','graph');
 
 % TreeBagger stores predictor importance estimates in the property
 % OOBPermutedPredictorDeltaError. Compare the estimates using a bar graph.
@@ -92,18 +112,20 @@ ylabel 'Out-of-bag classification error';
 
 
 %% test random forest with new subject
+obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
+
 % choose one subject directoy
-obj.szCurrentFolder = 'TZ06ES18';
+obj.szCurrentFolder = 'NN08IA10';
 
 % choose noise/ measurement configuration
-obj.szNoiseConfig = 'config6';
+obj.szNoiseConfig = 'config3';
 
 % build the full directory
 obj.szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig];
-
+            
 % select audio file
 obj.audiofile = fullfile(obj.szDir, [obj.szCurrentFolder '_' obj.szNoiseConfig '.wav']);
-
+            
 % call funtion to calculate PSDs
 stData = detectOVSRealCoherence([], obj);
 
@@ -112,28 +134,42 @@ nBlocks = size(stData.vCohMeanReal, 2);
 
 % re-assign values
 vCohMeanReal = stData.vCohMeanReal';
-%     Pxx = stData.Pxx;
-%     Pyy = stData.Pyy;
-%     Cxy = stData.Cxy;
 mRMS = stData.mRMS(:,1);
+
+% weight real CPSD and build sum over all frequencies
+Cxy = real(stData.Cxy)';
+[Cxy_Weighted] = weightingFrequency(Cxy, stData.fs, stData.nFFT/2+1);
+mCPSD = sum(Cxy_Weighted, 2);
+
+% calculate correlation of CPSD with hannwin combs
+correlation = CalcCorrelation(Cxy, stData.fs, stData.nFFT/2+1);
+% find peaks in the correlation matrix
+basefrequencies = logspace(log10(50),log10(450),200);
+PeaksCorr = DeterminePeaksCorrelation(correlation, basefrequencies, nBlocks);
 
 % get ground truth labels for voice activity
 obj.fsVD = 1/nLenFrame;
 obj.NrOfBlocks = nBlocks;
 [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
-groundTrFVS(groundTrFVS == 1) = 2;
-%     vVoiceLabels(StartIdx:StartIdx+nBlocks-1, 1) = groundTrOVS';
+groundTrFVS = 2*groundTrFVS; % set label for fvs to 2
+
+% combine OV and FV labels
+vGroundTruthVS = groundTrOVS; % first ovs
+% at no ovs look for fvs
+vGroundTruthVS(vGroundTruthVS == 0) = groundTrFVS(vGroundTruthVS == 0); 
+% % at ovs look for additional fvs
+% groundTrVS(groundTrVS == 1 & groundTrFVS == 2) = 3;
 
 % create test data set
-mTestDataSet = [vCohMeanReal, mRMS];
+mTestDataSet = [vCohMeanReal, mRMS, mCPSD, PeaksCorr];
 
 % start prediction with trained ensemble of bagged classification trees
 vPredictedVS = predict(Mdl, mTestDataSet);
 vPredictedVS = str2num(cell2mat(vPredictedVS));
 
 % display results as confusion matrix
-vLabels = {'OVS', 'no OVS'};
-plotConfusionMatrix([], vLabels, groundTrOVS', vPredictedVS);
+vLabels = {'no VS', 'OVS', 'FVS'};
+plotConfusionMatrix([], vLabels, vGroundTruthVS', vPredictedVS)
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
