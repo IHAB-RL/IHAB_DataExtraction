@@ -54,15 +54,21 @@ locs = NaN(nBlocks, 3);
 
 % peak definition
 MaxNrOfPeaks = 3; % find maximal 3 peaks
-MinPeakHeight = 1; % minimum peak height
-MinPeakHeight = 0.05; % minimum peak height
+% MinPeakHeight = 1; % minimum peak height
 MinPeakDistance = 20; % minimum peak distance in Hz
 
 % determine peaks in magnitude feature
 for blockidx = 1:nBlocks
+    
+    % determine % minimum peak prominence
+    MinPeakProminence = max(0.1*max(correlation(blockidx,:)), 10^-8); 
+    
     [peaksTemp, locsTemp] = findpeaks(correlation(blockidx,:), ...
-        basefrequencies, 'NPeaks', MaxNrOfPeaks, 'MinPeakHeight', MinPeakHeight, ...
+        basefrequencies, 'NPeaks', MaxNrOfPeaks, 'MinPeakProminence', MinPeakProminence, ...
         'SortStr', 'descend', 'MinPeakDistance', MinPeakDistance);
+    findpeaks(correlation(blockidx,:), ...
+        basefrequencies, 'NPeaks', MaxNrOfPeaks, 'MinPeakProminence', MinPeakProminence, ...
+        'SortStr', 'descend', 'MinPeakDistance', MinPeakDistance,'Annotate','extents');
     
     % actual number of peaks
     nPeaks = size(peaksTemp, 2);
@@ -71,6 +77,7 @@ for blockidx = 1:nBlocks
         peaks(blockidx,1:nPeaks) = peaksTemp;
         locs(blockidx,1:nPeaks) = locsTemp;
     end
+   
 end
 
 if nargin == 3
