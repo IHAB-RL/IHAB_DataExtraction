@@ -1,30 +1,37 @@
 function [mConfusion]=getConfusionMatrix(vPredicted, vGroundTruth)
 % function to calculate the confusion matrix
-% Usage [outParam]=getConfusionMatrix(inParam)
+% Usage [mConfusion]=getConfusionMatrix(vPredicted, vGroundTruth)
 %
 % Parameters
 % ----------
-% inParam :  vPredicted   - vector, containing logicals
-%            vGroundTruth - vector, containing logicals
+% vPredicted   - vector, containing predicted values
+% vGroundTruth - vector, containing true values
 %
 % Returns
 % -------
-% outParam :  tp - number of true positive detection
-%             tn - number of true negative detection
-%             fp - number of false positive detection
-%             fn - number of false negative detection
+% mConfusion - confusion matrix
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create 24-Sep-2019  JP
+% Ver. 1.0 generalized 15-Nov-2019  JP
 
-tp = sum((vPredicted == 1) & (vGroundTruth == 1));
-tn = sum((vPredicted == 0) & (vGroundTruth == 0));
-fp = sum((vPredicted == 1) & (vGroundTruth == 0));
-fn = sum((vPredicted == 0) & (vGroundTruth == 1));
+% determine unique numbers in ground truth vector
+vUniqueNums = unique(vGroundTruth);
 
-mConfusion = [tp fp; fn tn];
+% number of categories/ dimensions
+nDim = length(vUniqueNums);
 
+% preallocate
+mConfusion = zeros(nDim, nDim);
+
+for row = 1:nDim
+    nPred = vUniqueNums(row);
+    for column = 1:nDim
+        nGT = vUniqueNums(column);
+        mConfusion(row, column) = sum((vPredicted == nPred) & (vGroundTruth == nGT));
+    end
+end
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
