@@ -39,7 +39,6 @@ if stParam.privacy
     Pxx = zeros(stParam.nFFT/2+1,floor(nFrames/10)+1);
     Pyy = zeros(stParam.nFFT/2+1,floor(nFrames/10)+1);
     Cxy = zeros(stParam.nFFT/2+1,floor(nFrames/10)+1);
-    mRMS = zeros(floor(nFrames/10)+1, 2);
 else
     mCoherence  = zeros(stParam.nFFT/2+1,nFrames);
     Pxx = zeros(stParam.nFFT/2+1,nFrames);
@@ -47,7 +46,6 @@ else
     Cxy = zeros(stParam.nFFT/2+1,nFrames);
     mRMS = zeros(nFrames,2);
 end
-mRMStemp = zeros(nFrames,2);
 
 % smoothing factor PSD
 alphaPSD    = exp(-lFeed/(0.125*stParam.fs));
@@ -73,16 +71,13 @@ for iFrame = 1:nFrames
     curXc   = mSpec(:,1).*conj(mSpec(:,2));
     tmpXc   = alphaPSD*tmpXc+(1-alphaPSD)*(curXc);
     
-    
-    mRMStemp(iFrame,:) = rms(stParam.mSignal(vIDX,:));
-        
     if stParam.privacy 
         if mod(iFrame,10) == 0
             mCoherence(:,counter) = tmpXc./(sqrt(tmpX(:,1).*tmpX(:,2))+eps);
             Pxx(:,counter) = tmpX(:,1);
             Pyy(:,counter) = tmpX(:,2);
             Cxy(:,counter) = tmpXc;
-            mRMS(counter,:) = mean(mRMStemp(iFrame-9:iFrame));
+            
             counter = counter+1;
         end
     else
@@ -90,8 +85,9 @@ for iFrame = 1:nFrames
         Pxx(:,iFrame) = tmpX(:,1);
         Pyy(:,iFrame) = tmpX(:,2);
         Cxy(:,iFrame) = tmpXc;
-        mRMS(iFrame,:) = mRMStemp;
     end
+    
+    mRMS(iFrame,:) = rms(stParam.mSignal(vIDX,:));
     
 end % for iFrame
 
