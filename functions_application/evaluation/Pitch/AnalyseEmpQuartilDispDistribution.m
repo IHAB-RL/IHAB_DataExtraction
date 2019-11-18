@@ -1,5 +1,6 @@
-% script to analyse the distribution of the RMS of correlation (magnitude
-% feature by Basti Bechtold)
+% script to analyse the distribution of the Empirischer 
+% Quartilsdispersionskoeffizient of correlation (magnitude feature by Basti 
+% Bechtold)
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create 08-Nov-2019  JP
@@ -71,9 +72,9 @@ nSubject = max(size(subjectDirectories, 1), 1);
 
 % preallocate result matrix
 nValuesMax = nSubject * nBlocksMax;
-mCorrRMSOVS = NaN(nValuesMax, nConfig(2));
-mCorrRMSFVS = NaN(nValuesMax, nConfig(2));
-mCorrRMSNone = NaN(nValuesMax, nConfig(2));
+mEmpQuartilDispOVS = NaN(nValuesMax, nConfig(2));
+mEmpQuartilDispFVS = NaN(nValuesMax, nConfig(2));
+mEmpQuartilDispNone = NaN(nValuesMax, nConfig(2));
 
 nCountVS = zeros(nConfig(2), nSubject, 3);
 
@@ -96,34 +97,34 @@ for config = nConfig(1):nConfig(2)
             
             szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep 'Pitch' filesep 'PeaksMatFiles'];
             
-            szFile = ['CorrelationRMS_PP_Cxy_scaled_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
+            szFile = ['EmpQuartilDisp_PP_Cxy_scaled_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
         else
             szDir = [obj.szBaseDir filesep 'Pitch' filesep 'PeaksMatFiles'];
             
-            szFile = ['CorrelationRMS_PP_Cxy_scaled_'  obj.szNoiseConfig];
+            szFile = ['EmpQuartilDisp_PP_Cxy_scaled_'  obj.szNoiseConfig];
         end
         
         
         if exist([szDir filesep szFile '.mat'], 'file')
-            load([szDir filesep szFile], 'CorrRMS_OVS', 'CorrRMS_FVS', 'CorrRMS_None');
+            load([szDir filesep szFile], 'EmpQuartilDisp_OVS', 'EmpQuartilDisp_FVS', 'EmpQuartilDisp_None');
             
             % count number of specific voice sequences
-            nCountVS(config, subj, 1) = size(CorrRMS_OVS,1);
-            nCountVS(config, subj, 2) = size(CorrRMS_FVS,1);
-            nCountVS(config, subj, 3) = size(CorrRMS_None,1);
+            nCountVS(config, subj, 1) = size(EmpQuartilDisp_OVS,2);
+            nCountVS(config, subj, 2) = size(EmpQuartilDisp_FVS,2);
+            nCountVS(config, subj, 3) = size(EmpQuartilDisp_None,2);
             
             
             % construct matrix with pooled data
-            mCorrRMSOVS(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config) = CorrRMS_OVS;
-            mCorrRMSFVS(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config) = CorrRMS_FVS;
-            mCorrRMSNone(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config) = CorrRMS_None;
+            mEmpQuartilDispOVS(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config) = EmpQuartilDisp_OVS;
+            mEmpQuartilDispFVS(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config) = EmpQuartilDisp_FVS;
+            mEmpQuartilDispNone(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config) = EmpQuartilDisp_None;
             
             % adjust index
             StartIdx(1) = StartIdx(1) + nCountVS(config, subj, 1);
             StartIdx(2) = StartIdx(2) + nCountVS(config, subj, 2);
             StartIdx(3) = StartIdx(3) + nCountVS(config, subj, 3);
             
-            clear CorrRMS_OVS CorrRMS_FVS CorrRMS_None
+            clear EmpQuartilDisp_OVS EmpQuartilDisp_FVS EmpQuartilDisp_None
         end
     end
     
@@ -133,33 +134,33 @@ end
 nPeakValues = max(max(sum(nCountVS(:, :, :), 2)));
 
 % adjust peak vectors to one length
-mCorrRMSOVS(nPeakValues+1:end, :) = [];
-mCorrRMSFVS(nPeakValues+1:end, :) = [];
-mCorrRMSNone(nPeakValues+1:end, :) = [];
+mEmpQuartilDispOVS(nPeakValues+1:end, :) = [];
+mEmpQuartilDispFVS(nPeakValues+1:end, :) = [];
+mEmpQuartilDispNone(nPeakValues+1:end, :) = [];
 
 
-% %% GroupedBoxplot(mCorrRMSOVS, mCorrRMSFVS, mCorrRMSNone, [nPeakValues config])
+% %% GroupedBoxplot(mEmpQuartilDispOVS, mEmpQuartilDispFVS, mEmpQuartilDispNone, [nPeakValues config])
 hFig = figure;
 subplot(1,3,1);
-boxplot(mCorrRMSOVS,'Labels',vLabels, 'Colors', 'r','Whisker', 1);
-title('RMS Correlation at OVS');
+boxplot(mEmpQuartilDispOVS,'Labels',vLabels, 'Colors', 'r','Whisker', 1);
+title('EmpQuartilDisp at OVS');
 xlabel('noise configuration');
-ylabel('RMS Correlation');
-ylim([0 0.2]);
+ylabel('EmpQuartilDisp');
+ylim([-100 100]);
 
 subplot(1,3,2);
-boxplot(mCorrRMSFVS,'Labels',vLabels, 'Colors', 'b','Whisker', 1);
-title('RMS Correlation at FVS');
+boxplot(mEmpQuartilDispFVS,'Labels',vLabels, 'Colors', 'b','Whisker', 1);
+title('EmpQuartilDisp at FVS');
 xlabel('noise configuration');
-ylabel('RMS Correlation');
-ylim([0 0.2]);
+ylabel('EmpQuartilDisp');
+ylim([-100 100]);
 
 subplot(1,3,3);
-boxplot(mCorrRMSNone,'Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
-title('RMS Correlation at no VS');
+boxplot(mEmpQuartilDispNone,'Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
+title('EmpQuartilDisp at no VS');
 xlabel('noise configuration');
-ylabel('RMS Correlation');
-ylim([0 0.2]);
+ylabel('EmpQuartilDisp');
+ylim([-100 100]);
 
 
 % logical to save figure
@@ -167,7 +168,7 @@ bPrint = 1;
 if bPrint
     szDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019\Pitch\Distribution';
     
-    exportName = {[szDir filesep 'DistributionRMSCorrelationMagnitudeFeature_PP_scaled']};
+    exportName = {[szDir filesep 'DistributionEmpQuartilDispMagnitudeFeature']};
     if isSchreiber
         exportName = strcat(exportName, '_NS');
     elseif isOutdoor

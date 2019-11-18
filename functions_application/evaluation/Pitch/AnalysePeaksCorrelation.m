@@ -34,6 +34,7 @@ if isempty(DataPSD) || size(Cxy, 1) <= nMinLen
     Pxx = stData.Pxx';
     Pyy = stData.Pyy';
     Cxy = stData.Cxy';
+    mRMS = stData.mRMS;
     nFFT = stData.nFFT;
     samplerate = stData.fs;
     
@@ -51,6 +52,15 @@ else
     
     % duration one frame in sec
     nLenFrame = 60/stInfoFile.nFrames;
+    
+    % desired feature RMS
+    szFeature = 'RMS';
+
+    % set compression on
+    obj.isCompression = true;
+
+    % get all available feature file data
+    mRMS = getObjectiveDataBilert(obj, szFeature);
 end
 
 % size of frequency bins
@@ -61,7 +71,7 @@ nBlocks = size(Pxx, 1);
 
 
 % Pxx = 10^5*Pxx;
-Cxy = real(Cxy)./sum(real(Cxy),2);
+Cxy = real(Cxy)./mean(mRMS, 2);
 % Pyy = 10^5*Pyy;
 
 % calculate correlation
@@ -94,10 +104,22 @@ CorrRMS_FVS = CorrRMS(idxTrFVS, :);
 CorrRMS_None = CorrRMS(idxTrNone, :);
 
 
+% calculate Empirischer Quartilsdispersionskoeffizient
+EmpQuartilDisp = (prctile(correlation', 75)-prctile(correlation', 25))./ median(correlation,2)';
+
+EmpQuartilDisp_OVS = EmpQuartilDisp(idxTrOVS);
+EmpQuartilDisp_FVS = EmpQuartilDisp(idxTrFVS);
+EmpQuartilDisp_None = EmpQuartilDisp(idxTrNone);
+
+
 % determine peaks of correlation
-[peaks, locs, hFig, peaksOVS, peaksFVS, peaksNone] = ...
+[peaks, locs, proms, hFig, peaksOVS, peaksFVS, peaksNone] = ...
     DeterminePeaksCorrelation(correlation, basefrequencies, nBlocks, idxTrOVS, idxTrFVS, idxTrNone);
 
+% sort prominence according to label
+promsOVS = proms(idxTrOVS, :);
+promsFVS = proms(idxTrFVS, :);
+promsNone = proms(idxTrNone, :);
                         
 % build the full directory
 if isfield(obj, 'szCurrentFolder')
@@ -115,13 +137,17 @@ if ~exist(szFolder_Output, 'dir')
 end
 
 % save results as mat file
-szFile = ['PeaksLocs_Cxy_scaled_' szFileEnd];
-save([szFolder_Output filesep szFile], 'peaks', 'locs', 'peaksOVS', 'peaksFVS', 'peaksNone');
+szFile = ['PeaksLocs_PP_Cxy_scaled_' szFileEnd];
+save([szFolder_Output filesep szFile], 'peaks', 'locs', 'peaksOVS', 'peaksFVS', 'peaksNone', 'promsOVS', 'promsFVS', 'promsNone');
 savefig(hFig, [szFolder_Output filesep szFile]);
 
 % save results as mat file
-szFile = ['CorrelationRMS_Cxy_scaled_' szFileEnd];
+szFile = ['CorrelationRMS_PP_Cxy_scaled_' szFileEnd];
 save([szFolder_Output filesep szFile], 'CorrRMS_OVS', 'CorrRMS_FVS', 'CorrRMS_None');
+
+% save results as mat file
+szFile = ['EmpQuartilDisp_PP_Cxy_scaled_' szFileEnd];
+save([szFolder_Output filesep szFile], 'EmpQuartilDisp_OVS', 'EmpQuartilDisp_FVS', 'EmpQuartilDisp_None');
 
 
 %--------------------Licence ---------------------------------------------

@@ -76,6 +76,9 @@ nValuesMax = nSubject * nBlocksMax;
 mPeaksOVS = NaN(nValuesMax, nConfig(2));
 mPeaksFVS = NaN(nValuesMax, nConfig(2));
 mPeaksNone = NaN(nValuesMax, nConfig(2));
+mPromsOVS = NaN(nValuesMax, nConfig(2));
+mPromsFVS = NaN(nValuesMax, nConfig(2));
+mPromsNone = NaN(nValuesMax, nConfig(2));
 
 nCountVS = zeros(nConfig(2), nSubject, 3);
 nCountPeaks = zeros(nConfig(2), nSubject, 3, 3);
@@ -102,14 +105,14 @@ for config = nConfig(1):nConfig(2)
             
             szDir = [obj.szBaseDir filesep obj.szCurrentFolder filesep 'Pitch' filesep 'PeaksMatFiles'];
             
-            szFile = ['PeaksLocs_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
+            szFile = ['PeaksLocs_PP_Cxy_scaled_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
             
             szVoiceFile = ['VoiceLabels_' obj.szCurrentFolder '_'  obj.szNoiseConfig];
             szVoiceFile = [obj.szBaseDir filesep obj.szCurrentFolder filesep obj.szNoiseConfig filesep szVoiceFile];
         else
             szDir = [obj.szBaseDir filesep 'Pitch' filesep 'PeaksMatFiles'];
             
-            szFile = ['PeaksLocs_Cxy_'  obj.szNoiseConfig];
+            szFile = ['PeaksLocs_PP_Cxy_scaled_'  obj.szNoiseConfig];
             
             szVoiceFile = ['VoiceLabels_' obj.szNoiseConfig];
             szVoiceFile = [obj.szBaseDir filesep obj.szNoiseConfig filesep szVoiceFile];
@@ -118,7 +121,7 @@ for config = nConfig(1):nConfig(2)
         
         if exist([szDir filesep szFile '.mat'], 'file')
             % load analysis data
-            load([szDir filesep szFile], 'peaksOVS', 'peaksFVS', 'peaksNone', 'locs');
+            load([szDir filesep szFile], 'peaksOVS', 'peaksFVS', 'peaksNone', 'locs', 'promsOVS', 'promsFVS', 'promsNone');
             
             % count number of specific voice sequences
             nCountVS(config, subj, 1) = size(peaksOVS,1);
@@ -131,29 +134,34 @@ for config = nConfig(1):nConfig(2)
             nCountPeaks(config, subj, 3, :) = sum(~isnan(peaksNone));
             
             % construct matrix with pooled data
-            mPeaksOVS(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config) = peaksOVS(:, 1);
-            mPeaksFVS(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config) = peaksFVS(:, 1);
-            mPeaksNone(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config) = peaksNone(:, 1);
+            mPeaksOVS(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config) = peaksOVS(:, 2);
+            mPeaksFVS(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config) = peaksFVS(:, 2);
+            mPeaksNone(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config) = peaksNone(:, 2);
             
-            % load voice labels
-            load(szVoiceFile, 'idxTrOVS', 'idxTrFVS', 'idxTrNone');
+            % construct matrix with pooled data
+            mPromsOVS(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config) = promsOVS(:, 2);
+            mPromsFVS(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config) = promsFVS(:, 2);
+            mPromsNone(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config) = promsNone(:, 2);
             
-            % index voice sequences
-            locsOVS = locs(idxTrOVS, :);
-            locsFVS = locs(idxTrFVS, :);
-            locsNone = locs(idxTrNone, :);
+%             % load voice labels
+%             load(szVoiceFile, 'idxTrOVS', 'idxTrFVS', 'idxTrNone');
+%             
+%             % index voice sequences
+%             locsOVS = locs(idxTrOVS, :);
+%             locsFVS = locs(idxTrFVS, :);
+%             locsNone = locs(idxTrNone, :);
             
-            % calculate harmonic ratio of the frequencies at the highest
-            % and second highest peak
-            nHarmRatio12(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config, 1) = locsOVS(:, 1)./locsOVS(:, 2);
-            nHarmRatio12(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config, 2) = locsFVS(:, 1)./locsFVS(:, 2);
-            nHarmRatio12(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config, 3) = locsNone(:, 1)./locsNone(:, 2);
-            
-            % calculate harmonic ratio of the frequencies at the highest
-            % and third highest peak
-            nHarmRatio13(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config, 1) = locsOVS(:, 1)./locsOVS(:, 3);
-            nHarmRatio13(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config, 2) = locsFVS(:, 1)./locsFVS(:, 3);
-            nHarmRatio13(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config, 3) = locsNone(:, 1)./locsNone(:, 3);
+%             % calculate harmonic ratio of the frequencies at the highest
+%             % and second highest peak
+%             nHarmRatio12(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config, 1) = locsOVS(:, 1)./locsOVS(:, 2);
+%             nHarmRatio12(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config, 2) = locsFVS(:, 1)./locsFVS(:, 2);
+%             nHarmRatio12(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config, 3) = locsNone(:, 1)./locsNone(:, 2);
+%             
+%             % calculate harmonic ratio of the frequencies at the highest
+%             % and third highest peak
+%             nHarmRatio13(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config, 1) = locsOVS(:, 1)./locsOVS(:, 3);
+%             nHarmRatio13(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config, 2) = locsFVS(:, 1)./locsFVS(:, 3);
+%             nHarmRatio13(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config, 3) = locsNone(:, 1)./locsNone(:, 3);
             
             % adjust index
             StartIdx(1) = StartIdx(1) + nCountVS(config, subj, 1);
@@ -173,6 +181,9 @@ nPeakValues = max(max(sum(nCountVS(:, :, :), 2)));
 mPeaksOVS(nPeakValues+1:end, :) = [];
 mPeaksFVS(nPeakValues+1:end, :) = [];
 mPeaksNone(nPeakValues+1:end, :) = [];
+mPromsOVS(nPeakValues+1:end, :) = [];
+mPromsFVS(nPeakValues+1:end, :) = [];
+mPromsNone(nPeakValues+1:end, :) = [];
 
 
 % %% GroupedBoxplot(mPeaksOVS, mPeaksFVS, mPeaksNone, [nPeakValues config])
@@ -182,21 +193,44 @@ boxplot(mPeaksOVS,'Labels',vLabels, 'Colors', 'r','Whisker', 1);
 title('Peak Height at OVS');
 xlabel('noise configuration');
 ylabel('Peak Height F^M_t(f_0)');
-ylim([0 100]);
+ylim([-0.001 0.03]);
 
 subplot(1,3,2);
 boxplot(mPeaksFVS,'Labels',vLabels, 'Colors', 'b','Whisker', 1);
 title('Peak Height at FVS');
 xlabel('noise configuration');
 ylabel('Peak Height F^M_t(f_0)');
-ylim([0 100]);
+ylim([-0.001 0.03]);
 
 subplot(1,3,3);
 boxplot(mPeaksNone,'Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
 title('Peak Height at no VS');
 xlabel('noise configuration');
 ylabel('Peak Height F^M_t(f_0)');
-ylim([0 100]);
+ylim([-0.001 0.03]);
+
+
+hFig3 = figure;
+subplot(1,3,1);
+boxplot(mPromsOVS,'Labels',vLabels, 'Colors', 'r','Whisker', 1);
+title('Prominence at OVS');
+xlabel('noise configuration');
+ylabel('Prominence F^M_t(f_0)');
+ylim([0 0.03]);
+
+subplot(1,3,2);
+boxplot(mPromsFVS,'Labels',vLabels, 'Colors', 'b','Whisker', 1);
+title('Prominence at FVS');
+xlabel('noise configuration');
+ylabel('Prominence F^M_t(f_0)');
+ylim([0 0.03]);
+
+subplot(1,3,3);
+boxplot(mPromsNone,'Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
+title('Prominence at no VS');
+xlabel('noise configuration');
+ylabel('Prominence F^M_t(f_0)');
+ylim([0 0.03]);
 
 
 %% display distribution
@@ -363,13 +397,13 @@ ylim([0 100]);
 
 
 % logical to save figures
-bPrint = 1;
+bPrint = 0;
 if bPrint
     szDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019\Pitch\Distribution';
     
-    exportNames = {[szDir filesep 'DistributionHeightFirstPeakCxyMagnitudeFeature'];...
-        [szDir filesep 'RelOccurrencePeaksCxyMagnitudeFeature'];...
-        [szDir filesep 'DistributionRatioPeaksCxyMagnitudeFeature']};
+    exportNames = {[szDir filesep 'DistributionHeightFirstPeakCxyMagnitudeFeature_PP_scaled'];...
+        [szDir filesep 'RelOccurrencePeaksCxyMagnitudeFeature_PP_scaled'];...
+        [szDir filesep 'DistributionRatioPeaksCxyMagnitudeFeature_PP_scaled']};
     if isSchreiber
         exportNames = strcat(exportNames, '_NS');
     elseif isOutdoor

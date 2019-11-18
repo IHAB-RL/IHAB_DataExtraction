@@ -1,5 +1,4 @@
-% script to analyse the distribution of the calculated a priori SNR and the
-% a posteriori speech presence probability according to Gerkmann 2012
+% script to analyse the distribution of the rms
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create 08-Nov-2019  JP
@@ -9,7 +8,7 @@ clear;
 
 
 % choose between data from Bilert or Schreiber or Pohlhausen
-isBilert = 0;
+isBilert = 1;
 isOutdoor = 0;
 isSchreiber = 0;
 
@@ -72,12 +71,15 @@ nSubject = max(size(subjectDirectories, 1), 1);
 
 % preallocate result matrix
 nValuesMax = nSubject * nBlocksMax;
-mSNR_OVS = NaN(nValuesMax, nConfig(2));
-mSNR_FVS = NaN(nValuesMax, nConfig(2));
-mSNR_None = NaN(nValuesMax, nConfig(2));
-mSPP_OVS = NaN(nValuesMax, nConfig(2));
-mSPP_FVS = NaN(nValuesMax, nConfig(2));
-mSPP_None = NaN(nValuesMax, nConfig(2));
+mRMS_std_OVS = NaN(nValuesMax, nConfig(2));
+mRMS_std_FVS = NaN(nValuesMax, nConfig(2));
+mRMS_std_None = NaN(nValuesMax, nConfig(2));
+mRMS_eqd_OVS = NaN(nValuesMax, nConfig(2));
+mRMS_eqd_FVS = NaN(nValuesMax, nConfig(2));
+mRMS_eqd_None = NaN(nValuesMax, nConfig(2));
+mRMS_env_OVS = NaN(nValuesMax, nConfig(2));
+mRMS_env_FVS = NaN(nValuesMax, nConfig(2));
+mRMS_env_None = NaN(nValuesMax, nConfig(2));
 
 nCountVS = zeros(nConfig(2), nSubject, 3);
 
@@ -111,61 +113,83 @@ for config = nConfig(1):nConfig(2)
             obj.audiofile = fullfile(obj.szDir, ['IHAB_' obj.szNoiseConfig '.wav']);
         end
         
-        % desired feature PSD
-        szFeature = 'PSD';
+        
+        % desired feature RMS
+        szFeature = 'RMS';
         
         % get all available feature file data
-        [DataPSD,TimeVec,stInfoPSD] = getObjectiveDataBilert(obj, szFeature);
+        [mRMS, ~, stInfo] = getObjectiveDataBilert(obj, szFeature);
         
+        % set minimum time length in blocks
+        nMinLen = 960;
+
         % if no feature files are stored, extracted PSD from audio signals
-        if isempty(DataPSD)
+        if isempty(mRMS) || size(mRMS, 1) <= nMinLen
+            
+            obj.isPrivacy = false;
             
             % call funtion to calculate PSDs
             stData = detectOVSRealCoherence([], obj);
             
             % re-assign values
-            Pxx = stData.Pxx';
-            Pyy = stData.Pyy';
-            Cxy = stData.Cxy';
-            nFFT = stData.nFFT;
-            samplerate = stData.fs;
+            mRMS = stData.mRMS;
             
             % duration one frame in sec
-            nLenFrame = stData.tFrame;
+            nLenFrame = stData.nSigDur/size(mRMS, 1);
+        
+            % new number of frames per minute
+            nFrames = round(60/nLenFrame/10);
             
             clear stData
         else
             
-            % extract PSD data
-            version = 1; % JP modified get_psd
-            [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
-            
-            clear DataPSD
-            
-            % sampling frequency in Hz
-            samplerate = stInfoPSD.fs;
-            
-            % number of fast Fourier transform points
-            nFFT = (stInfoPSD.nDimensions - 2 - 4)/2;
-            
             % duration one frame in sec
-            nLenFrame = 60/stInfoPSD.nFrames;
+            nLenFrame = stInfo.HopSizeInSamples/stInfo.fs;
+        
+            % new number of frames per minute
+            nFrames = round(stInfo.nFrames/10);
         end
         
+        nRemain = rem(size(mRMS, 1), 10*nFrames);
+        if nRemain ~= 0
+            mRMS(end-nRemain+1:end, :) = [];
+        end
         
+        % number of blocks
+        nBlocks = size(mRMS, 1)/10;
+       
         
-        %% VOICE DETECTION by Schreiber 2019
-        stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate);
+        % claculate std of signal envelope
+        alpha = 0.2; % smoothing constant
+        mPower_smooth = filter([1-alpha],[1 -alpha], mRMS.^2);
+
+        % smooth envelope data
+        mEnv_smooth = filter([1-alpha],[1 -alpha], mRMS);
+
+        % calculate standard deviation of the signal envelope
+        mSTD_Env = sqrt(mPower_smooth - mEnv_smooth.^2);
         
-        % a posteriori speech presence probability
-        vFreqRange = [400 1000];
-        vFreqBins = round(vFreqRange./samplerate*nFFT);
-        meanSPP = mean(stDataOVD.PH1(vFreqBins(1):vFreqBins(2),:),1);
+        % calculate standard deviation and Empirischer 
+        % Quartilsdispersionskoeffizient of 10 adjacent blocks
+        std_RMS = NaN(nBlocks, 2);
+        std_Env = NaN(nBlocks, 2);
+        eqd_RMS = NaN(nBlocks, 2);
+        for iLoop = 1:nBlocks
+            
+            mBlockRMS = mRMS(1+(iLoop-1)*10:iLoop*10, :);
+            
+            std_RMS(iLoop, :) = std(mBlockRMS);
+            
+            eqd_RMS(iLoop, :) = ((prctile(mBlockRMS, 75)-prctile(mBlockRMS, 25))./ median(mBlockRMS))';
+            
+            std_Env(iLoop, :) = mean(mSTD_Env(1+(iLoop-1)*10:iLoop*10, :));
+            
+        end
+       
         
-        
-        %% get ground truth labels for voice activity
-        obj.fsVD = 1/nLenFrame;
-        obj.NrOfBlocks = size(Pxx, 1);
+        % get ground truth labels for voice activity
+        obj.fsVD = round(1/(10*nLenFrame));
+        obj.NrOfBlocks = nBlocks;
         [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
         
         idxTrOVS = groundTrOVS == 1;
@@ -173,20 +197,26 @@ for config = nConfig(1):nConfig(2)
         idxTrNone = ~idxTrOVS & ~idxTrFVS;
         
         % count number of specific voice sequences
-        nCountVS(config, subj, 1) = sum(idxTrOVS);
-        nCountVS(config, subj, 2) = sum(idxTrFVS);
-        nCountVS(config, subj, 3) = sum(idxTrNone);
+        nCountVS(config, subj, 1) = 2*sum(idxTrOVS);
+        nCountVS(config, subj, 2) = 2*sum(idxTrFVS);
+        nCountVS(config, subj, 3) = 2*sum(idxTrNone);
         
         
-        % construct matrix with pooled data: SNR
-        mSNR_OVS(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config) = stDataOVD.movAvgSNR(idxTrOVS);
-        mSNR_FVS(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config) = stDataOVD.movAvgSNR(idxTrFVS);
-        mSNR_None(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config) = stDataOVD.movAvgSNR(idxTrNone);
+        % construct matrix with pooled rms data
+        mRMS_std_OVS(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config) = std_RMS([idxTrOVS idxTrOVS]);
+        mRMS_std_FVS(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config) = std_RMS([idxTrFVS idxTrFVS]);
+        mRMS_std_None(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config) = std_RMS([idxTrNone idxTrNone]);
         
-        % construct matrix with pooled data: SPP
-        mSPP_OVS(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config) = meanSPP(idxTrOVS);
-        mSPP_FVS(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config) = meanSPP(idxTrFVS);
-        mSPP_None(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config) = meanSPP(idxTrNone);
+        % construct matrix with pooled rms data
+        mRMS_eqd_OVS(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config) = eqd_RMS([idxTrOVS idxTrOVS]);
+        mRMS_eqd_FVS(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config) = eqd_RMS([idxTrFVS idxTrFVS]);
+        mRMS_eqd_None(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config) = eqd_RMS([idxTrNone idxTrNone]);
+        
+        % construct matrix with pooled rms data
+        mRMS_env_OVS(StartIdx(1):StartIdx(1)+nCountVS(config, subj, 1)-1, config) = std_Env([idxTrOVS idxTrOVS]);
+        mRMS_env_FVS(StartIdx(2):StartIdx(2)+nCountVS(config, subj, 2)-1, config) = std_Env([idxTrFVS idxTrFVS]);
+        mRMS_env_None(StartIdx(3):StartIdx(3)+nCountVS(config, subj, 3)-1, config) = std_Env([idxTrNone idxTrNone]);
+        
         
         % adjust index
         StartIdx(1) = StartIdx(1) + nCountVS(config, subj, 1);
@@ -196,56 +226,94 @@ for config = nConfig(1):nConfig(2)
     end
 end
 
+% get maximum of number of peak values
+nValues = max(max(sum(nCountVS(:, :, :), 2)));
 
-% SNR
+% adjust peak vectors to one length
+mRMS_std_OVS(nValues+1:end, :) = [];
+mRMS_std_FVS(nValues+1:end, :) = [];
+mRMS_std_None(nValues+1:end, :) = [];
+mRMS_eqd_OVS(nValues+1:end, :) = [];
+mRMS_eqd_FVS(nValues+1:end, :) = [];
+mRMS_eqd_None(nValues+1:end, :) = [];
+
+
+% STD
 hFig1 = figure;
 subplot(1,3,1);
-boxplot(mSNR_OVS,'Labels',vLabels, 'Colors', 'r','Whisker', 1);
-% violinplot(mSNR_OVS,vLabels,'ViolinColor',[1 0 0]);
-title('a priori SNR at OVS');
+boxplot(mRMS_std_OVS,'Labels',vLabels, 'Colors', 'r','Whisker', 1);
+% violinplot(mRMS_std_OVS,vLabels,'ViolinColor',[1 0 0]);
+title('std(RMS) at OVS');
 xlabel('noise configuration');
-ylabel('a priori SNR in dB');
-ylim([0 100]);
+ylabel('std(RMS)');
+ylim([0 0.35]);
 
 subplot(1,3,2);
-boxplot(mSNR_FVS,'Labels',vLabels, 'Colors', 'b','Whisker', 1);
-% violinplot(mSNR_FVS,vLabels,'ViolinColor',[0 0 1]);
-title('a priori SNR at FVS');
+boxplot(mRMS_std_FVS,'Labels',vLabels, 'Colors', 'b','Whisker', 1);
+% violinplot(mRMS_std_FVS,vLabels,'ViolinColor',[0 0 1]);
+title('std(RMS) at FVS');
 xlabel('noise configuration');
-ylabel('a priori SNR in dB');
-ylim([0 100]);
+ylabel('std(RMS)');
+ylim([0 0.35]);
 
 subplot(1,3,3);
-boxplot(mSNR_None,'Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
-% violinplot(mSNR_None,vLabels,'ViolinColor',[0 0.6 0.2]);
-title('a priori SNR at no VS');
+boxplot(mRMS_std_None,'Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
+% violinplot(mRMS_std_None,vLabels,'ViolinColor',[0 0.6 0.2]);
+title('std(RMS) at no VS');
 xlabel('noise configuration');
-ylabel('a priori SNR in dB');
-ylim([0 100]);
+ylabel('std(RMS)');
+ylim([0 0.35]);
 
 
-% SPP
+% EQD
 hFig2 = figure;
 subplot(1,3,1);
-boxplot(mSPP_OVS,'Labels',vLabels, 'Colors', 'r','Whisker', 1);
-title('a posteriori SPP at OVS');
+boxplot(mRMS_eqd_OVS,'Labels',vLabels, 'Colors', 'r','Whisker', 1);
+% violinplot(mRMS_eqd_OVS,vLabels,'ViolinColor',[1 0 0]);
+title('eqd(RMS) at OVS');
 xlabel('noise configuration');
-ylabel('speech presence probability');
-ylim([0 1]);
+ylabel('eqd(RMS)');
+ylim([0 30]);
 
 subplot(1,3,2);
-boxplot(mSPP_FVS,'Labels',vLabels, 'Colors', 'b','Whisker', 1);
-title('a posteriori SPP at FVS');
+boxplot(mRMS_eqd_FVS,'Labels',vLabels, 'Colors', 'b','Whisker', 1);
+% violinplot(mRMS_eqd_FVS,vLabels,'ViolinColor',[0 0 1]);
+title('eqd(RMS) at FVS');
 xlabel('noise configuration');
-ylabel('speech presence probability');
-ylim([0 1]);
+ylabel('eqd(RMS)');
+ylim([0 30]);
 
 subplot(1,3,3);
-boxplot(mSPP_None,'Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
-title('a posteriori SPP at no VS');
+boxplot(mRMS_eqd_None,'Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
+% violinplot(mRMS_eqd_None,vLabels,'ViolinColor',[0 0.6 0.2]);
+title('eqd(RMS) at no VS');
 xlabel('noise configuration');
-ylabel('speech presence probability');
-ylim([0 1]);
+ylabel('eqd(RMS)');
+ylim([0 30]);
+
+
+% std Envelope
+hFig3 = figure;
+subplot(1,3,1);
+boxplot(mRMS_env_OVS,'Labels',vLabels, 'Colors', 'r','Whisker', 1);
+title('std(Env) at OVS');
+xlabel('noise configuration');
+ylabel('std(Env)');
+ylim([0 0.1]);
+
+subplot(1,3,2);
+boxplot(mRMS_env_FVS,'Labels',vLabels, 'Colors', 'b','Whisker', 1);
+title('std(Env) at FVS');
+xlabel('noise configuration');
+ylabel('std(Env)');
+ylim([0 0.1]);
+
+subplot(1,3,3);
+boxplot(mRMS_env_None,'Labels',vLabels, 'Colors', [0 0.6 0.2],'Whisker', 1);
+title('std(Env) at no VS');
+xlabel('noise configuration');
+ylabel('std(Env)');
+ylim([0 0.1]);
 
 
 % logical to save figures
@@ -253,8 +321,9 @@ bPrint = 1;
 if bPrint
     szDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019\Pitch\Distribution';
     
-    exportNames = {[szDir filesep 'DistributionPrioriSNR'];...
-        [szDir filesep 'DistributionPosterioriSPP']};
+    exportNames = {[szDir filesep 'DistributionSTDRMS'];...
+        [szDir filesep 'DistributionEQDRMS'];...
+        [szDir filesep 'DistributionSTDEnv_Kates2008']};
     if isSchreiber
         exportNames = strcat(exportNames, '_NS');
     elseif isOutdoor
@@ -265,6 +334,7 @@ if bPrint
     
     savefig(hFig1, exportNames{1});
     savefig(hFig2, exportNames{2});
+    savefig(hFig3, exportNames{3});
 end
 
 %--------------------Licence ---------------------------------------------
