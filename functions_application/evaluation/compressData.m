@@ -1,10 +1,9 @@
 function [DataOut] = compressData(Data, nFramesOld, stControl)
-% function to do something usefull (fill out)
-% Usage [outParam]=compressData(inParam)
+% function to compress given data
+% Usage [DataOut] = compressData(Data, nFramesOld, stControl)
 %
 % Parameters
 % ----------
-% inParam :
 %   Data       - data vector
 %
 %   nFramesOld - actual number of time frames per minute
@@ -13,7 +12,6 @@ function [DataOut] = compressData(Data, nFramesOld, stControl)
 %
 % Returns
 % -------
-% outParam :
 %   Data       - compressed data vector
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
