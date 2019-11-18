@@ -1,4 +1,4 @@
-function [peaks,locs,hFig,peaksOVS,peaksFVS,peaksNone] = ...
+function [peaks,locs,proms,hFig,peaksOVS,peaksFVS,peaksNone] = ...
     DeterminePeaksCorrelation(correlation,basefrequencies,nBlocks,idxTrOVS,idxTrFVS,idxTrNone)
 % function to find peaks in the correlation (magnitude feature by Bechtold)
 % If no peaks occur, NaNs are saved
@@ -8,7 +8,6 @@ function [peaks,locs,hFig,peaksOVS,peaksFVS,peaksNone] = ...
 %
 % Parameters
 % ----------
-% inParam :  
 %   correlation - len(nBlocks) x len(basefrequencies) matrix, containing 
 %                 the magnitude feature, calculated for a set of given 
 %                 basefrequencies (cf. CalcCorrelation.m)
@@ -25,8 +24,7 @@ function [peaks,locs,hFig,peaksOVS,peaksFVS,peaksNone] = ...
 %   idxTrNone - logical array len(nBlocks), 1 = no VS
 %
 % Returns
-% -------
-% outParam :  
+% ------- 
 %   peaks     - matrix, contains the height of the three highest peaks for 
 %               each time frame
 %
@@ -51,24 +49,25 @@ warning('off','signal:findpeaks:largeMinPeakHeight');
 % pre allocate output args
 peaks = NaN(nBlocks, 3);
 locs = NaN(nBlocks, 3);
+proms = NaN(nBlocks, 3);
 
 % peak definition
 MaxNrOfPeaks = 3; % find maximal 3 peaks
 % MinPeakHeight = 1; % minimum peak height
 MinPeakDistance = 20; % minimum peak distance in Hz
+    
+% determine minimum peak prominence
+MinPeakProminence = max(mean(correlation(:)), 10^-8); 
 
 % determine peaks in magnitude feature
 for blockidx = 1:nBlocks
     
-    % determine % minimum peak prominence
-    MinPeakProminence = max(0.1*max(correlation(blockidx,:)), 10^-8); 
-    
-    [peaksTemp, locsTemp] = findpeaks(correlation(blockidx,:), ...
+    [peaksTemp, locsTemp, ~, promsTemp] = findpeaks(correlation(blockidx,:), ...
         basefrequencies, 'NPeaks', MaxNrOfPeaks, 'MinPeakProminence', MinPeakProminence, ...
         'SortStr', 'descend', 'MinPeakDistance', MinPeakDistance);
-    findpeaks(correlation(blockidx,:), ...
-        basefrequencies, 'NPeaks', MaxNrOfPeaks, 'MinPeakProminence', MinPeakProminence, ...
-        'SortStr', 'descend', 'MinPeakDistance', MinPeakDistance,'Annotate','extents');
+%     findpeaks(correlation(blockidx,:), ...
+%         basefrequencies, 'NPeaks', MaxNrOfPeaks, 'MinPeakProminence', MinPeakProminence, ...
+%         'SortStr', 'descend', 'MinPeakDistance', MinPeakDistance,'Annotate','extents');
     
     % actual number of peaks
     nPeaks = size(peaksTemp, 2);
@@ -76,6 +75,7 @@ for blockidx = 1:nBlocks
     if ~isempty(nPeaks) && nPeaks > 0
         peaks(blockidx,1:nPeaks) = peaksTemp;
         locs(blockidx,1:nPeaks) = locsTemp;
+        proms(blockidx,1:nPeaks) = promsTemp;
     end
    
 end
@@ -95,7 +95,6 @@ peaksNone = peaks(idxTrNone, :);
 locsOVS = locs(idxTrOVS, :);
 locsFVS = locs(idxTrFVS, :);
 locsNone = locs(idxTrNone, :);
-% sum(isnan(peaksOVS))
 
 % % adjust peak vectors to one length
 % nPeakValues = max([size(peaksOVS,1), size(peaksFVS,1), size(peaksNone,1)]);
