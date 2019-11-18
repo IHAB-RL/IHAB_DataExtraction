@@ -63,8 +63,6 @@ for config = 4:nConfig(2)
     vGroundTruthVS = groundTrOVS; % first ovs
     % at no ovs look for fvs
     vGroundTruthVS(vGroundTruthVS == 0) = groundTrFVS(vGroundTruthVS == 0); 
-%     % at ovs look for additional fvs
-%     groundTrVS(groundTrVS == 1 & groundTrFVS == 2) = 3;
     vVoiceLabels(StartIdx:StartIdx+nBlocks-1, 1) = vGroundTruthVS;
     
     % adjust index
