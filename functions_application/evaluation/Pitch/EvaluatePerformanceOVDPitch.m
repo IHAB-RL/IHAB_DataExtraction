@@ -14,7 +14,7 @@ function EvaluatePerformanceOVDPitch(obj)
 szFeature = 'PSD';
 
 % get all available feature file data
-[DataPSD, ~, stInfoFile] = getObjectiveDataBilert(obj, szFeature);
+[DataPSD, ~, stInfo] = getObjectiveDataBilert(obj, szFeature);
 
 % extract PSD data
 version = 1; % JP modified get_psd
@@ -44,15 +44,15 @@ if isempty(DataPSD) || size(Cxy, 1) <= nMinLen
 else
     
     % sampling frequency in Hz
-    samplerate = stInfoFile.fs;
+    samplerate = stInfo.fs;
     
     % number of fast Fourier transform points
-    nFFT = (stInfoFile.nDimensions - 2 - 4)/2;
+    nFFT = (stInfo.nDimensions - 2 - 4)/2;
     
     % duration one frame in sec
-    nLenFrame = 60/stInfoFile.nFrames;
+    nLenFrame = stInfo.HopSizeInSamples/stInfo.fs;
     
-    % desired feature PSD
+    % desired feature RMS
     szFeature = 'RMS';
 
     % set compression on
@@ -69,35 +69,36 @@ specsize = nFFT/2 + 1;
 nBlocks = size(Pxx, 1);
 
 
-% load subject and system specific calibration constants
-szFile = 'I:\IdentificationSystems\IdentificationProbandSystem.mat';
-load(szFile, 'stSubject_3', 'stSystem');
-
-% subject - system
-if isfield(obj, 'szCurrentFolder')
-    idxSubj = strcmp({stSubject_3.ID}, obj.szCurrentFolder);
-    szSystem = stSubject_3(idxSubj).System;
-else
-    % Outdoor by SB
-    szSystem = 'SystemSB';
-end
-
-% system - calib constant
-Calib_RMS = stSystem(strcmp({stSystem.System}, szSystem)).Calib;
-
-% transfer to dB SPL
-mRMS_dBSPL = 20*log10(mRMS(:,1)) + Calib_RMS(:,1);
+% % load subject and system specific calibration constants
+% szFile = 'I:\IdentificationSystems\IdentificationProbandSystem.mat';
+% load(szFile, 'stSubject_3', 'stSystem');
+% 
+% % subject - system
+% if isfield(obj, 'szCurrentFolder')
+%     idxSubj = strcmp({stSubject_3.ID}, obj.szCurrentFolder);
+%     szSystem = stSubject_3(idxSubj).System;
+% else
+%     % Outdoor by SB
+%     szSystem = 'SystemSB';
+% end
+% 
+% % system - calib constant
+% Calib_RMS = stSystem(strcmp({stSystem.System}, szSystem)).Calib;
+% 
+% % transfer to dB SPL
+% mRMS_dBSPL = 20*log10(mRMS(:,1)) + Calib_RMS(:,1);
 
 
 % call OVD by Schreiber 2019
-stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate, mRMS_dBSPL);
+stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate);
+% stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate, mRMS_dBSPL);
 
 % % % call OVD by Bilert 2018
 % % stParam = setParamsFeatureExtraction(obj);
 % % stDataOVD = OVD_Bilert(stParam, stData);
 
-% scale for nicer values in correlation matrix
-Pxx = 10^5*Pxx;
+% % scale for nicer values in correlation matrix
+% Pxx = 10^5*Pxx;
 
 % % calculate correlation of PSD with hannwin combs
 % correlation = CalcCorrelation(Pxx, samplerate, specsize);
@@ -132,7 +133,7 @@ stResults.mConfusion_Pitch = getConfusionMatrix(estimatedOVS', groundTrOVS);
 vLabels = {'OVS', 'no OVS'};
 plotConfusionMatrix(stResults.mConfusion_Pitch, vLabels);
 
-szCondition = 'OVD_Schreiber_RMSdBSPL_';
+szCondition = 'OVD_Schreiber_Min03_';
 % build the full directory
 if isfield(obj, 'szCurrentFolder')
     szDir = [obj.szBaseDir filesep obj.szCurrentFolder];

@@ -22,7 +22,7 @@ function [correlation, spectrum] = magnitude_correlation(signal, samplerate, blo
         specsize = floor(nfft / 2) + 1;
     end
 
-    % weigh differences according to perception:
+    % weight differences according to perception:
     f = linspace(0, samplerate/2, specsize);
     log_f_weight =  1 ./ (samplerate/2).^(f / (samplerate/2));
 

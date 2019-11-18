@@ -44,7 +44,7 @@ else
     % number of first and last noise configuration
     nConfig = [1; 3];
 end
-   
+
 
 % get all subject directories
 subjectDirectories = dir(obj.szBaseDir);
@@ -91,15 +91,18 @@ for subj = 1:nSubject
         end
         
         % function call
-        %         PitchBechtold(obj);
-        %         CalcCorrelationTest(obj);
-                AnalysePeaksCorrelation(obj);
-%                 SaveVoiceLabels(obj)
-%                 EvaluatePerformanceOVDPitch(obj);
-%             plotPROBANDData(obj);
-%         plotFingerprintAnalysis(obj)
         
-           close all;
+        % PitchBechtold(obj);
+        % CalcCorrelationTest(obj);
+        % AnalysePeaksCorrelation(obj);
+        % SaveVoiceLabels(obj)
+        % EvaluatePerformanceOVDPitch(obj);
+        % plotPROBANDData(obj);
+        % plotFingerprintAnalysis(obj)
+        
+        FeatureExtractionTestSet(obj)
+        
+        close all;
     end
 end
 

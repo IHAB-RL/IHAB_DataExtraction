@@ -8,7 +8,7 @@ clear;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
 isBilert = 1;
-isOutdoor = 0;
+isOutdoor = 1;
 isSchreiber = 0;
 
 if isBilert
@@ -76,11 +76,12 @@ nSubject = max(size(subjectDirectories, 1), 1);
 % szCondition = 'OVD_Bilert2018_';
 % szCondition = 'OVD_Schreiber2019_';
 % szCondition = 'OVD_Schreiber_Pitch_PeakHeight10';
-% szCondition = 'OVD_Schreiber_Min03_';
+szCondition = 'OVD_Schreiber_Min03_';
 % szCondition = 'OVD_Cohe_Pitch_rmsCorr';
 % szCondition = 'OVD_Cohe_Min03_rmsCorr_movmean';
 % szCondition = 'OVD_Schreiber_Pitch_rmsCorr_';
-szCondition = 'OVD_Schreiber_RMSdBSPL_';
+% szCondition = 'OVD_Schreiber_RMSdBSPL_';
+% szCondition = 'OVD_Schreiber_FreqRange_';
 
 % preallocate result vectors
 F2OVS = NaN(nSubject, nConfig(2));
