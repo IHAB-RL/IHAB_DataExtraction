@@ -24,27 +24,16 @@ function FeatureExtractionTestSet(obj)
 % Ver. 0.01 initial create (empty) 15-Nov-2019  JP
 % TO DO: not ready jet
 %   - RMS linear or dB SPL
-%   - weighted mean of PSD or bandwise analysis
 %   - calculation of MFCCs
 %   - integration of "Pitch"
 
-% reading objective data, desired feature PSD
-szFeature = 'PSD';
 
-% get all available feature file data
-[DataPSD,~,stInfo] = getObjectiveDataBilert(obj, szFeature);
+% check whether the number of feature files is valid or not
+obj = checkNrOfFeatFiles(obj);
 
-% extract PSD data
-version = 1; % JP modified get_psd
-[Cxy,Pxx,Pyy] = get_psd(DataPSD, version);
-
-% set minimum time length in blocks
-nMinLen = 960;
-
-% if no or all feature files are stored, extract PSD from audio signals
-if isempty(DataPSD) || size(Cxy, 1) <= nMinLen
+% if no or not all feature files are stored, extract data from audio 
+if obj.UseAudio
     
-    obj.isPrivacy = false;
     % call funtion to calculate PSDs
     stData = detectOVSRealCoherence([], obj);
     
@@ -57,13 +46,24 @@ if isempty(DataPSD) || size(Cxy, 1) <= nMinLen
     samplerate = stData.fs;
     
     % calculate ZCR
-    [mZCR] = calcZCRframebased(stData.mSignal, samplerate, stData.privacy);
+    isPrivacy = false;
+    [mZCR] = calcZCRframebased(stData.mSignal, samplerate, isPrivacy);
     
     % duration one frame in sec
     nLenFrame = stData.tFrame;
     
     clear stData
 else
+
+    % reading objective data, desired feature PSD
+    szFeature = 'PSD';
+
+    % get all available feature file data
+    [DataPSD,~,stInfo] = getObjectiveDataBilert(obj, szFeature);
+
+    % extract PSD data
+    version = 1; % JP modified get_psd
+    [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
     
     % sampling frequency in Hz
     samplerate = stInfo.fs;
@@ -79,6 +79,12 @@ else
 
     % get all available feature file data
     mRMS = getObjectiveDataBilert(obj, szFeature);
+    
+    % desired feature 
+    szFeature = 'ZCR';
+        
+    % get all available feature file data
+    mZCR = getObjectiveDataBilert(obj, szFeature);
 end
  
 % number of time frames
@@ -90,12 +96,15 @@ nBlocks = size(Pxx, 1);
 mEQD = EQD(mRMS, nBlocks);
 
 
-% subsample RMS by factor 10 (according to privacy option)
+% subsample RMS and ZCR by factor 10 (according to privacy option for PSDs)
 nRemain = rem(size(mRMS, 1), 10*nBlocks);
-if nRemain ~= 0
+if nRemain ~= 0 && nRemain ~= size(mRMS, 1)
     mRMS(end-nRemain+1:end, :) = [];
+    mZCR(end-nRemain+1:end, :) = [];
 end
 mRMS = mRMS(1:10:end, :);
+mZCR = mZCR(1:10:end, :);
+
 
 
 % call OVD by Schreiber 2019
@@ -107,7 +116,26 @@ mMeanRealCoherence = stDataOVD.meanCoheTimesCxy;
 % a posteriori speech presence probability according to Gerkmann 2010
 vFreqRange = [400 1000];
 vFreqBins = round(vFreqRange./samplerate*nFFT);
-mMeanSPP = mean(stDataOVD.PH1(vFreqBins(1):vFreqBins(2),:),1);
+mMeanSPP = mean(stDataOVD.PH1(vFreqBins(1):vFreqBins(2),:),1)';
+
+
+% calculate correlation of real(Cxy) scaled to RMS with hannwin combs
+Cxy_scaled = real(Cxy)./mean(mRMS, 2);
+correlation = CalcCorrelation(Cxy_scaled, samplerate, nFFT/2+1);
+
+% calculate the "RMS" of the correlation
+mCorrRMS = sqrt(sum(correlation.^2, 2));
+
+
+
+% sum up fft bins to bands given in halftones 
+resolution_halftones = 8;
+MinMaxFreqs_Hz = [62.5 12000];
+
+[FreqTMatrix] = fft2Bands(nFFT, samplerate, resolution_halftones, MinMaxFreqs_Hz);
+
+Pxx = Pxx*FreqTMatrix;
+Cxy = Cxy*FreqTMatrix;
 
 
 
@@ -115,10 +143,10 @@ mMeanSPP = mean(stDataOVD.PH1(vFreqBins(1):vFreqBins(2),:),1);
 obj.fsVD = 1/nLenFrame;
 obj.NrOfBlocks = nBlocks;
 [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
-groundTrFVS = 2*groundTrFVS; % set label for fvs to 2
+groundTrFVS = 2*groundTrFVS'; % set label for fvs to 2
     
 % combine OV and FV labels
-vGroundTruthVS = groundTrOVS; % first ovs
+vGroundTruthVS = groundTrOVS'; % first ovs
 % at no ovs look for fvs
 vGroundTruthVS(vGroundTruthVS == 0) = groundTrFVS(vGroundTruthVS == 0); 
     
@@ -143,8 +171,9 @@ end
 % save results as mat file
 szFile = ['Features_' szFileEnd];
 save([szFolder_Output filesep szFile], 'mRMS', 'mZCR', ...
-    'mMeanRealCoherence', 'mMeanSPP', 'mEQD', 'vGroundTruthVS');
-
+    'mMeanRealCoherence', 'mMeanSPP', 'mEQD', 'mCorrRMS', ...
+    'Pxx', 'Cxy', 'vGroundTruthVS');
+ 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
 % Jade University of Applied Sciences 
