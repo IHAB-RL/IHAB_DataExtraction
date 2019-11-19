@@ -35,17 +35,20 @@ nFrames     = floor((size(stParam.mSignal,1)-stParam.lOverlap)/(lFeed));
 
 % preallocation
 if stParam.privacy 
-    mCoherence  = zeros(stParam.nFFT/2+1,floor(nFrames/10)+1);
-    Pxx = zeros(stParam.nFFT/2+1,floor(nFrames/10)+1);
-    Pyy = zeros(stParam.nFFT/2+1,floor(nFrames/10)+1);
-    Cxy = zeros(stParam.nFFT/2+1,floor(nFrames/10)+1);
+    % set number of privacy aware frames
+    nPrivateFrames = floor(nFrames/10);
+    
+    mCoherence  = zeros(stParam.nFFT/2+1, nPrivateFrames);
+    Pxx = zeros(stParam.nFFT/2+1, nPrivateFrames);
+    Pyy = zeros(stParam.nFFT/2+1, nPrivateFrames);
+    Cxy = zeros(stParam.nFFT/2+1, nPrivateFrames);
 else
-    mCoherence  = zeros(stParam.nFFT/2+1,nFrames);
-    Pxx = zeros(stParam.nFFT/2+1,nFrames);
-    Pyy = zeros(stParam.nFFT/2+1,nFrames);
-    Cxy = zeros(stParam.nFFT/2+1,nFrames);
-    mRMS = zeros(nFrames,2);
+    mCoherence  = zeros(stParam.nFFT/2+1, nFrames);
+    Pxx = zeros(stParam.nFFT/2+1, nFrames);
+    Pyy = zeros(stParam.nFFT/2+1, nFrames);
+    Cxy = zeros(stParam.nFFT/2+1, nFrames);
 end
+mRMS = zeros(nFrames, 2);
 
 % smoothing factor PSD
 alphaPSD    = exp(-lFeed/(0.125*stParam.fs));

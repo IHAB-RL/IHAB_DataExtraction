@@ -87,40 +87,40 @@ vFreqRange = [120 1000];
 vFreqBins = round(vFreqRange./fs*nFFT);
 stDataReal.meanLogSNRPrio = 20*log10(mean(stDataReal.snrPrio(vFreqBins(1):vFreqBins(2),:),1));
 
-% Set window size dependent on privacy parameter; should actually always be
-% private, but because of evaluation reasons it has been a bigger window
-if isprivacy
-    stDataReal.winLen = floor(nFFT/10);
-else
-    stDataReal.winLen = nFFT;
-end
-
-% 'Overall level'
-stDataReal.movAvgSNR = movmax(stDataReal.meanLogSNRPrio,stDataReal.winLen);
-
-% This parameters are set dependent on 'overall level'
-stDataReal.a_rms = 0.15.*ones(nFrames, 1); % NS
-stDataReal.a_rms(stDataReal.movAvgSNR >= 30) = 0.2;
-% stDataReal.a_rms = 0.5.*ones(nFrames, 1); % JP
-
-stDataReal.a_cohe = 0.3.*ones(nFrames, 1);
-stDataReal.a_cohe(stDataReal.movAvgSNR >= 20) = 0.5;
-stDataReal.a_cohe(stDataReal.movAvgSNR >= 30) = 0.4;
-stDataReal.a_cohe(stDataReal.movAvgSNR >= 40) = 0.5;
-stDataReal.a_cohe(stDataReal.movAvgSNR >= 50) = 0.4;
-
-% Sliding max and min
-stDataReal.adapThreshMax = movmax(stDataReal.meanCoheTimesCxy,stDataReal.winLen);
-stDataReal.adapThreshMin = movmin(stDataReal.meanCoheTimesCxy,stDataReal.winLen);
-stDataReal.adapThreshMaxRMS = movmax(stDataReal.curRMSfromPxx,stDataReal.winLen.*1.5);
-stDataReal.adapThreshMinRMS = movmin(stDataReal.curRMSfromPxx,stDataReal.winLen.*1.5);
-
-% Adaptive thresholds
-stDataReal.adapThreshCohe = (stDataReal.a_cohe.*stDataReal.adapThreshMax + (1-stDataReal.a_cohe).*stDataReal.adapThreshMin);
-stDataReal.adapThreshCohe = max(stDataReal.adapThreshCohe, MIN_COH);
-stDataReal.adapThreshRMS = (stDataReal.a_rms.*stDataReal.adapThreshMaxRMS + (1-stDataReal.a_rms).*stDataReal.adapThreshMinRMS);
-stDataReal.adapThreshRMS = max(stDataReal.adapThreshRMS, MIN_RMS);
-stDataReal.vOVS = (stDataReal.meanCoheTimesCxy >= stDataReal.adapThreshCohe ...
-                 &  stDataReal.curRMSfromPxx >= stDataReal.adapThreshRMS);
+% % Set window size dependent on privacy parameter; should actually always be
+% % private, but because of evaluation reasons it has been a bigger window
+% if isprivacy
+%     stDataReal.winLen = floor(nFFT/10);
+% else
+%     stDataReal.winLen = nFFT;
+% end
+% 
+% % 'Overall level'
+% stDataReal.movAvgSNR = movmax(stDataReal.meanLogSNRPrio,stDataReal.winLen);
+% 
+% % This parameters are set dependent on 'overall level'
+% stDataReal.a_rms = 0.15.*ones(nFrames, 1); % NS
+% stDataReal.a_rms(stDataReal.movAvgSNR >= 30) = 0.2;
+% % stDataReal.a_rms = 0.5.*ones(nFrames, 1); % JP
+% 
+% stDataReal.a_cohe = 0.3.*ones(nFrames, 1);
+% stDataReal.a_cohe(stDataReal.movAvgSNR >= 20) = 0.5;
+% stDataReal.a_cohe(stDataReal.movAvgSNR >= 30) = 0.4;
+% stDataReal.a_cohe(stDataReal.movAvgSNR >= 40) = 0.5;
+% stDataReal.a_cohe(stDataReal.movAvgSNR >= 50) = 0.4;
+% 
+% % Sliding max and min
+% stDataReal.adapThreshMax = movmax(stDataReal.meanCoheTimesCxy,stDataReal.winLen);
+% stDataReal.adapThreshMin = movmin(stDataReal.meanCoheTimesCxy,stDataReal.winLen);
+% stDataReal.adapThreshMaxRMS = movmax(stDataReal.curRMSfromPxx,stDataReal.winLen.*1.5);
+% stDataReal.adapThreshMinRMS = movmin(stDataReal.curRMSfromPxx,stDataReal.winLen.*1.5);
+% 
+% % Adaptive thresholds
+% stDataReal.adapThreshCohe = (stDataReal.a_cohe.*stDataReal.adapThreshMax + (1-stDataReal.a_cohe).*stDataReal.adapThreshMin);
+% stDataReal.adapThreshCohe = max(stDataReal.adapThreshCohe, MIN_COH);
+% stDataReal.adapThreshRMS = (stDataReal.a_rms.*stDataReal.adapThreshMaxRMS + (1-stDataReal.a_rms).*stDataReal.adapThreshMinRMS);
+% stDataReal.adapThreshRMS = max(stDataReal.adapThreshRMS, MIN_RMS);
+% stDataReal.vOVS = (stDataReal.meanCoheTimesCxy >= stDataReal.adapThreshCohe ...
+%                  &  stDataReal.curRMSfromPxx >= stDataReal.adapThreshRMS);
 end
 

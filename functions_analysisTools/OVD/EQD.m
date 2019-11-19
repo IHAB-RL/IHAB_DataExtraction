@@ -20,8 +20,15 @@ function [eqd]=EQD(x,nBlocks)
 eqd = NaN(nBlocks, 2);
 for iLoop = 1:nBlocks
 
+    % adjust indices
+    vIdx = 1+(iLoop-1)*10 : iLoop*10;
+    
+    if vIdx(end) > length(x)
+        vIdx(vIdx > length(x)) = [];
+    end
+    
     % select 10 adjacent frames
-    mBlock = x(1+(iLoop-1)*10:iLoop*10, :);
+    mBlock = x(vIdx, :);
 
     % calculate EQD
     eqd(iLoop, :) = ((prctile(mBlock, 75)-prctile(mBlock, 25))./ median(mBlock))';
