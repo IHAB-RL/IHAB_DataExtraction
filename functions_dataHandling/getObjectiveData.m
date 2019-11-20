@@ -209,6 +209,13 @@ else
     isFileBased = 1;
 end
 
+% number of time frames
+if strcmp(szFeature, 'PSD')
+    nFrames = stInfoFile.nFrames - 1; % 479 per min
+else
+    nFrames = stInfoFile.nFrames;  % 4799 per min
+end
+
 % pre-allocate vectors for residual values
 TimeVecRes = [];
 DataVecRes = [];
@@ -216,7 +223,7 @@ DataVecRes = [];
 if isFileBased
     % pre-allocation of output arguments
     NrOfDataPoints = ceil(LenOneFile_s/(stControl.DataPointRepresentation_s*(1-stControl.DataPointOverlap_percent)));
-    NrOfDataPoints = min(NrOfDataPoints, NrOfFiles*stInfoFile.nFrames);
+    NrOfDataPoints = min(NrOfDataPoints, nFrames);
     
     Data = zeros(NrOfDataPoints,size(FeatData,2));
     TimeVec = datetime(zeros(NrOfDataPoints,1), zeros(NrOfDataPoints,1),...
@@ -231,6 +238,10 @@ if isFileBased
         
         % load data from feature file
         [FeatData, ~,~] = LoadFeatureFileDroidAlloc([szDir filesep szFileName]);
+        
+        if strcmp(szFeature, 'PSD')
+            FeatData(end, :) = [];
+        end
         
         ActBlockSize = size(FeatData,1);
         

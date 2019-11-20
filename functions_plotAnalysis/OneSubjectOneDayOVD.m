@@ -147,12 +147,6 @@ stParam.privacy = true;
 
 
 %% VOICE DETECTION
-stDataOVD.Coh = [];
-stDataOVD.vOVS = [];
-stDataOVD.snrPrio = [];
-stDataOVD.movAvgSNR = [];
-stDataFVD.vFVS = [];
-
 [stDataOVD] = OVD3(Cxy, Pxx, Pyy, stParam.fs);
 
 [stDataFVD] = FVD3(stDataOVD.vOVS,stDataOVD.snrPrio,stDataOVD.movAvgSNR);

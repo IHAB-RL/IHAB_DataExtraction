@@ -24,7 +24,7 @@ NrOfFiles = numel(AllWavFiles);
 
 
 % loop through all audiofiles
-for idx = 10:NrOfFiles
+for idx = 1:NrOfFiles
     % set current filename 
     obj.szAudioFile = AllWavFiles{idx};
     

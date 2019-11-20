@@ -8,8 +8,8 @@ clear;
 close all;
 
 % path to data folder (needs to be customized)
-szBaseDir = 'I:\IHAB_2_EMA2018\IHAB_Rohdaten_EMA2018';
-szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019\NN08IA10';
+szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
+% szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019\NN08IA10';
 
 % get all subject directories
 subjectDirectories = dir(szBaseDir);
@@ -18,8 +18,7 @@ subjectDirectories = dir(szBaseDir);
 isValidLength = arrayfun(@(x)(length(x.name) == 18), subjectDirectories);
 subjectDirectories = subjectDirectories(isValidLength);
 
-% choose a subject randomly  (adjust for a specific subject)
-nSubject = round(size(subjectDirectories,1)*rand(1));
+% choose a subject  (adjust for a specific subject)
 nSubject = 1;
 
 % get one subject directoy

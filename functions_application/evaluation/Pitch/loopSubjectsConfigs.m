@@ -10,9 +10,9 @@ clear;
 % close all;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
-isBilert = 0;
-isOutdoor = 0;
-isSchreiber = 1;
+isBilert = 1;
+isOutdoor = 1;
+isSchreiber = 0;
 
 % path to main data folder (needs to be customized)
 if isBilert

@@ -73,12 +73,18 @@ if ~isempty(AllFeatFiles)
     % get infos about feature file for pre-allocation
     [~,~,stInfoFile]=LoadFeatureFileDroidAlloc([obj.szDir filesep AllFeatFiles{1}]);
     
+    % number of time frames
+    if strcmp(szFeature, 'PSD')
+        nFrames = stInfoFile.nFrames - 1;
+    else
+        nFrames = stInfoFile.nFrames;
+    end
     
     % pre-allocation of output arguments
-    Data = repmat(zeros(stInfoFile.nFrames,stInfoFile.nDimensions-2),length(dateVecAll),1);
-    TimeVec = datetime(zeros(length(dateVecAll)*stInfoFile.nFrames,1),...
-        zeros(length(dateVecAll)*stInfoFile.nFrames,1),...
-        zeros(length(dateVecAll)*stInfoFile.nFrames,1));
+    Data = repmat(zeros(nFrames,stInfoFile.nDimensions-2),length(dateVecAll),1);
+    TimeVec = datetime(zeros(length(dateVecAll)*nFrames,1),...
+        zeros(length(dateVecAll)*nFrames,1),...
+        zeros(length(dateVecAll)*nFrames,1));
     
     % loop over each feature file
     Startindex = 1;
@@ -89,26 +95,34 @@ if ~isempty(AllFeatFiles)
         % load data from feature file
         [FeatData, ~,stInfo] = LoadFeatureFileDroidAlloc([obj.szDir filesep szFileName]);
         
-        if stInfo.nFrames < stInfoFile.nFrames
-            % sometimes the last recorded feature file contains fewer values
-            Data(Startindex:Startindex+stInfo.nFrames-1,:) = FeatData(1:stInfo.nFrames,:);
-            
-            Data(Startindex+stInfo.nFrames:end,:) = [];
-            
-            % calculate time vector
-            DateTimeValue = dateVecAll(fileIdx);
-            TimeVec(Startindex:Startindex+stInfo.nFrames-1) = linspace(DateTimeValue,DateTimeValue+minutes(1-1/stInfo.nFrames),stInfo.nFrames);
-            
-            TimeVec(Startindex+stInfo.nFrames:end) = [];
+        % number of current time frames
+        if strcmp(szFeature, 'PSD')
+            nCurrentFrames = stInfo.nFrames - 1;
         else
-            Data(Startindex:Startindex+stInfoFile.nFrames-1,:) = FeatData(1:stInfoFile.nFrames,:);
-            
-            % calculate time vector
-            DateTimeValue = dateVecAll(fileIdx);
-            TimeVec(Startindex:Startindex+stInfoFile.nFrames-1) = linspace(DateTimeValue,DateTimeValue+minutes(1-1/stInfoFile.nFrames),stInfoFile.nFrames);
+            nCurrentFrames = stInfo.nFrames;
         end
         
-        Startindex = Startindex + stInfoFile.nFrames;
+        if nCurrentFrames < nFrames
+            % sometimes the last recorded feature file contains fewer values
+            Data(Startindex:Startindex+nCurrentFrames-1,:) = FeatData(1:nCurrentFrames,:);
+            
+            Data(Startindex+nCurrentFrames:end,:) = [];
+            
+            % calculate time vector
+            DateTimeValue = dateVecAll(fileIdx);
+            TimeVec(Startindex:Startindex+nCurrentFrames-1) = linspace(DateTimeValue,DateTimeValue+minutes(1-1/nCurrentFrames),nCurrentFrames);
+            
+            TimeVec(Startindex+nCurrentFrames:end) = [];
+        else
+            
+            Data(Startindex:Startindex+nFrames-1,:) = FeatData(1:nFrames,:);
+            
+            % calculate time vector
+            DateTimeValue = dateVecAll(fileIdx);
+            TimeVec(Startindex:Startindex+nFrames-1) = linspace(DateTimeValue,DateTimeValue+minutes(1-1/nFrames),nFrames);
+        end
+        
+        Startindex = Startindex + nFrames;
     end
     
     
@@ -121,7 +135,7 @@ if ~isempty(AllFeatFiles)
         stControl.DataPointRepresentation_s = 0.125;
         
         % new number of frames per minute
-        nFrames = round(stInfoFile.nFrames/10);
+        nFrames = floor(nFrames/10);
         
         nRemain = rem(size(Data, 1), 10*nFrames);
         if nRemain ~= 0
