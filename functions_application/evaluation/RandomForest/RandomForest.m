@@ -4,12 +4,17 @@
 % Ver. 0.01 initial create (empty) 20-Nov-2019 	JP
 
 clear;
-close all;
+% close all;
 
 
 % set variables
-szVarNames = {'mMeanRealCoherence', 'mRMS', 'vGroundTruthVS'};
-vNames = {'Re(Cohe)'; 'RMS1'; 'RMS2'}; %; 'CPSD'; 'PH1'; 'PH2'; 'PH3'
+% szVarNames = {'mMeanRealCoherence', 'mRMS', 'mZCR', 'mEQD', 'mMeanSPP', 'mCorrRMS', 'vGroundTruthVS'};
+% vNames = {'Re(Cohe)'; 'RMS1'; 'RMS2'; 'ZCR1'; 'ZCR2'; 'ZCRdiff1'; 'ZCRdiff2'; 'EQD1'; 'EQD2'; 'MeanSPP'; 'rms(Corr)'};
+% szVarNames = {'mMeanRealCoherence', 'mRMS', 'Cxy', 'mEQD', 'mMeanSPP', 'mCorrRMS', 'vGroundTruthVS'};
+% vNames = {'Re(Cohe)'; 'RMS1'; 'RMS2'; 'CPSD1'; 'CPSD2'; 'CPSD3'; 'CPSD4'; 'CPSD5'; 'CPSD6'; 'CPSD7'; 'CPSD8'; 'CPSD9'; 'CPSD10'; 'CPSD11'; 'CPSD12'; 'EQD1'; 'EQD2'; 'MeanSPP'; 'rms(Corr)'};
+szVarNames = {'mMeanRealCoherence', 'Pxx', 'Cxy', 'vGroundTruthVS'};
+vNames = {'Re(Cohe)'; 'APSD1'; 'APSD2'; 'APSD3'; 'APSD4'; 'APSD5'; 'APSD6'; 'APSD7'; 'APSD8'; 'APSD9'; 'APSD10'; 'APSD11'; 'APSD12'; 'CPSD1'; 'CPSD2'; 'CPSD3'; 'CPSD4'; 'CPSD5'; 'CPSD6'; 'CPSD7'; 'CPSD8'; 'CPSD9'; 'CPSD10'; 'CPSD11'; 'CPSD12'};
+
 
 % create training data set
 isTraining = true;

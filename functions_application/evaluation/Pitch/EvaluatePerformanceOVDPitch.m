@@ -130,7 +130,7 @@ obj.NrOfBlocks = nBlocks;
 
 % calculate and plot confusion matrix for OVD
 stResults.mConfusion_Pitch = getConfusionMatrix(estimatedOVS', groundTrOVS);
-vLabels = {'OVS', 'no OVS'};
+vLabels = {'no OVS', 'OVS'};
 plotConfusionMatrix(stResults.mConfusion_Pitch, vLabels);
 
 szCondition = 'OVD_Schreiber_Min03_';

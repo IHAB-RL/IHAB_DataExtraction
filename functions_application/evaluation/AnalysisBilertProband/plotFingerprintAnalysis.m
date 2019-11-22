@@ -154,7 +154,7 @@ vFalseAlarmOVD_JP = double(groundTrOVS == 0 & vOVS_JP == 1);
 
 
 % % % get recorded audio signal for plotting
-% % [WavData, TimeVecWav, Fs] = getAudioSignal(obj);
+% % [WavData] = getAudioSignal(obj);
 % % nLen = length(WavData);
 % % WavData = WavData(1:100:end,1);
 % % TimeVecWav = linspace(0, nLen/samplerate, length(WavData));
@@ -289,7 +289,7 @@ linkaxes([axRMS, axCorr, axPxx, axCohe], 'x');
 
 
 %% plot confusion matrix
-vLabels = {'OVS', 'no OVS'};
+vLabels = {'no OVS', 'OVS'};
 plotConfusionMatrix([], vLabels, groundTrOVS, vOVS);
 plotConfusionMatrix([], vLabels, groundTrOVS, vOVS_JP);
 

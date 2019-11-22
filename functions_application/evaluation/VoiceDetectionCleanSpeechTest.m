@@ -38,6 +38,10 @@ for idx = 1:NrOfFiles
     % save in text file
     VoiceDetectionCleanSpeech(obj);
 
+%     % get duration
+%     stInfo = audioinfo(obj.szAudioFile);
+%     vDur(idx) = stInfo.Duration;
+
 end
 
 

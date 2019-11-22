@@ -10,8 +10,8 @@ clear;
 % close all;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
-isBilert = 1;
-isOutdoor = 1;
+isBilert = 0;
+isOutdoor = 0;
 isSchreiber = 0;
 
 % path to main data folder (needs to be customized)
@@ -42,7 +42,7 @@ else
     obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
     
     % number of first and last noise configuration
-    nConfig = [1; 3];
+    nConfig = [1; 5];
 end
 
 
@@ -68,7 +68,7 @@ for subj = 1:nSubject
     end
     
     % loop over all noise configurations
-    for config = nConfig(1):nConfig(2)
+    for config = 4:nConfig(2)
         
         if isOutdoor
             % choose measurement configuration

@@ -39,14 +39,14 @@ if isTraining
     mSubj.SB = [1 2 4 5 7];
     mConfig.OD = {'COFFEE'};
     mConfig.NS = [1 3 5];
-    mConfig.JP = [1 3];
+    mConfig.JP = [4 5];
 else
     % test data
     mConfig.SB = 1:6;
     mSubj.SB = [3 6 8];
     mConfig.OD = {'CAR', 'CITY', 'STREET'};
     mConfig.NS = [2 4 6];
-    mConfig.JP = [2];
+    mConfig.JP = [1 2 3];
 end
 
 % preallocate output data set

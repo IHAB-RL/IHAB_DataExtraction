@@ -51,7 +51,7 @@ idxVS = mRMS >= mThreshold;
 [mVS2] = findVoiceSequences(obj.szPath, obj.szSubject2, idxVS(:, 2), nLenOneFrame);
 
 
-bPlot = 1;
+bPlot = 0;
 if bPlot 
     % plot results
     figure;
@@ -110,7 +110,7 @@ end
 function saveAsTextFile(szPath, szSubject, vStartIdx, vEndIdx)
     vLabel = ones(size(vEndIdx));
     mALL = [vStartIdx vEndIdx vLabel]';
-    filename = [szPath filesep szSubject '_config0_Voice.txt'];
+    filename = [szPath filesep 'VoiceLabels' filesep szSubject '_config0_Voice.txt'];
     fileID = fopen(filename,'w');
     fprintf(fileID, '%6.8f %12.8f %1.0f\n', mALL);
     fclose(fileID);
