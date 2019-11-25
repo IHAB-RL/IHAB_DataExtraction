@@ -22,9 +22,9 @@ function FeatureExtractionTestSet(obj)
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF 
 % Version History:
 % Ver. 0.01 initial create (empty) 15-Nov-2019  JP
+% Ver. 0.02 calculation of MFCCs 25-Nov-2019 JP
 % TO DO: not ready jet
-%   - RMS linear or dB SPL
-%   - calculation of MFCCs
+%   - RMS linear or dB SPL ?!
 %   - integration of "Pitch"
 
 
@@ -43,11 +43,11 @@ if obj.UseAudio
     Cxy = stData.Cxy';
     mRMS = stData.mRMS;
     nFFT = stData.nFFT;
-    samplerate = stData.fs;
+    SampleRate = stData.fs;
     
     % calculate ZCR
     isPrivacy = false;
-    [mZCR] = calcZCRframebased(stData.mSignal, samplerate, isPrivacy);
+    [mZCR] = calcZCRframebased(stData.mSignal, SampleRate, isPrivacy);
     
     % duration one frame in sec
     nLenFrame = stData.tFrame;
@@ -66,7 +66,7 @@ else
     [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
     
     % sampling frequency in Hz
-    samplerate = stInfo.fs;
+    SampleRate = stInfo.fs;
     
     % number of fast Fourier transform points
     nFFT = (stInfo.nDimensions - 2 - 4)/2;
@@ -106,22 +106,27 @@ mRMS = mRMS(1:10:end, :);
 mZCR = mZCR(1:10:end, :);
 
 
+% calculate Mel Frequency Cepstral Coefficients
+isPowerSpec = true;
+[mfcc] = calcMFCC(Pxx', SampleRate, nFFT, isPowerSpec);
+mfcc = mfcc';
+
 
 % call OVD by Schreiber 2019
-stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate, mRMS);
+stDataOVD = OVD3(Cxy, Pxx, Pyy, SampleRate, mRMS);
 
 % mean real coherence (400 - 1000 Hz)
 mMeanRealCoherence = stDataOVD.meanCoheTimesCxy;
 
 % a posteriori speech presence probability according to Gerkmann 2010
 vFreqRange = [400 1000];
-vFreqBins = round(vFreqRange./samplerate*nFFT);
+vFreqBins = round(vFreqRange./SampleRate*nFFT);
 mMeanSPP = mean(stDataOVD.PH1(vFreqBins(1):vFreqBins(2),:),1)';
 
 
 % calculate correlation of real(Cxy) scaled to RMS with hannwin combs
 Cxy_scaled = real(Cxy)./mean(mRMS, 2);
-correlation = CalcCorrelation(Cxy_scaled, samplerate, nFFT/2+1);
+correlation = CalcCorrelation(Cxy_scaled, SampleRate, nFFT/2+1);
 
 % calculate the "RMS" of the correlation
 mCorrRMS = sqrt(sum(correlation.^2, 2));
@@ -132,7 +137,7 @@ mCorrRMS = sqrt(sum(correlation.^2, 2));
 resolution_halftones = 8;
 MinMaxFreqs_Hz = [62.5 12000];
 
-[FreqTMatrix] = fft2Bands(nFFT, samplerate, resolution_halftones, MinMaxFreqs_Hz);
+[FreqTMatrix] = fft2Bands(nFFT, SampleRate, resolution_halftones, MinMaxFreqs_Hz);
 
 Pxx = Pxx*FreqTMatrix;
 Cxy = Cxy*FreqTMatrix;
@@ -170,7 +175,7 @@ end
 
 % save results as mat file
 szFile = ['Features_' szFileEnd];
-save([szFolder_Output filesep szFile], 'mRMS', 'mZCR', ...
+save([szFolder_Output filesep szFile], 'mRMS', 'mZCR', 'mfcc', ...
     'mMeanRealCoherence', 'mMeanSPP', 'mEQD', 'mCorrRMS', ...
     'Pxx', 'Cxy', 'vGroundTruthVS');
  
