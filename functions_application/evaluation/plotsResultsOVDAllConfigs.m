@@ -83,7 +83,7 @@ for config = nConfig(1):nConfig(2)
 end
 
 % call function to plot confusion matrix for all subjects and configs
-vLabels = {'OVS', 'no OVS'};
+vLabels = {'no OVS', 'OVS'};
 plotConfusionMatrix(mConfusion_fix, vLabels, 'Bitzer et al. 2016');
 plotConfusionMatrix(mConfusion_Bilert, vLabels, 'Bilert 2018');
 plotConfusionMatrix(mConfusion_Schreiber, vLabels, 'Schreiber 2019');
