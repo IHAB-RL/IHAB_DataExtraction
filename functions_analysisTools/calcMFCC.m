@@ -1,11 +1,25 @@
 function [mfcc]=calcMFCC(data, SampleRate,  nFFT, isPowerSpec)
 % function to calculate 'Mel Frequency Cepstral Coefficients'
+% Calculation is based on 125ms time frames 
+% If input data contains the time signal, it is possible to use a 
+% pre-emphasis filter ('to reduce spectral roll-off of the signal'), set 
+% logical isPreEmphFilt to true
 %
 % Parameters
 % ----------
+%   data - vector that contains either the time signal or the power
+%          spectral density (dimension: frequency x time)
+%
+%   SampleRate - sampling frequency in Hz
+%
+%   nFFT - number of fast Fourier transform points
+%
+%   isPowerSpec - logical whether data contains the time signal (== false) 
+%                 or the power spectral density (== true)
 %
 % Returns
 % -------
+%   mfcc - vector that contains for each time frame the 13 first MFCCs
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Source: Mfcc_LLF - low level feature implements the MFCC feature
@@ -37,15 +51,21 @@ if ~isPowerSpec
     % initialize all properties which depend on the sample rate
     vWindow = WindowFunction(BlockSizeSample); % Window vector
     
-    % following the default pre-emph. filter with alpha = 0.95@16e3
-    cutoff = -log(0.95) * 16e3 / (2*pi);
+    % logical to use PreEmphasisFilter or not
+    isPreEmphFilt = false;
     
-    % Coeffs. of the pre-emphasis filter
-    PreEmphasisCoefficient = exp(-2*pi * cutoff / SampleRate);
+    if isPreEmphFilt
+        % following the default pre-emph. filter with alpha = 0.95@16e3
+        cutoff = -log(0.95) * 16e3 / (2*pi);
+
+        % Coeffs. of the pre-emphasis filter
+        PreEmphasisCoefficient = exp(-2*pi * cutoff / SampleRate);
+
+        % pre-emphasis filter to reduce spectral roll-off of the signal
+        [data, PreEmphasisFilterStates] = filter([1, -PreEmphasisCoefficient], 1, data);
+    end
     
-    % pre-emphasis filter to reduce spectral roll-off of the signal
-%     [data, PreEmphasisFilterStates] = filter([1, -PreEmphasisCoefficient], 1, data);
-    
+    % loop through all time frames
     for iFrame = 1:nFrames
         
         vIDX    = ((iFrame-1)*lFeed+1):((iFrame-1)*lFeed+BlockSizeSample);
@@ -66,12 +86,6 @@ IndexUsedCoefficients = 1:13;
 
 % frequency vector
 vFreq = linspace(0, SampleRate / 2, nFFT / 2 + 1);
-
-    % Lower edge frequency of the Mel filterbank
-    MinimumFrequency = 50;
-
-    % Upper edge frequency of the Mel filterbank
-    MaximumFrequency = 8e3;
 
 % Filterbank matrix
 MelFilterbank = melfilter(NumDefaultCoefficients, vFreq);
