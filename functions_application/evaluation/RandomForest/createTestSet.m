@@ -1,4 +1,4 @@
-function [mDataSet,vVoiceLabels]=createTestSet(szVarNames, isTraining)
+function [mDataSet,vVoiceLabels]=createTestSet(szVarNames, isTraining, isOnlyOVD)
 % function to create a DATA Set with specified variables for classification
 % requi
 % Usage [mDataSet]=createTestSet(vVarNames, isTraining)
@@ -27,9 +27,11 @@ function [mDataSet,vVoiceLabels]=createTestSet(szVarNames, isTraining)
 % set variable names (if not specified, take all)
 if nargin == 0 
     szVarNames = {'mRMS', 'mZCR', 'mMeanRealCoherence', 'mMeanSPP', ...
-        'mEQD', 'mCorrRMS', 'Pxx', 'Cxy', 'vGroundTruthVS'};
+        'mEQD', 'mCorrRMS', 'Pxx', 'Cxy', 'mfcc', 'vGroundTruthVS'};
     
     isTraining = true;
+    
+    isOnlyOVD = false;
 end
 
 % choose data
@@ -176,6 +178,11 @@ for ii = 1:length(vMeasurement)
             idxRow = idxRow + nBlocks;
         end
     end
+end
+
+% only OVD
+if isOnlyOVD
+    vVoiceLabels(vVoiceLabels == 2) = 0;
 end
 
 %--------------------Licence ---------------------------------------------
