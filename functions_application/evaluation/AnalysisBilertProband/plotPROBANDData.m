@@ -195,17 +195,20 @@ if isFreqLim
     nFreqBins = size(PxxShort,2);
     freqVec = 1:nFreqBins;
     
-    RealCohe = real(CoheShort(:,:))';
+    RealCohe = real(CoheShort)';
 else
     freqVec = 0 : samplerate/nFFT : samplerate/2;
     
-    RealCohe = real(Cohe(:,:))';
+    RealCohe = real(Cohe)';
+    
+ImagCohe = imag(Cohe)';
 end
-imagesc(timeVec,freqVec,RealCohe);
+% imagesc(timeVec,freqVec,RealCohe);
+imagesc(timeVec,freqVec,ImagCohe);
 axis xy;
 colorbar;
 title('');
-reText=text(timeVec(5),freqVec(end-10),'Re\{Coherence\}','Color',[1 1 1]);
+reText=text(timeVec(5),freqVec(end-10),'Im\{Coherence\}','Color',[1 1 1]);
 reText.FontSize = 12;
 if isFreqLim
     yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
@@ -373,14 +376,6 @@ set(gcf,'PaperPositionMode', 'auto');
 
 linkaxes([axOVD,axRMS,axAudio,axPxx,axCoher],'x');
 % dynamicDateTicks([axOVD,axRMS,axPxx,axCoher,axCoherInvalid,axPxxInvalid],'linked');
-
-
-% % print relative values of voice activity
-% nFrames = size(stDataOVD.vOVS,1);
-% OVSrel = sum(stDataOVD.vOVS)/nFrames;
-% fprintf('***estimated %.2f %% own voice per day\n',100*OVSrel);
-% FVSrel = sum(stDataFVD.vFVS)/nFrames;
-% fprintf('***estimated %.2f %% futher voice per day\n',100*FVSrel);
 
 
 
@@ -636,8 +631,23 @@ ylabel('imaginary coherence');
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Im-Re-Cohe%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+J = mean((RealCohe-ImagCohe)./RealCohe, 2);
+figure;
+subplot(3,1,1);
+histogram(J(idxTrOVS),'FaceColor', 'r');
+
+subplot(3,1,2);
+histogram(J(idxTrFVS),'FaceColor', 'b');
+
+subplot(3,1,3);
+histogram(J(idxTrNone),'FaceColor', 'g');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 % logical to save figure
-bPrint = 1;
+bPrint = 0;
 
 % save figures
 if bPrint

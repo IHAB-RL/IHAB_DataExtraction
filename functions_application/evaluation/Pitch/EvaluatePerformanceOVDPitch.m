@@ -10,21 +10,12 @@ function EvaluatePerformanceOVDPitch(obj)
 % Version History: (based on AnalysePeaksCorrelation.m)
 % Ver. 0.01 initial create 05-Nov-2019 	JP
 
-% reading objective data, desired feature PSD
-szFeature = 'PSD';
 
-% get all available feature file data
-[DataPSD, ~, stInfo] = getObjectiveDataBilert(obj, szFeature);
+% check whether the number of feature files is valid or not
+obj = checkNrOfFeatFiles(obj);
 
-% extract PSD data
-version = 1; % JP modified get_psd
-[Cxy,Pxx,Pyy] = get_psd(DataPSD, version);
-
-% set minimum time length in blocks
-nMinLen = 960;
-
-% if no feature files are stored, extracted PSD from audio signals
-if isempty(DataPSD) || size(Cxy, 1) <= nMinLen
+% if no or not all feature files are stored, extract data from audio 
+if obj.UseAudio
     
     % call funtion to calculate PSDs
     stData = detectOVSRealCoherence([], obj);
@@ -35,22 +26,32 @@ if isempty(DataPSD) || size(Cxy, 1) <= nMinLen
     Cxy = stData.Cxy';
     mRMS = stData.mRMS;
     nFFT = stData.nFFT;
-    samplerate = stData.fs;
+    SampleRate = stData.fs;
     
     % duration one frame in sec
     nLenFrame = stData.tFrame;
     
     clear stData
 else
+
+    % reading objective data, desired feature PSD
+    szFeature = 'PSD';
+
+    % get all available feature file data
+    [DataPSD, ~, stInfo] = getObjectiveDataBilert(obj, szFeature);
+
+    % extract PSD data
+    version = 1; % JP modified get_psd
+    [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
     
     % sampling frequency in Hz
-    samplerate = stInfo.fs;
+    SampleRate = stInfo.fs;
     
     % number of fast Fourier transform points
     nFFT = (stInfo.nDimensions - 2 - 4)/2;
     
     % duration one frame in sec
-    nLenFrame = stInfo.HopSizeInSamples/stInfo.fs;
+    nLenFrame = stInfo.HopSizeInSamples/SampleRate;
     
     % desired feature RMS
     szFeature = 'RMS';
@@ -90,8 +91,8 @@ nBlocks = size(Pxx, 1);
 
 
 % call OVD by Schreiber 2019
-stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate);
-% stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate, mRMS_dBSPL);
+% stDataOVD = OVD3(Cxy, Pxx, Pyy, SampleRate);
+% stDataOVD = OVD3(Cxy, Pxx, Pyy, SampleRate, mRMS_dBSPL);
 
 % % % call OVD by Bilert 2018
 % % stParam = setParamsFeatureExtraction(obj);
@@ -101,7 +102,7 @@ stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate);
 % Pxx = 10^5*Pxx;
 
 % % calculate correlation of PSD with hannwin combs
-% correlation = CalcCorrelation(Pxx, samplerate, specsize);
+% correlation = CalcCorrelation(Pxx, SampleRate, specsize);
 % 
 % 
 % % estimate own voice sequences based on correlation
@@ -110,11 +111,11 @@ stDataOVD = OVD3(Cxy, Pxx, Pyy, samplerate);
 
 % combine coherence, rms, pitch
 % estimatedOVS = stDataPitch.vEstOVS;
-estimatedOVS = stDataOVD.vOVS;
+% estimatedOVS = stDataOVD.vOVS;
 % estimatedOVS = stDataOVD.vOVS_adap';
 % estimatedOVS = stDataOVD.vOVS | stDataPitch.vEstOVS;
 % estimatedOVS = stDataOVD.meanCoheTimesCxy >= stDataOVD.adapThreshCohe & stDataPitch.vEstOVS;
-% estimatedOVS = ones(nBlocks,1);
+estimatedOVS = zeros(nBlocks,1);
 
 
 % get ground truth voice labels
@@ -133,7 +134,7 @@ stResults.mConfusion_Pitch = getConfusionMatrix(estimatedOVS', groundTrOVS);
 vLabels = {'no OVS', 'OVS'};
 plotConfusionMatrix(stResults.mConfusion_Pitch, vLabels);
 
-szCondition = 'OVD_Schreiber_Min03_';
+szCondition = 'OVD_AllwaysFalse_';
 % build the full directory
 if isfield(obj, 'szCurrentFolder')
     szDir = [obj.szBaseDir filesep obj.szCurrentFolder];

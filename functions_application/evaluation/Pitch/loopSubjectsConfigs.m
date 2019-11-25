@@ -10,7 +10,7 @@ clear;
 % close all;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
-isBilert = 0;
+isBilert = 1;
 isOutdoor = 0;
 isSchreiber = 0;
 
@@ -68,7 +68,7 @@ for subj = 1:nSubject
     end
     
     % loop over all noise configurations
-    for config = 4:nConfig(2)
+    for config = nConfig(1):nConfig(2)
         
         if isOutdoor
             % choose measurement configuration
@@ -96,11 +96,11 @@ for subj = 1:nSubject
         % CalcCorrelationTest(obj);
         % AnalysePeaksCorrelation(obj);
         % SaveVoiceLabels(obj)
-        % EvaluatePerformanceOVDPitch(obj);
+        EvaluatePerformanceOVDPitch(obj);
         % plotPROBANDData(obj);
         % plotFingerprintAnalysis(obj)
         
-        FeatureExtractionTestSet(obj)
+%         FeatureExtractionTestSet(obj)
         
         close all;
     end

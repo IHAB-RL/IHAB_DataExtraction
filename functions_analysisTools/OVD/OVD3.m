@@ -23,18 +23,18 @@ curPxx = zeros(nFrames, nFreqBins);
 curPyy = zeros(nFrames, nFreqBins);
 
 %% NS
-% MIN_COH = 0.1;
-% MIN_RMS = 10^(-40/20);
-% 
-% vFreqRange = [140 1500];
-% vFreqBins = round(vFreqRange./fs*nFFT); % 5:40. 6:64 17:43
+MIN_COH = 0.1;
+MIN_RMS = 10^(-40/20);
+
+vFreqRange = [140 1500];
+vFreqBins = round(vFreqRange./fs*nFFT); % 5:40. 6:64 17:43
 
 %% JP
-MIN_COH = 0.3;
-MIN_RMS = 10^(-45/20); % -> for dB FS
-
-vFreqRange = [400 1000];
-vFreqBins = round(vFreqRange./fs*nFFT); % 5:40. 6:64 17:43
+% MIN_COH = 0.3;
+% MIN_RMS = 10^(-45/20); % -> for dB FS
+% 
+% vFreqRange = [400 1000];
+% vFreqBins = round(vFreqRange./fs*nFFT); % 5:40. 6:64 17:43
 
 
 % smoothing PSD data for 3 adjacent frames respectively
