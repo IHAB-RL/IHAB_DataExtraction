@@ -9,7 +9,6 @@ close all;
 
 % path to data folder (needs to be customized)
 szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
-% szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019\NN08IA10';
 
 % get all subject directories
 subjectDirectories = dir(szBaseDir);
@@ -19,7 +18,7 @@ isValidLength = arrayfun(@(x)(length(x.name) == 18), subjectDirectories);
 subjectDirectories = subjectDirectories(isValidLength);
 
 % choose a subject  (adjust for a specific subject)
-nSubject = 1;
+nSubject = 12;
 
 % get one subject directoy
 szCurrentFolder = subjectDirectories(nSubject).name;
@@ -27,7 +26,7 @@ szCurrentFolder = subjectDirectories(nSubject).name;
 % get object
 [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
 
-OneSubjectOneDayOVD(obj);
+plotEMAFingerprint(obj, 'EndDay', 'first');
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> Jule Pohlhausen

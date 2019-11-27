@@ -1,20 +1,28 @@
 function [hasSubjectiveData,axQ]=plotSubjectiveData(obj,stInfo,bPrint,GUI_xStart,PosVecCoher)
 % function to do something usefull (fill out)
-% Usage [outParam]=plotSubjectiveData(inParam)
+% Usage [hasSubjectiveData,axQ]=plotSubjectiveData(obj,stInfo,bPrint,GUI_xStart,PosVecCoher)
 %
 % Parameters
 % ----------
-% inParam :  type
-%	 explanation
+% obj : class IHABdata, contains all informations
+%
+% stInfo : struct which contains valid date informations about the time 
+%          informations: start and end day and time; this struct results 
+%          from calling checkInputFormat.m
+%
+% bPrint : logical
+%
+% GUI_xStart : start position of matlab figure, 'left'
+%
+% PosVecCoher : vector, with position of Coherence axes
 %
 % Returns
 % -------
-% outParam :  type
-%	 explanation
+% hasSubjectiveData : logical, if the current subject has subjective data
+%                     for given time frame
 %
-%------------------------------------------------------------------------
-% Example: Provide example here if applicable (one or two lines)
-
+% axQ : axes handle of subjective data
+%
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Source: based on functions by Nils Schreiber (2019)
 % Version History:

@@ -1,4 +1,4 @@
-function [] = OneSubjectOneDayOVD(obj, varargin)
+function [] = plotEMAFingerprint(obj, varargin)
 % function to plot a fingerprint for a specific time frame
 % analyse data from IHAB
 % shows results of Own Voice Detection (OVD) and Futher Voice
