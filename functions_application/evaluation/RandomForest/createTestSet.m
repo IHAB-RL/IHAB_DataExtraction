@@ -1,6 +1,6 @@
-function [mDataSet,vVoiceLabels]=createTestSet(szVarNames, isTraining, isOnlyOVD)
+function [mDataSet,vVoiceLabels]=createTestSet(szVarNames, isTraining, szMode, mConfig, mSubj)
 % function to create a DATA Set with specified variables for classification
-% requi
+% run first FeatureExtractionTestSet.m
 % Usage [mDataSet]=createTestSet(vVarNames, isTraining)
 %
 % Parameters
@@ -24,31 +24,35 @@ function [mDataSet,vVoiceLabels]=createTestSet(szVarNames, isTraining, isOnlyOVD
 % Version History:
 % Ver. 0.01 initial create (empty) 20-Nov-2019  JP
 
+if ~exist('szMode', 'var')
+    szMode = [];
+end
+
 % set variable names (if not specified, take all)
 if nargin == 0 
     szVarNames = {'mRMS', 'mZCR', 'mMeanRealCoherence', 'mMeanSPP', ...
         'mEQD', 'mCorrRMS', 'Pxx', 'Cxy', 'mfcc', 'vGroundTruthVS'};
     
     isTraining = true;
-    
-    isOnlyOVD = false;
 end
 
 % choose data
-if isTraining
-    % training data
-    mConfig.SB = 1:6;
-    mSubj.SB = [1 2 4 5 7];
-    mConfig.OD = {'COFFEE'};
-    mConfig.NS = [1 3 5];
-    mConfig.JP = [4 5];
-else
-    % test data
-    mConfig.SB = 1:6;
-    mSubj.SB = [3 6 8];
-    mConfig.OD = {'CAR', 'CITY', 'STREET'};
-    mConfig.NS = [2 4 6];
-    mConfig.JP = [1 2 3];
+if nargin <= 3
+    if isTraining
+        % training data
+        mConfig.SB = 1:6;
+        mSubj.SB = [1 2 4 5 7];
+        mConfig.OD = {'COFFEE'};
+        mConfig.NS = [1 3 5];
+        mConfig.JP = [4 6];
+    else
+        % test data
+        mConfig.SB = 1:6;
+        mSubj.SB = [3 6 8];
+        mConfig.OD = {'CAR', 'CITY', 'STREET'};
+        mConfig.NS = [2 4 6];
+        mConfig.JP = [1 2 3 5];
+    end
 end
 
 % preallocate output data set
@@ -181,8 +185,11 @@ for ii = 1:length(vMeasurement)
 end
 
 % only OVD
-if isOnlyOVD
+if strcmp(szMode, 'OVD')
     vVoiceLabels(vVoiceLabels == 2) = 0;
+% only FVD
+elseif strcmp(szMode, 'FVD')
+    vVoiceLabels(vVoiceLabels == 1) = 0;
 end
 
 %--------------------Licence ---------------------------------------------
