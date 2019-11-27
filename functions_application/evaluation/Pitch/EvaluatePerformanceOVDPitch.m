@@ -31,7 +31,6 @@ if obj.UseAudio
     % duration one frame in sec
     nLenFrame = stData.tFrame;
     
-    clear stData
 else
 
     % reading objective data, desired feature PSD
@@ -90,13 +89,25 @@ nBlocks = size(Pxx, 1);
 % mRMS_dBSPL = 20*log10(mRMS(:,1)) + Calib_RMS(:,1);
 
 
-% call OVD by Schreiber 2019
+% % call OVD by Schreiber 2019
 % stDataOVD = OVD3(Cxy, Pxx, Pyy, SampleRate);
-% stDataOVD = OVD3(Cxy, Pxx, Pyy, SampleRate, mRMS_dBSPL);
+% % stDataOVD = OVD3(Cxy, Pxx, Pyy, SampleRate, mRMS_dBSPL);
 
-% % % call OVD by Bilert 2018
-% % stParam = setParamsFeatureExtraction(obj);
-% % stDataOVD = OVD_Bilert(stParam, stData);
+
+% call OVD by Bilert 2018
+stParam = setParamsFeatureExtraction(obj);
+if ~obj.UseAudio
+    % mean coherence in given frequency range
+    mCoherence = Cxy./(sqrt(Pxx.*Pyy) + eps);
+    vCohMeanReal = mean(real(mCoherence(:,stParam.vFreqBins(1):stParam.vFreqBins(2))),2);
+
+    % smoothed coherence
+    alphaCoh            = exp(-stParam.tFrame./stParam.tauCoh);
+    stData.vCohMeanRealSmooth  = filter(1-alphaCoh,[1 -alphaCoh],vCohMeanReal)';
+end
+
+stDataOVD = OVD_Bilert(stParam, stData);
+
 
 % % scale for nicer values in correlation matrix
 % Pxx = 10^5*Pxx;
@@ -115,7 +126,7 @@ nBlocks = size(Pxx, 1);
 % estimatedOVS = stDataOVD.vOVS_adap';
 % estimatedOVS = stDataOVD.vOVS | stDataPitch.vEstOVS;
 % estimatedOVS = stDataOVD.meanCoheTimesCxy >= stDataOVD.adapThreshCohe & stDataPitch.vEstOVS;
-estimatedOVS = zeros(nBlocks,1);
+estimatedOVS = ones(nBlocks,1);
 
 
 % get ground truth voice labels
@@ -130,11 +141,12 @@ obj.NrOfBlocks = nBlocks;
     stResults.recOVS_Pitch,stResults.accOVS_Pitch] = F1M(estimatedOVS', groundTrOVS);
 
 % calculate and plot confusion matrix for OVD
-stResults.mConfusion_Pitch = getConfusionMatrix(estimatedOVS', groundTrOVS);
+vUniqueNums = [0 1];
+stResults.mConfusion_Pitch = getConfusionMatrix(estimatedOVS', groundTrOVS, vUniqueNums);
 vLabels = {'no OVS', 'OVS'};
 plotConfusionMatrix(stResults.mConfusion_Pitch, vLabels);
 
-szCondition = 'OVD_AllwaysFalse_';
+szCondition = 'OVD_AllwaysTrue_';
 % build the full directory
 if isfield(obj, 'szCurrentFolder')
     szDir = [obj.szBaseDir filesep obj.szCurrentFolder];
