@@ -41,6 +41,7 @@ end
 vActVoice = importdata(gtFile);
 
 if isempty(vActVoice)
+    warning('no ground truth data was imported')
     return;
 end
 

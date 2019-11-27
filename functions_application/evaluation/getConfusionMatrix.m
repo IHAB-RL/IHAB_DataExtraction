@@ -1,4 +1,4 @@
-function [mConfusion]=getConfusionMatrix(vPredicted, vGroundTruth)
+function [mConfusion]=getConfusionMatrix(vPredicted, vGroundTruth, vUniqueNums)
 % function to calculate the confusion matrix
 % Usage [mConfusion]=getConfusionMatrix(vPredicted, vGroundTruth)
 %
@@ -17,7 +17,9 @@ function [mConfusion]=getConfusionMatrix(vPredicted, vGroundTruth)
 % Ver. 1.0 generalized 15-Nov-2019  JP
 
 % determine unique numbers in ground truth vector
-vUniqueNums = unique(vGroundTruth);
+if nargin == 2 || isempty(vUniqueNums)
+    vUniqueNums = unique(vGroundTruth);
+end
 
 % number of categories/ dimensions
 nDim = length(vUniqueNums);

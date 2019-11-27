@@ -11,7 +11,7 @@ clear;
 
 % choose between data from Bilert or Schreiber or Pohlhausen
 isBilert = 1;
-isOutdoor = 0;
+isOutdoor = 1;
 isSchreiber = 0;
 
 % path to main data folder (needs to be customized)
@@ -42,7 +42,7 @@ else
     obj.szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019';
     
     % number of first and last noise configuration
-    nConfig = [1; 5];
+    nConfig = [1; 6];
 end
 
 
@@ -96,7 +96,8 @@ for subj = 1:nSubject
         % CalcCorrelationTest(obj);
         % AnalysePeaksCorrelation(obj);
         % SaveVoiceLabels(obj)
-        EvaluatePerformanceOVDPitch(obj);
+        % EvaluatePerformanceOVDPitch(obj);
+        EvaluatePerformanceFVD(obj)
         % plotPROBANDData(obj);
         % plotFingerprintAnalysis(obj)
         

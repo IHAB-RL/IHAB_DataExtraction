@@ -200,15 +200,12 @@ else
     freqVec = 0 : samplerate/nFFT : samplerate/2;
     
     RealCohe = real(Cohe)';
-    
-ImagCohe = imag(Cohe)';
 end
-% imagesc(timeVec,freqVec,RealCohe);
-imagesc(timeVec,freqVec,ImagCohe);
+imagesc(timeVec,freqVec,RealCohe);
 axis xy;
 colorbar;
 title('');
-reText=text(timeVec(5),freqVec(end-10),'Im\{Coherence\}','Color',[1 1 1]);
+reText=text(timeVec(5),freqVec(end-10),'Re\{Coherence\}','Color',[1 1 1]);
 reText.FontSize = 12;
 if isFreqLim
     yaxisLables = sprintfc('%d', stBandDef.MidFreq(1:3:end));
@@ -632,22 +629,22 @@ ylabel('imaginary coherence');
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%Im-Re-Cohe%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-J = mean((RealCohe-ImagCohe)./RealCohe, 2);
-figure;
-subplot(3,1,1);
-histogram(J(idxTrOVS),'FaceColor', 'r');
-
-subplot(3,1,2);
-histogram(J(idxTrFVS),'FaceColor', 'b');
-
-subplot(3,1,3);
-histogram(J(idxTrNone),'FaceColor', 'g');
+% J = mean((RealCohe-ImagCohe)./RealCohe, 2);
+% figure;
+% subplot(3,1,1);
+% histogram(J(idxTrOVS),'FaceColor', 'r');
+% 
+% subplot(3,1,2);
+% histogram(J(idxTrFVS),'FaceColor', 'b');
+% 
+% subplot(3,1,3);
+% histogram(J(idxTrNone),'FaceColor', 'g');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 % logical to save figure
-bPrint = 0;
+bPrint = 1;
 
 % save figures
 if bPrint

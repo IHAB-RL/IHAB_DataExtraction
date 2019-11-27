@@ -43,7 +43,8 @@ function [Data,TimeVec,stInfoFile]=getObjectiveData(obj,szFeature,varargin)
 %  'SamplesPerPixel'    number that speciefies the data point resolution in
 %                       samples per pixel; by default it is 5 samples/pixel
 %
-%  'isCompress'         logical to compress data (1, default) or not (0)
+%  'useCompression'     logical to compress data (1, default) or not (0);
+%                       compression is done by averaging the data
 %
 % Returns
 % -------
@@ -95,14 +96,14 @@ p.addParameter('EndDay', NaT, @(x) isdatetime(x) || isnumeric(x) || ischar(x));
 p.addParameter('stInfo', [], @(x) isstruct(x));
 p.addParameter('PlotWidth', iDefaultPlotWidth, @(x) isnumeric(x));
 p.addParameter('SamplesPerPixel', iDefaultSamplesPerPixel, @(x) isnumeric(x));
-p.addParameter('isCompress', true, @(x) islogical(x));
+p.addParameter('useCompression', true, @(x) islogical(x));
 p.parse(obj,varargin{:});
 
 % Re-assign values
 stInfo = p.Results.stInfo;
 iPlotWidth = p.Results.PlotWidth;
 iStaticSamplesPerPixel = p.Results.SamplesPerPixel;
-isCompress = p.Results.isCompress;
+useCompression = p.Results.useCompression;
 
 if isempty(stInfo)
     % call function to check input date format and plausibility
@@ -250,7 +251,7 @@ if isFileBased
         TimeVecIn = linspace(DateTimeValue,DateTimeValue+minutes(1-1/ActBlockSize),ActBlockSize);
         
         % some steps are just for compression needed
-        if isCompress
+        if useCompression
             % find time gaps between files lager than 120 sec
             % if there is a time gap the residual values are cleared
             if fileIdx > 1

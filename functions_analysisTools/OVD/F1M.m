@@ -1,10 +1,11 @@
 function [F1Score,precision,recall,accuracy] = F1M(vPredicted, vGroundTruth, fBeta, precision, recall)
 
+% set weighting factor
 if nargin == 2
     fBeta = 2;
 end
 
-if ~exist('precision')
+if ~exist('precision', 'var')
     vGroundTruth(isnan(vGroundTruth)) = 0;
     vPredicted(isnan(vPredicted))= 0;
     vPredicted = double(vPredicted);
