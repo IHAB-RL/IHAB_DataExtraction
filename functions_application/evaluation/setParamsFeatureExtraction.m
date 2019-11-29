@@ -5,13 +5,13 @@ function [stParam]=setParamsFeatureExtraction(obj)
 %
 % Parameters
 % ----------
-% inParam :  type
-%	 explanation
+% obj - struct with specific informations about the current subject, data
+%        folder etc.
 %
 % Returns
 % -------
-% outParam :  type
-%	 explanation
+% stParam - struct with constant parameters for feature extraction and the
+%           audio signal
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF 
 % Version History:

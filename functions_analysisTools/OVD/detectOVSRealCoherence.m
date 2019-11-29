@@ -1,21 +1,23 @@
 function [stData] = detectOVSRealCoherence(stParam, obj)
 % function to detect the real part of the coherence using the auto- and
 % cross spectral power density
-% Usage [stData] = detectOVSRealCoherence(stParam)
+% Usage [stData] = detectOVSRealCoherence(stParam, obj)
 %
 % Parameters
 % ----------
-% stParam :  type
-%	 explanation
+% stParam - struct with constant parameters for feature extraction and the
+%           audio signal; if isempty, setParamsFeatureExtraction.m gets
+%           called
+%
+% obj - struct with specific informations about the current subject, data
+%        folder etc.
 %
 % Returns
 % -------
-% stData :  type
-%	 explanation
+% stData - struct that contains stParam and the frame based extracted 
+%          features like RMS, PSD etc
 %
 % Author: J.Bitzer (c) TGM @ Jade Hochschule applied licence see EOF
-% Source: If the function is based on a scientific paper or a web site,
-%         provide the citation detail here (with equation no. if applicable)
 % Version History:
 % Ver. 0.01 first implementation 01-Dec-2017  SB
 % Ver. 1.0 modified by NS 2018/2019
