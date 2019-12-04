@@ -110,7 +110,7 @@ end
 function saveAsTextFile(szPath, szSubject, vStartIdx, vEndIdx)
     vLabel = ones(size(vEndIdx));
     mALL = [vStartIdx vEndIdx vLabel]';
-    filename = [szPath filesep 'VoiceLabels' filesep szSubject '_config0_Voice.txt'];
+    filename = [szPath filesep 'VoiceLabels' filesep szSubject '_Voice.txt'];
     fileID = fopen(filename,'w');
     fprintf(fileID, '%6.8f %12.8f %1.0f\n', mALL);
     fclose(fileID);

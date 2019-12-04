@@ -16,13 +16,13 @@ function [mDataSet] = FeatureExtraction(obj, stDate, szVarNames)
 % Parameters
 % ----------
 % obj - class IHABdata, contains all informations
-% 
-% stDate - struct which contains valid date informations about the time 
-%          informations: start and end day and time; this struct results 
+%
+% stDate - struct which contains valid date informations about the time
+%          informations: start and end day and time; this struct results
 %          from calling checkInputFormat.m
 %
-% szVarNames - cell array, contains the variable names; possible variables 
-%              are: RMS, ZCR, mean real coherence, speech presence 
+% szVarNames - cell array, contains the variable names; possible variables
+%              are: RMS, ZCR, mean real coherence, speech presence
 %              probability, EQD, CorrRMS, Pxx, Cxy, ground truth labels
 %
 % Returns
@@ -37,111 +37,119 @@ function [mDataSet] = FeatureExtraction(obj, stDate, szVarNames)
 szDir = [obj.stSubject.Folder filesep 'FeatureExtraction'];
 
 % construct filename
-szFile = ['Features_' obj.stSubject.Name '_' datestr(stDate.StartDay,'yymmdd')];
+szFile = ['Features_' obj.stSubject.Name '_' datestr(stDate.StartDay, 'yymmdd') '_' datestr(stDate.StartTime, 'HH') '_' datestr(stDate.EndTime, 'HH')];
 
+isCalculated = false;
 if ~exist(szDir, 'dir')
     mkdir(szDir);
 else
-    if exist([szDir filesep szFile], 'file')
-        load([szDir filesep szFile])
+    if exist([szDir filesep szFile '.mat'], 'file')
+        load([szDir filesep szFile '.mat']);
+        isCalculated = true;
     end
 end
 
-
-% preallocate output data set matrix
-mDataSet = zeros(1, length(szVarNames));
-
-% use no compression
-useCompression = false;
-
-% reading objective data, desired feature PSD
-szFeature = 'PSD';
-
-% get all available feature file data for PSD
-[DataPSD,~,stInfo] = getObjectiveData(obj, szFeature, 'stInfo', stDate, ...
-    'useCompression', useCompression);
-
-% extract PSD data
-version = 1; % JP modified get_psd
-[Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
-
-% sampling frequency in Hz
-SampleRate = stInfo.fs;
-
-% number of fast Fourier transform points
-nFFT = (stInfo.nDimensions - 2 - 4)/2;
-
-% duration one frame in sec
-nLenFrame = stInfo.HopSizeInSamples/stInfo.fs;
-
-% desired feature RMS
-szFeature = 'RMS';
-
-% get all available feature file data for RMS
-mRMS = getObjectiveData(obj, szFeature, 'stInfo', stDate, ...
-    'useCompression', useCompression);
-
-% desired feature
-szFeature = 'ZCR';
-
-% get all available feature file data for ZCR
-mZCR = getObjectiveData(obj, szFeature, 'stInfo', stDate,...
-    'useCompression', useCompression);
-
-% number of time frames
-nBlocks = size(Pxx, 1);
-
-
-% Empirischer Quartilsdispersionskoeffizient calculated on 10 adjacent RMS
-% frames
-mEQD = EQD(mRMS, nBlocks);
-
-
-% subsample RMS and ZCR by factor 10 (according to privacy option for PSDs)
-nRemain = rem(size(mRMS, 1), 10*nBlocks);
-if nRemain ~= 0 && nRemain ~= size(mRMS, 1)
-    mRMS(end-nRemain+1:end, :) = [];
-    mZCR(end-nRemain+1:end, :) = [];
+if ~isCalculated
+    % preallocate output data set matrix
+    mDataSet = zeros(1, length(szVarNames));
+    
+    % use no compression
+    useCompression = false;
+    
+    % reading objective data, desired feature PSD
+    szFeature = 'PSD';
+    
+    % get all available feature file data for PSD
+    [DataPSD,~,stInfo] = getObjectiveData(obj, szFeature, 'stInfo', stDate, ...
+        'useCompression', useCompression);
+    
+    if isempty(DataPSD)
+        return;
+    end
+    
+    % extract PSD data
+    version = 1; % JP modified get_psd
+    [Cxy, Pxx, Pyy] = get_psd(DataPSD, version);
+    
+    % sampling frequency in Hz
+    SampleRate = stInfo.fs;
+    
+    % number of fast Fourier transform points
+    nFFT = (stInfo.nDimensions - 2 - 4)/2;
+    
+    % duration one frame in sec
+    nLenFrame = stInfo.HopSizeInSamples/stInfo.fs;
+    
+    % desired feature RMS
+    szFeature = 'RMS';
+    
+    % get all available feature file data for RMS
+    mRMS = getObjectiveData(obj, szFeature, 'stInfo', stDate, ...
+        'useCompression', useCompression);
+    
+    % desired feature
+    szFeature = 'ZCR';
+    
+    % get all available feature file data for ZCR
+    mZCR = getObjectiveData(obj, szFeature, 'stInfo', stDate,...
+        'useCompression', useCompression);
+    
+    % number of time frames
+    nBlocks = size(Pxx, 1);
+    
+    
+    % Empirischer Quartilsdispersionskoeffizient calculated on 10 adjacent RMS
+    % frames
+    mEQD = EQD(mRMS, nBlocks);
+    
+    
+    % subsample RMS and ZCR by factor 10 (according to privacy option for PSDs)
+    nRemain = rem(size(mRMS, 1), 10*nBlocks);
+    if nRemain ~= 0 && nRemain ~= size(mRMS, 1)
+        mRMS(end-nRemain+1:end, :) = [];
+        mZCR(end-nRemain+1:end, :) = [];
+    end
+    mRMS = mRMS(1:10:end, :);
+    mZCR = mZCR(1:10:end, :);
+    
+    
+    % calculate Mel Frequency Cepstral Coefficients
+    isPowerSpec = true;
+    [mfcc] = calcMFCC(Pxx', SampleRate, nFFT, isPowerSpec);
+    mfcc = mfcc';
+    
+    
+    % call OVD by Schreiber 2019
+    stDataOVD = OVD3(Cxy, Pxx, Pyy, SampleRate, mRMS);
+    
+    % mean real coherence (400 - 1000 Hz)
+    mMeanRealCoherence = stDataOVD.meanCoheTimesCxy;
+    
+    % a posteriori speech presence probability according to Gerkmann 2010
+    vFreqRange = [400 1000];
+    vFreqBins = round(vFreqRange./SampleRate*nFFT);
+    mMeanSPP = mean(stDataOVD.PH1(vFreqBins(1):vFreqBins(2),:),1)';
+    
+    
+    % calculate correlation of real(Cxy) scaled to RMS with hannwin combs
+    Cxy_scaled = real(Cxy)./mean(mRMS, 2);
+    correlation = CalcCorrelation(Cxy_scaled, SampleRate, nFFT/2+1);
+    
+    % calculate the "RMS" of the correlation
+    mCorrRMS = sqrt(sum(correlation.^2, 2));
+    
+    
+    
+    % sum up fft bins to bands given in halftones
+    resolution_halftones = 8;
+    MinMaxFreqs_Hz = [62.5 12000];
+    
+    [FreqTMatrix] = fft2Bands(nFFT, SampleRate, resolution_halftones, MinMaxFreqs_Hz);
+    
+    Pxx = Pxx*FreqTMatrix;
+    Cxy = Cxy*FreqTMatrix;
+    
 end
-mRMS = mRMS(1:10:end, :);
-mZCR = mZCR(1:10:end, :);
-
-
-% calculate Mel Frequency Cepstral Coefficients
-isPowerSpec = true;
-[mfcc] = calcMFCC(Pxx', SampleRate, nFFT, isPowerSpec);
-mfcc = mfcc';
-
-
-% call OVD by Schreiber 2019
-stDataOVD = OVD3(Cxy, Pxx, Pyy, SampleRate, mRMS);
-
-% mean real coherence (400 - 1000 Hz)
-mMeanRealCoherence = stDataOVD.meanCoheTimesCxy;
-
-% a posteriori speech presence probability according to Gerkmann 2010
-vFreqRange = [400 1000];
-vFreqBins = round(vFreqRange./SampleRate*nFFT);
-mMeanSPP = mean(stDataOVD.PH1(vFreqBins(1):vFreqBins(2),:),1)';
-
-
-% calculate correlation of real(Cxy) scaled to RMS with hannwin combs
-Cxy_scaled = real(Cxy)./mean(mRMS, 2);
-correlation = CalcCorrelation(Cxy_scaled, SampleRate, nFFT/2+1);
-
-% calculate the "RMS" of the correlation
-mCorrRMS = sqrt(sum(correlation.^2, 2));
-
-
-
-% sum up fft bins to bands given in halftones
-resolution_halftones = 8;
-MinMaxFreqs_Hz = [62.5 12000];
-
-[FreqTMatrix] = fft2Bands(nFFT, SampleRate, resolution_halftones, MinMaxFreqs_Hz);
-
-Pxx = Pxx*FreqTMatrix;
-Cxy = Cxy*FreqTMatrix;
 
 
 % set column index for data set matrix
@@ -171,8 +179,10 @@ end
 
 
 % save results as mat file
-save([szDir filesep szFile], 'mRMS', 'mZCR', 'mfcc', 'mMeanRealCoherence',...
-    'mMeanSPP', 'mEQD', 'mCorrRMS', 'Pxx', 'Cxy');
+if ~isCalculated
+    save([szDir filesep szFile], 'mRMS', 'mZCR', 'mfcc', 'mMeanRealCoherence',...
+        'mMeanSPP', 'mEQD', 'mCorrRMS', 'Pxx', 'Cxy');
+end
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen

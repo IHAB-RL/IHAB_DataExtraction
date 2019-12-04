@@ -3,12 +3,11 @@
 % Version History:
 % Ver. 0.01 initial create (empty) 27-Nov-2019 	JP
 
-clear;
+% clear;
 close all;
 
 % path to data folder (needs to be customized)
 szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
-% szBaseDir = 'I:\Forschungsdaten_mit_AUDIO\Bachelorarbeit_Jule_Pohlhausen2019\NN08IA10';
 
 % get all subject directories
 subjectDirectories = dir(szBaseDir);
@@ -18,16 +17,22 @@ isValidLength = arrayfun(@(x)(length(x.name) == 18), subjectDirectories);
 subjectDirectories = subjectDirectories(isValidLength);
 isDirectory = arrayfun(@(x)(x.isdir == 1), subjectDirectories);
 subjectDirectories = subjectDirectories(isDirectory);
+subjectDirectories = subjectDirectories([12 20]);
 
 % number of subjects
 nSubject = size(subjectDirectories, 1);
 
 % preallocate struct for date values
-stDate = struct('StartTime', 0, 'EndTime', 24, 'StartDay', [], 'EndDay', []);
+stDate = struct('StartTime', [], 'EndTime', [], 'StartDay', [], 'EndDay', []);
+
+mStartTime = 8:20;
 
 % preallocate matrix with relative OV per day
 nMaxDays = 5; % maximum of days with EMA
 mOVperDay = NaN(nMaxDays, nSubject);
+mOVperHour = NaN(nMaxDays*length(mStartTime), nSubject);
+nFrames = 0;
+nOV = 0;
 
 % loop over all subjects
 for subj = 1:nSubject
@@ -41,12 +46,19 @@ for subj = 1:nSubject
     % get all dates of current subject
     caDates = getdatesonesubject(obj);
     
-    %  number of days with EMA
+    % analyse only valid dates, i.e. after the 01-May-2018
+    dProjectStart = datetime(2018,05,01);
+    isValidDate = arrayfun(@(x)(x >= dProjectStart), caDates);
+    caDates = caDates(isValidDate);
+    
+    % current number of days with EMA
     nDays = numel(caDates);
     
     if nDays > nMaxDays
         disp('adjust NaN')
     end
+    
+    counter = 1;
     
     % loop over all days with EMA
     for day = 1:nDays
@@ -55,14 +67,40 @@ for subj = 1:nSubject
         stDate.StartDay = caDates(day);
         stDate.EndDay = stDate.StartDay;
         
-        % call function to analyse distribution of OVS per day
-        [mOVperDay(day, subj)] = analyseDistributionOVSperDay(obj, stDate);
+        % loop over 1h intervalls
+        for time = 1:length(mStartTime)
+        
+            % adjust time in struct
+            stDate.StartTime = duration(mStartTime(time), 0, 1);
+            stDate.EndTime = duration(mStartTime(time)+1, 0, 0);
+
+            % call function to analyse distribution of OVS in the morning
+            [~, nOVTemp, nFramesTemp] = analyseDistributionOVSperDay(obj, stDate);
+
+            % total number of frames per day
+            nFrames = nFrames + nFramesTemp;
+
+            % total number of OV per day
+            nOV = nOV + nOVTemp;
+        
+            % OV per hour relative to number of frames per hour
+            mOVperHour(counter, subj) = nOVTemp/nFramesTemp; 
+            
+            counter = counter + 1;
+        end
+        
+        % OV per day relative to number of frames per day
+        mOVperDay(day, subj) = nOV/nFrames; 
     end
+    
+    clear obj
 end
 
 % plot results
 figure;
-histogram(mOVperDay(:))
+% histogram(mOVperDay(:))
+boxplot(100*mOVperHour,'Labels', {subjectDirectories.name});
+ylabel('estimated own voice per day in %');
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen

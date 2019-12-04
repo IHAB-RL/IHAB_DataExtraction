@@ -1,6 +1,6 @@
-function [nOVperDay, nOVS, nFrames]=analyseDistributionOVSperDay(obj, stDate)
-% function to analyse distribution of OVS per day
-% Usage [nOVperDay]=analyseDistributionOVSperDay(obj, stDate)
+function [vPredictedVS]=detectVoiceRandomForest(obj, stDate, szMode)
+% function to predict voice sequences with a trained random forest
+% Usage [vPredictedVS]=detectVoiceRandomForest(obj, stDate)
 %
 % Parameters
 % ----------
@@ -10,31 +10,49 @@ function [nOVperDay, nOVS, nFrames]=analyseDistributionOVSperDay(obj, stDate)
 %          informations: start and end day and time; this struct results 
 %          from calling checkInputFormat.m
 %
+% szMode - string: 'OVD' | 'FVD' | [] (default both)
+%
 % Returns
 % -------
-% nOVperDay - number of predicted OVS relative to total number of blocks
+% vPredictedOVS - vector, contains frame based 1 (==voice) | 0 (==no voice)
 %
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create (empty) 27-Nov-2019 JP
 
-% predict voice sequences with a trained random forest
-szMode = 'OVD';
-[vPredictedOVS] = detectVoiceRandomForest(obj, stDate, szMode);
+if ~exist('szMode', 'var')
+    szMode = [];
+end
 
-% number of blocks (each 125ms)
-nFrames = size(vPredictedOVS, 1);
+% load trained random forest (cave!)
+if strcmp(szMode, 'OVD')
+    
+    load('EnsembleTrees', 'RandomForest_OVD', 'szVarNames');
+    RandomForest = RandomForest_OVD;
+    
+elseif strcmp(szMode, 'FVD')
+    
+    load('EnsembleTrees', 'RandomForest_FVD', 'szVarNames');
+    RandomForest = RandomForest_FVD;
 
-if isempty(nFrames)
-    nFrames = 0;
-    nOVS = 0;
-    nOVperDay = NaN;
+else
+    
+    load('EnsembleTrees', 'RandomForest', 'szVarNames');
+end
+
+% extract features needed for OVD
+mDataSet = FeatureExtraction(obj, stDate, szVarNames);
+
+% if for the given time interval no data is available, return empty vector 
+if size(mDataSet, 1) == 1
+    vPredictedVS = [];
     return;
 end
 
-% calculate OV per day
-nOVS = sum(vPredictedOVS);
-nOVperDay = nOVS/nFrames;
+% start prediction with trained ensemble of bagged classification trees
+vPredictedVS = predict(RandomForest, mDataSet);
+vPredictedVS = str2num(cell2mat(vPredictedVS));
+
 
 %--------------------Licence ---------------------------------------------
 % Copyright (c) <2019> J. Pohlhausen
