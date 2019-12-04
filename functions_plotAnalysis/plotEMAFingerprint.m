@@ -91,7 +91,7 @@ szFeature = 'PSD';
 
 % get all available feature file data
 [DataPSD,TimeVecPSD,stInfoFile] = getObjectiveData(obj, szFeature, ...
-    'stInfo', stInfo, 'PlotWidth',iPlotWidth, 'SamplesPerPixel', iSamplesPerPixel);
+    'stInfo', stInfo, 'PlotWidth',iPlotWidth, 'SamplesPerPixel', iSamplesPerPixel,'useCompression', false);
 
 
 version = 1; % JP modified get_psd
@@ -137,22 +137,29 @@ end
 szFeature = 'RMS';
 
 % get all available feature file data
-[DataRMS,TimeVecRMS,~] = getObjectiveData(obj, szFeature, 'stInfo', stInfo, 'PlotWidth',iPlotWidth);
+[DataRMS,TimeVecRMS,~] = getObjectiveData(obj, szFeature, 'stInfo', stInfo, 'PlotWidth',iPlotWidth,'useCompression', false);
 
-
-% logical to save figure
-bPrint = 1;
-
+% set privacy option
 stParam.privacy = true;
 
 
 %% VOICE DETECTION
-[stDataOVD] = OVD3(Cxy, Pxx, Pyy, stParam.fs);
 
-[stDataFVD] = FVD3(stDataOVD.vOVS,stDataOVD.snrPrio,stDataOVD.movAvgSNR);
-
-% clear Cxy Pxx Pyy;
-
+useRandomForest = true;
+if useRandomForest 
+    
+    % predict voice sequences with a trained random forest
+    [vPredictedVS] = detectVoiceRandomForest(obj, stInfo);
+    stDataOVD.vOVS = vPredictedVS;
+    stDataOVD.vOVS(stDataOVD.vOVS == 2) = 0;
+    stDataFVD.vFVS = vPredictedVS;
+    stDataFVD.vFVS(stDataFVD.vFVS == 1) = 0;
+    stDataFVD.vFVS(stDataFVD.vFVS == 2) = 1;
+    
+else
+    [stDataOVD] = OVD3(Cxy, Pxx, Pyy, stParam.fs);
+    [stDataFVD] = FVD3(stDataOVD.vOVS,stDataOVD.snrPrio,stDataOVD.movAvgSNR);
+end
 
 
 %% plot objective Data
@@ -281,10 +288,10 @@ hold on;
 hOVD = plot(TimeVecPSD,MeanCoheTimeSmoothed);
 hOVD.Color = [0 0 0];
 
+% view estimated futher voice sequences (blue)
+plot(TimeVecPSD,1.3*vFVS,'bx');
 % view estimated own voice sequences (red)
 plot(TimeVecPSD,1.25*vOVS,'rx');
-% view estimated futher voice sequences (blue)
-plot(TimeVecPSD,1.25*vFVS,'bx');
 set(axOVD,'XTick',[]);
 axOVD.YLabel = ylabel('avg. Re\{Coherence\}');
 xlim([TimeVecPSD(1) TimeVecPSD(end)]);
@@ -323,6 +330,9 @@ annotationRMS.LineStyle = 'none';
 annotationRMS.FontSize = 12;
 annotationRMS.Position = [iStartAnno 0.112 0.0251 0.0411];
 
+
+% logical to save figure
+bPrint = 1;
 
 %% get and plot subjective data
 [hasSubjectiveData, axQ] = plotSubjectiveData(obj, stInfo, bPrint, GUI_xStart, PosVecCoher);

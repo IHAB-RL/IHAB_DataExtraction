@@ -5,23 +5,24 @@
 % Ver. 0.01 initial create 10-Sep-2019 	JP
 
 clear; 
-close all;
+% close all;
 
 % path to data folder (needs to be customized)
 szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
 
-% get all subject directories
-subjectDirectories = dir(szBaseDir);
-
-% sort for correct subjects
-isValidLength = arrayfun(@(x)(length(x.name) == 18), subjectDirectories);
-subjectDirectories = subjectDirectories(isValidLength);
-
-% choose a subject  (adjust for a specific subject)
-nSubject = 12;
-
-% get one subject directoy
-szCurrentFolder = subjectDirectories(nSubject).name;
+% % get all subject directories
+% subjectDirectories = dir(szBaseDir);
+% 
+% % sort for correct subjects
+% isValidLength = arrayfun(@(x)(length(x.name) == 18), subjectDirectories);
+% subjectDirectories = subjectDirectories(isValidLength);
+% 
+% % choose a subject  (adjust for a specific subject)
+% nSubject = 12;
+% 
+% % get one subject directoy
+% szCurrentFolder = subjectDirectories(nSubject).name;
+szCurrentFolder = 'NN07IS04_180611_ks';
 
 % get object
 [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);

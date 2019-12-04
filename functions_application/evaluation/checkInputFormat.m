@@ -54,7 +54,7 @@ else
 end
 
 % check time input parameters plausibility
-if stInfo.StartTime > stInfo.EndTime
+if stInfo.StartTime >= stInfo.EndTime
     error('input EndTime must be greater than input StartTime');
 end
 
