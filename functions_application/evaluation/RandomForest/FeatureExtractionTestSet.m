@@ -23,10 +23,6 @@ function FeatureExtractionTestSet(obj)
 % Version History:
 % Ver. 0.01 initial create (empty) 15-Nov-2019  JP
 % Ver. 0.02 calculation of MFCCs 25-Nov-2019 JP
-% TO DO: not ready jet
-%   - RMS linear or dB SPL ?!
-%   - integration of "Pitch"
-
 
 % check whether the number of feature files is valid or not
 obj = checkNrOfFeatFiles(obj);
@@ -52,7 +48,7 @@ if obj.UseAudio
     % duration one frame in sec
     nLenFrame = stData.tFrame;
     
-    clear stData
+%     clear stData
 else
 
     % reading objective data, desired feature PSD
@@ -148,6 +144,10 @@ Cxy = Cxy*FreqTMatrix;
 obj.fsVD = 1/nLenFrame;
 obj.NrOfBlocks = nBlocks;
 [groundTrOVS, groundTrFVS] = getVoiceLabels(obj);
+
+vTime = linspace(0, stData.nSigDur, nBlocks);
+figure; plot(vTime, mEQD); hold on; plot(vTime, groundTrOVS, 'r'); plot(vTime, groundTrFVS, 'b')
+
 groundTrFVS = 2*groundTrFVS'; % set label for fvs to 2
     
 % combine OV and FV labels

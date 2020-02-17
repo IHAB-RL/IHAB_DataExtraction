@@ -1,7 +1,7 @@
-function [mDataSet,vVoiceLabels]=createTestSet(szVarNames, isTraining, szMode, mConfig, mSubj)
+function [mDataSet,vVoiceLabels]=createTestSet(szVarNames,isTraining,szMode,mConfig,mSubj)
 % function to create a DATA Set with specified variables for classification
 % run first FeatureExtractionTestSet.m
-% Usage [mDataSet]=createTestSet(vVarNames, isTraining)
+% Usage [mDataSet,vVoiceLabels]=createTestSet(szVarNames,isTraining,szMode,mConfig,mSubj)
 %
 % Parameters
 % ----------
@@ -12,6 +12,14 @@ function [mDataSet,vVoiceLabels]=createTestSet(szVarNames, isTraining, szMode, m
 % 
 %   isTraining - logical, whether the training or test data set should be
 %                created; by default true
+%
+%   szMode - optional string that specifies voice detection: 'OVD', 'FVD';
+%            by default as well own as further voices are classified
+% 
+%   mConfig - optional number array that specifies the measurement
+%             configuartion of the recorded data
+%
+%   mSubj - optional string that specifies the subject while recording
 %
 % Returns
 % -------
@@ -43,7 +51,7 @@ if nargin <= 3
         mConfig.SB = 1:6;
         mSubj.SB = [1 2 4 5 7];
         mConfig.OD = {'COFFEE'};
-        mConfig.NS = [1 3 5];
+        mConfig.NS = [1 5];
         mConfig.JP = [4 6];
     else
         % test data
