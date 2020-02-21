@@ -1,20 +1,21 @@
-% test script to plot a fingerprint for a specific time frame
+% script to predict voice sequences based on 125ms frames with a trained
+% Random Forest
 %
 % Author: J. Pohlhausen (c) IHA @ Jade Hochschule applied licence see EOF
 % Version History:
-% Ver. 0.01 initial create 04-Feb-2020 	JP
+% Ver. 0.01 initial create 20-Feb-2020 	JP
 
-% clear; 
-% close all;
+clear; 
+close all;
 
-% % path to data folder (needs to be customized)
-% szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
-% 
-% % subject folder
-% szCurrentFolder = 'NN07IS04_180611_ks';
-% 
-% % get object
-% [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
+% path to data folder (needs to be customized)
+szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
+
+% subject folder
+szCurrentFolder = 'NN07IS04_180611_ks';
+
+% get object
+[obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
 
 % set time infos
 StartDay = datetime(2018,6,13);
