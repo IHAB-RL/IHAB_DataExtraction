@@ -1,16 +1,16 @@
-function [vPredictedVS]=detectVoiceRandomForest(obj, stDate, szMode)
+function [vPredictedVS,TimePSD]=detectVoiceRandomForest(obj,stDate,szMode)
 % function to predict voice sequences with a trained random forest
 % Usage [vPredictedVS]=detectVoiceRandomForest(obj, stDate)
 %
 % Parameters
 % ----------
 % obj - class IHABdata, contains all informations
-% 
-% stDate - struct which contains valid date informations about the time 
-%          informations: start and end day and time; this struct results 
+%
+% stDate - struct which contains valid date informations about the time
+%          informations: start and end day and time; this struct results
 %          from calling checkInputFormat.m
 %
-% szMode - string: 'OVD' | 'FVD' | [] (default both)
+% szMode - string: 'OVD' | 'FVD' 
 %
 % Returns
 % -------
@@ -25,32 +25,33 @@ if ~exist('szMode', 'var')
 end
 
 % load trained random forest (cave!)
+szTreeDir = [obj.sFolderMain filesep 'functions_helper'];
 if strcmp(szMode, 'OVD')
     
-    load('EnsembleTrees', 'RandomForest_OVD', 'szVarNames');
-    RandomForest = RandomForest_OVD;
+    szName = 'RandomForest_100Trees_OVD_PredictorSet4.mat';
     
 elseif strcmp(szMode, 'FVD')
     
-    load('EnsembleTrees', 'RandomForest_FVD', 'szVarNames');
-    RandomForest = RandomForest_FVD;
-
-else
+    szName = 'RandomForest_100Trees_FVD_PredictorSet6.mat';
     
-    load('EnsembleTrees', 'RandomForest', 'szVarNames');
+else % tbd
+    
+    %     load('EnsembleTrees', 'RandomForest', 'szVarNames');
 end
 
-% extract features needed for OVD
-mDataSet = FeatureExtraction(obj, stDate, szVarNames);
+load([szTreeDir filesep szName], 'MRandomForest', 'szVarNames');
 
-% if for the given time interval no data is available, return empty vector 
+% extract features needed for VD
+[mDataSet, TimePSD] = FeatureExtraction(obj, stDate, szVarNames);
+
+% if for the given time interval no data is available, return empty vector
 if size(mDataSet, 1) == 1
     vPredictedVS = [];
     return;
 end
 
 % start prediction with trained ensemble of bagged classification trees
-vPredictedVS = predict(RandomForest, mDataSet);
+vPredictedVS = predict(MRandomForest, mDataSet);
 vPredictedVS = str2num(cell2mat(vPredictedVS));
 
 
