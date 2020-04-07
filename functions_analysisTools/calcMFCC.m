@@ -89,7 +89,20 @@ vFreq = linspace(0, SampleRate / 2, nFFT / 2 + 1);
 
 % Filterbank matrix
 MelFilterbank = melfilter(NumDefaultCoefficients, vFreq);
-% plot(freq, MelFilterbank')
+
+% figure;
+% plot(vFreq, MelFilterbank');
+% xlim([0 SampleRate / 2]);
+% xlabel('Frequenz in Hz');
+% ylabel('Amplitude');
+% ax = gca;
+% ax.FontName = 'Times New Roman';
+% ax.FontSize = 18;
+% xLabels = ax.XTickLabel;
+% xLabels = strrep(xLabels, '000', 'k');
+% xLabels = strrep(xLabels, 'kk', '0k');
+% set(ax, 'XTickLabel', xLabels);
+% drawnow;
 
 % transform to mel bands and account for digital zeros (bad for log(.))
 melBandEnergy = MelFilterbank * singleSidedPower;
