@@ -1,4 +1,4 @@
-function [vPredictedVS,TimePSD]=detectVoiceRandomForest(obj,stDate,szMode)
+function [vPredictedVS,vTime,Cxy]=detectVoiceRandomForest(obj,stDate,szMode)
 % function to predict voice sequences with a trained random forest
 % Usage [vPredictedVS]=detectVoiceRandomForest(obj, stDate)
 %
@@ -16,13 +16,11 @@ function [vPredictedVS,TimePSD]=detectVoiceRandomForest(obj,stDate,szMode)
 % -------
 % vPredictedOVS - vector, contains frame based 1 (==voice) | 0 (==no voice)
 %
+% vTime - corresponding time vector
+%
 % Author: J. Pohlhausen (c) TGM @ Jade Hochschule applied licence see EOF
 % Version History:
 % Ver. 0.01 initial create (empty) 27-Nov-2019 JP
-
-if ~exist('szMode', 'var')
-    szMode = [];
-end
 
 % load trained random forest (cave!)
 szTreeDir = [obj.sFolderMain filesep 'functions_helper'];
@@ -42,7 +40,7 @@ end
 load([szTreeDir filesep szName], 'MRandomForest', 'szVarNames');
 
 % extract features needed for VD
-[mDataSet, TimePSD] = FeatureExtraction(obj, stDate, szVarNames);
+[mDataSet, vTime, Cxy] = FeatureExtraction(obj, stDate, szVarNames);
 
 % if for the given time interval no data is available, return empty vector
 if size(mDataSet, 1) == 1
