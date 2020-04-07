@@ -35,7 +35,7 @@ function [mDataSet,TimePSD,Cxy,Pxx,Pyy] = FeatureExtraction(obj, stDate, szVarNa
 
 % logical whether to calc and return the PSDs or not
 isCalcPSD = false;
-if nargout == 5
+if nargout > 2
     isCalcPSD = true;
 end
 
@@ -188,11 +188,11 @@ for iVar = 1:length(szVarNames)
 end
 
 
-% save results as mat file
-if ~isCalculated
-    save([szDir filesep szFile], 'mRMS', 'mZCR', 'mfcc', 'mMeanRealCoherence',...
-        'mMeanSPP', 'mEQD', 'mCorrRMS', 'Pxx', 'Cxy');
-end
+% % save results as mat file
+% if ~isCalculated
+%     save([szDir filesep szFile], 'mRMS', 'mZCR', 'mfcc', 'mMeanRealCoherence',...
+%         'mMeanSPP', 'mEQD', 'mCorrRMS', 'Pxx', 'Cxy');
+% end
 
 
 if isCalcPSD

@@ -1,4 +1,4 @@
-function [correlation, spectrum] = magnitude_correlation(signal, samplerate, blocksize, hopsize, basefrequencies, nfft)
+function [correlation, spectrum] = magnitude_correlation(signal, samplerate, blocksize, hopsize, basefrequencies)
     % Correlate synthetic tone complex spectra with a true spectrum.
     %
     % Generate spectra at a number of given base frequencies, then
@@ -16,66 +16,18 @@ function [correlation, spectrum] = magnitude_correlation(signal, samplerate, blo
     %
     % Returns a len(blocks) x len(basefrequencies) matrix of correlation values.
 
-    if nargin == 5
-        specsize = floor(blocksize / 2) + 1;
-    else
-        specsize = floor(nfft / 2) + 1;
-    end
+    specsize = floor(blocksize / 2) + 1;
 
-    % weight differences according to perception:
+    % weigh differences according to perception:
     f = linspace(0, samplerate/2, specsize);
     log_f_weight =  1 ./ (samplerate/2).^(f / (samplerate/2));
 
     correlation = zeros(numblocks(signal, blocksize, hopsize), length(basefrequencies));
-    spectrum = zeros(numblocks(signal, blocksize, hopsize), specsize);
     synthetic_magnitudes = synthetic_magnitude(samplerate, specsize, basefrequencies);
-    
-    %% Jule
-    freqs = linspace(0, samplerate/2, specsize);
-    FundFreq = [130 200];
-    idxFundFreq(1) = find(basefrequencies >= FundFreq(1), 1);
-    idxFundFreq(2) = find(basefrequencies >= FundFreq(2), 1);
-%     figure;
-%     subplot(2,1,1);
-%     plot(freqs, synthetic_magnitudes(idxFundFreq(1), :));
-%     ylabel('T^M(f, 130)');
-%     xticks(FundFreq(1):FundFreq(1):15*FundFreq(1));
-%     xlim([freqs(1) 10*FundFreq(2)]);
-%     legend('f_0 = 130 Hz');
-%     ax = gca;
-%     ax.XAxisLocation = 'origin';
-%     
-%     subplot(2,1,2);
-%     plot(freqs, synthetic_magnitudes(idxFundFreq(2), :));
-%     xlabel('Frequency in Hz');
-%     ylabel('T^M(f, 200)');
-%     xticks(FundFreq(2):FundFreq(2):10*FundFreq(2));
-%     xlim([freqs(1) 10*FundFreq(2)]);
-%     legend('f_0 = 200 Hz');
-%     ax = gca;
-%     ax.XAxisLocation = 'origin';
-    %%
-    
+
     for blockidx = 1:numblocks(signal, blocksize, hopsize)
-        spectrum(blockidx, :) = stft(signal, blocksize, hopsize, blockidx)';
-        correlation(blockidx, :) = sum(abs(spectrum(blockidx, :)) .* synthetic_magnitudes .* log_f_weight, 2)';
-        
-        %% Jule
-        if blockidx == 143 % plot template and spectrum for speech
-            
-            PSD = spectrum(blockidx,:).*conj(spectrum(blockidx,:));
-            
-            figure; 
-            plot(freqs, abs(spectrum(blockidx,:)));
-            hold on;
-            plot(freqs, synthetic_magnitudes(FundFreq(1),:), 'r');
-            plot(freqs, PSD);
-            legend('STFT magnitude', 'T^M(f, 130)', 'PSD');
-            xlim([0 4000]);
-            xlabel('Frequency in Hz');
-            ylabel('STFT/ PSD Magnitude');
-        end
-        %%
+        spectrum = stft(signal, blocksize, hopsize, blockidx);
+        correlation(blockidx, :) = sum(abs(spectrum)' .* synthetic_magnitudes .* log_f_weight, 2)';
     end
 end
 
@@ -93,6 +45,7 @@ function [spectrum] = stft(signal, blocksize, hopsize, blockidx, nfft, windowfun
     % transformation, each block is windowed by windowfunc.
     %
     % signal: A vector of doubles
+    % samplerate: A scalar in Hz
     % blocksize: A scalar in samples
     % hopsize: A scalar in samples
     % blockindex: A scalar
@@ -126,6 +79,7 @@ function [magnitudes] = synthetic_magnitude(samplerate, specsize, basefrequencie
     %
     % Returns a len(basefrequencies) x specsize matrix of tone complex spectra.
 
+    freqs = linspace(0, samplerate/2, specsize);
     magnitudes = zeros(length(basefrequencies), specsize);
     for freqidx = 1:length(basefrequencies)
         magnitudes(freqidx, :) = hannwin_comb(samplerate, basefrequencies(freqidx), specsize);
@@ -210,7 +164,7 @@ function [spectrum] = hannwin_spectrum(angular_freq, specsize)
     function [spectrum] = rectwin_spectrum(angular_freq)
         % In case of angular_freq == 0, this will calculate NaN. This
         % will be corrected later.
-        spectrum = ( exp(-1j*angular_freq*(specsize-1)/2) .* ...
+        spectrum = ( exp(-j*angular_freq*(specsize-1)/2) .* ...
                      sin(specsize*angular_freq/2) ./ ...
                      sin(angular_freq/2) );
         spectrum(angular_freq == 0) = specsize;

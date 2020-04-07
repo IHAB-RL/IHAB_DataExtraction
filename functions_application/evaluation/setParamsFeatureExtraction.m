@@ -17,18 +17,26 @@ function [stParam]=setParamsFeatureExtraction(obj)
 % Version History:
 % Ver. 0.01 initial create (empty) 12-Nov-2019  JP
 
-% read in audiosignal
-[mSignal, Fs]      = audioread(obj.audiofile);
+if isfield(obj, 'audiofile')
+    % read in audiosignal
+    [mSignal, Fs]      = audioread(obj.audiofile);
 
-% downsampling by factor 2
-stParam.fs         = Fs/2;
-stParam.mSignal    = resample(mSignal, stParam.fs, Fs);
+    % downsampling by factor 2
+    if Fs == 48000 || Fs == 16000
+        stParam.fs         = Fs/2;
+        stParam.mSignal    = resample(mSignal, stParam.fs, Fs);
+    else
+        stParam.fs         = Fs;
+        stParam.mSignal    = mSignal;
+    end
 
- % calculate time vector
-stParam.nSigLen    = size(stParam.mSignal,1); % length in samples
-stParam.nSigDur    = stParam.nSigLen/stParam.fs; % duration in sec
-stParam.TimeVec    = linspace(0, stParam.nSigDur, stParam.nSigLen);
-
+     % calculate time vector
+    stParam.nSigLen    = size(stParam.mSignal,1); % length in samples
+    stParam.nSigDur    = stParam.nSigLen/stParam.fs; % duration in sec
+    stParam.TimeVec    = linspace(0, stParam.nSigDur, stParam.nSigLen);
+else
+    stParam.fs         = 24000;
+end
 % set parameters for processing audio data
 % privacy option, just every 10th PSD frame is saved
 stParam.privacy    = true;

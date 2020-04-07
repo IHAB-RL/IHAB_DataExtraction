@@ -1,4 +1,4 @@
-function [correlation] = CalcCorrelation(spectrum, samplerate, specsize, useFilter)
+function [correlation,basefrequencies] = CalcCorrelation(spectrum, samplerate, specsize, useFilter)
 % function to calculate the correlation between a complex spectrum and a
 % series of synthetic magnitude spectra
 % Usage: [correlation] = CalcCorrelation(spectrum, samplerate, specsize)
@@ -26,16 +26,8 @@ if nargin == 3
     useFilter = 1;
 end
 
-szDir = 'I:\IHAB_DataExtraction\functions_application\evaluation\Pitch';
-if samplerate ~= 24000 || ~useFilter
-%     basefrequencies = 80:0.5:450;
-    basefrequencies = logspace(log10(50),log10(450),200);
-    synthetic_magnitudes = synthetic_magnitude(samplerate, specsize, basefrequencies, useFilter);
-else
-%     matfile = 'SyntheticMagnitudes_80_450_741.mat';
-    matfile = 'SyntheticMagnitudes_50_450_200.mat';
-    load([szDir filesep matfile], 'synthetic_magnitudes');
-end
+basefrequencies = logspace(log10(50),log10(450),200);
+synthetic_magnitudes = synthetic_magnitude(samplerate, specsize, basefrequencies, useFilter);
 
 % weight differences according to perception:
 f = linspace(0, samplerate/2, specsize);
@@ -44,11 +36,6 @@ log_f_weight =  1 ./ (samplerate/2).^(f / (samplerate/2));
 % number of blocks
 nBlocks = size(spectrum, 1);
 
-
-% figure;
-% plot(f, synthetic_magnitudes(101,:));
-% hold on;
-% plot(f, synthetic_PSD(101,:));
 
 % pre allocation
 correlation = zeros(nBlocks, size(synthetic_magnitudes, 1));
