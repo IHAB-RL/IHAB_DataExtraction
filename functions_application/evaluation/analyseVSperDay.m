@@ -91,11 +91,6 @@ vTimeVD = vTimePSD(nFramesPerBlock/2 : nFeed : nFrames - nFeed);
 
 
 % debug plot
-% figure;
-% subplot(2,1,1)
-% plot(vTimePSD, vPredictedVS);
-% subplot(2,1,2)
-% plot(vTimeVD, vVS, 'x');
 isPlot = true;
 if isPlot
     

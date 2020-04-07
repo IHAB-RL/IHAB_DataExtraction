@@ -4,18 +4,18 @@
 % Ver. 0.01 initial create (empty) 04-Feb-2020 	JP
 % Ver. 1.0 new input options 6-Apr-2020 JP
 
-% % clear;
-% close all;
-% 
-% % path to data folder (needs to be customized!)
-% % szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
-% szBaseDir = '/Volumes/Samsung_T5/IHAB_1_EMA2018/IHAB_Rohdaten_EMA2018';
-% 
-% % get current subject directoy
-% szCurrentFolder = 'NN07IS04_180611_ks';
-% 
-% % get object
-% [obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
+% clear;
+close all;
+
+% path to data folder (needs to be customized!)
+% szBaseDir = 'I:\IHAB_1_EMA2018\IHAB_Rohdaten_EMA2018';
+szBaseDir = '/Volumes/Samsung_T5/IHAB_1_EMA2018/IHAB_Rohdaten_EMA2018';
+
+% get current subject directoy
+szCurrentFolder = 'NN07IS04_180611_ks';
+
+% get object
+[obj] = IHABdata([szBaseDir filesep szCurrentFolder]);
 
 % preallocate struct for date values
 stDate = struct('StartTime', [], 'EndTime', [], 'StartDay', [], 'EndDay', []);
