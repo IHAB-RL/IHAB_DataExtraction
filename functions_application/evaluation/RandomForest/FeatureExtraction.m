@@ -72,7 +72,7 @@ if ~isCalculated
     szFeature = 'PSD';
     
     % get all available feature file data for PSD
-    [DataPSD,TimePSD,stInfo] = getObjectiveData(obj, szFeature, 'stInfo', stDate, ...
+	[DataPSD,TimePSD,stInfo] = getObjectiveData(obj, szFeature, 'stInfo', stDate, ...
         'useCompression', useCompression);
     
     % if for the given time frame no objective data exist, return
@@ -152,13 +152,28 @@ if ~isCalculated
     
     % sum up fft bins to bands given in halftones
     resolution_halftones = 8;
-    MinMaxFreqs_Hz = [62.5 SampleRate/2];
+    MinMaxFreqs_Hz = [62.5 12000];
     
     [FreqTMatrix] = fft2Bands(nFFT, SampleRate, resolution_halftones, MinMaxFreqs_Hz);
     
-    Pxx = Pxx*FreqTMatrix;
-    Cxy = Cxy*FreqTMatrix;
+    Pxx = Pxx*FreqTMatrix(1:nFFT/2+1, :);
+    Cxy = Cxy*FreqTMatrix(1:nFFT/2+1, :);
     
+    % check for low sampling frequencies thus unreached octaves
+    Pxx(:, ~any(Pxx ~= 0)) = NaN;
+    Cxy(:, ~any(Cxy ~= 0)) = NaN;
+    
+end
+
+
+% save extracted features as mat file
+if ~isCalculated
+    save([szDir filesep szFile], 'mRMS', 'mZCR', 'mfcc', 'mMeanRealCoherence',...
+        'mMeanSPP', 'mEQD', 'mCorrRMS', 'Pxx', 'Cxy');
+    
+    if ~nargout
+        return;
+    end
 end
 
 
@@ -186,13 +201,6 @@ for iVar = 1:length(szVarNames)
         idxColumn = idxColumn + nDim;
     end
 end
-
-
-% % save results as mat file
-% if ~isCalculated
-%     save([szDir filesep szFile], 'mRMS', 'mZCR', 'mfcc', 'mMeanRealCoherence',...
-%         'mMeanSPP', 'mEQD', 'mCorrRMS', 'Pxx', 'Cxy');
-% end
 
 
 if isCalcPSD

@@ -22,13 +22,22 @@ if isfield(obj, 'audiofile')
     [mSignal, Fs]      = audioread(obj.audiofile);
 
     % downsampling by factor 2
-    if Fs == 48000 || Fs == 16000
+    if Fs == 48000 || Fs == 16000 && ~isfield(obj, 'downsampling')
         stParam.fs         = Fs/2;
         stParam.mSignal    = resample(mSignal, stParam.fs, Fs);
     else
         stParam.fs         = Fs;
         stParam.mSignal    = mSignal;
     end
+
+     % calculate time vector
+    stParam.nSigLen    = size(stParam.mSignal,1); % length in samples
+    stParam.nSigDur    = stParam.nSigLen/stParam.fs; % duration in sec
+    stParam.TimeVec    = linspace(0, stParam.nSigDur, stParam.nSigLen);
+    
+elseif isfield(obj, 'vSignal')
+    stParam.mSignal = obj.vSignal;
+    stParam.fs = obj.fs;
 
      % calculate time vector
     stParam.nSigLen    = size(stParam.mSignal,1); % length in samples
@@ -50,17 +59,9 @@ stParam.lFrame     = floor(stParam.tFrame*stParam.fs);
 % overlap of adjacent blocks in samples
 stParam.lOverlap   = stParam.lFrame/2; 
 
-% optimal frequency resolution of one frequency bin, e.g. for fs = 24 kHz
-% and nFFT = 1024
-stParam.nFreqRes   = 23.4375; 
-
 % number of fast Fourier transform points, dependent on samplingrate and
-% frequency resolution
-nFFT               = stParam.fs/stParam.nFreqRes;
-stParam.nFFT       = 2^nextpow2(nFFT); 
-if nFFT-stParam.nFFT ~= 0 
-    stParam.nFFT       = 2^(nextpow2(nFFT)-1); 
-end
+% block length
+stParam.nFFT       = 2^nextpow2(stParam.tFrame*stParam.fs); 
 
 % normalized window length for PSD calculation
 stParam.winLen     = floor(stParam.nFFT/10); 

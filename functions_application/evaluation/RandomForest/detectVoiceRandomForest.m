@@ -40,7 +40,11 @@ end
 load([szTreeDir filesep szName], 'MRandomForest', 'szVarNames');
 
 % extract features needed for VD
-[mDataSet, vTime, Cxy] = FeatureExtraction(obj, stDate, szVarNames);
+if nargout == 3
+    [mDataSet, vTime, Cxy] = FeatureExtraction(obj, stDate, szVarNames);
+else
+    [mDataSet, vTime] = FeatureExtraction(obj, stDate, szVarNames);
+end
 
 % if for the given time interval no data is available, return empty vector
 if size(mDataSet, 1) == 1

@@ -1,8 +1,8 @@
-function [mfcc]=calcMFCC(data, SampleRate,  nFFT, isPowerSpec)
+function [mfcc]=calcMFCC(data, SampleRate,  nFFT, isPowerSpec, isFullBandwidth)
 % function to calculate 'Mel Frequency Cepstral Coefficients'
-% Calculation is based on 125ms time frames 
-% If input data contains the time signal, it is possible to use a 
-% pre-emphasis filter ('to reduce spectral roll-off of the signal'), set 
+% Calculation is based on 125ms time frames
+% If input data contains the time signal, it is possible to use a
+% pre-emphasis filter ('to reduce spectral roll-off of the signal'), set
 % logical isPreEmphFilt to true
 %
 % Parameters
@@ -14,8 +14,11 @@ function [mfcc]=calcMFCC(data, SampleRate,  nFFT, isPowerSpec)
 %
 %   nFFT - number of fast Fourier transform points
 %
-%   isPowerSpec - logical whether data contains the time signal (== false) 
+%   isPowerSpec - logical whether data contains the time signal (== false)
 %                 or the power spectral density (== true)
+%
+%   isFullBandwidth - logical whether the full bandwidth (default 
+%                SampleRate/2) or just the reduced bandwidth (4kHz) is used
 %
 % Returns
 % -------
@@ -26,6 +29,10 @@ function [mfcc]=calcMFCC(data, SampleRate,  nFFT, isPowerSpec)
 % introduced by Davis and Mermelstein around 1980
 % Version History:
 % Ver. 0.01 initial create (empty) 22-Nov-2019  JP
+
+if nargin == 4
+    isFullBandwidth = true;
+end
 
 if ~isPowerSpec
     % only account for one channel
@@ -57,10 +64,10 @@ if ~isPowerSpec
     if isPreEmphFilt
         % following the default pre-emph. filter with alpha = 0.95@16e3
         cutoff = -log(0.95) * 16e3 / (2*pi);
-
+        
         % Coeffs. of the pre-emphasis filter
         PreEmphasisCoefficient = exp(-2*pi * cutoff / SampleRate);
-
+        
         % pre-emphasis filter to reduce spectral roll-off of the signal
         [data, PreEmphasisFilterStates] = filter([1, -PreEmphasisCoefficient], 1, data);
     end
@@ -69,7 +76,7 @@ if ~isPowerSpec
     for iFrame = 1:nFrames
         
         vIDX    = ((iFrame-1)*lFeed+1):((iFrame-1)*lFeed+BlockSizeSample);
-       
+        
         % single sided power spectrum of windowed time frame
         spec = fft(data(vIDX) .* vWindow, nFFT);
         singleSidedPower(:, iFrame) = abs(spec(1:nFFT/2+1)).^2;
@@ -91,7 +98,7 @@ vFreq = linspace(0, SampleRate / 2, nFFT / 2 + 1);
 MelFilterbank = melfilter(NumDefaultCoefficients, vFreq);
 
 % figure;
-% plot(vFreq, MelFilterbank');
+% plot(vFreq, MelFilterbank', '-o');
 % xlim([0 SampleRate / 2]);
 % xlabel('Frequenz in Hz');
 % ylabel('Amplitude');
@@ -103,6 +110,11 @@ MelFilterbank = melfilter(NumDefaultCoefficients, vFreq);
 % xLabels = strrep(xLabels, 'kk', '0k');
 % set(ax, 'XTickLabel', xLabels);
 % drawnow;
+
+if ~isFullBandwidth
+    MelFilterbank = MelFilterbank(1:16, :);
+    MelFilterbank(:, vFreq > 4000) = 0;
+end
 
 % transform to mel bands and account for digital zeros (bad for log(.))
 melBandEnergy = MelFilterbank * singleSidedPower;

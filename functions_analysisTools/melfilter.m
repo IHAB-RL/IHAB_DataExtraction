@@ -1,4 +1,4 @@
-function [Filter,MelFrequencyVector] = melfilter(N,FrequencyVector,hWindow)
+function [Filter,MelFrequencyVector] = melfilter(N,FrequencyVector,hWindow,useFreq)
 % melfilter         Create a mel frequency filterbank
 %
 %   [Filter,MelFrequencyVector] = melfilter(N,FrequencyVector,hWindow)
@@ -47,22 +47,55 @@ function [Filter,MelFrequencyVector] = melfilter(N,FrequencyVector,hWindow)
 %
 %   melbankm by Mike Brookes 1997
 %
+% edited by JP (Aug-2020): added boolean 'useFreq' to use specific frequencies
 
 %% Assign defaults
 if nargin<3 || isempty(hWindow), hWindow = @triang; end
+if nargin<4, useFreq = true; end
 
 %%
-MelFrequencyVector = 2595*log10(1+FrequencyVector/700);   % Convert to mel scale
-MaxF = max(MelFrequencyVector);                 % 
-MinF = min(MelFrequencyVector);                 %
-MelBinWidth = (MaxF-MinF)/(N+1);                %
-Filter = zeros([N numel(MelFrequencyVector)]);  % Predefine loop matrix
+% Convert to mel scale
+MelFrequencyVector = 2595*log10(1+FrequencyVector/700);   
+if useFreq % use specific frequencies
+    MaxF = 2595*log10(1+12000/700);                  
+    MinF = 0; 
+else
+    MaxF = max(MelFrequencyVector);                  
+    MinF = min(MelFrequencyVector);  
+end  
+
+MelBinWidth = (MaxF-MinF)/(N+1); 
+
+% Predefine loop matrix
+Filter = zeros([N numel(MelFrequencyVector)]);  
 
 %% Construct filter bank
 for i = 1:N
     iFilter = find(MelFrequencyVector>=((i-1)*MelBinWidth+MinF) & ...
                     MelFrequencyVector<=((i+1)*MelBinWidth+MinF));
-    Filter(i,iFilter) = hWindow(numel(iFilter)); % Triangle window
+    
+    % number of frequency bins
+    nBins = numel(iFilter);
+                
+    % check for low sampling frequencies thus unreached frequencies
+    if max(MelFrequencyVector) < (i+1)*MelBinWidth+MinF 
+        
+        if isempty(iFilter)
+            Filter = Filter(1:i-1, :);
+            break;
+        end
+        
+        % resolution of frequency bins (Hz)
+        nRes = FrequencyVector(2) - FrequencyVector(1);
+        
+        % determine number of missing bins
+        editBins = ceil((mel2hz((i+1)*MelBinWidth+MinF) - max(FrequencyVector))/nRes);
+        nBins = nBins + editBins;
+    end
+    
+    TriangleWindow =  hWindow(nBins);
+                
+    Filter(i,iFilter) = TriangleWindow(1:numel(iFilter)); 
 end
 Filter = sparse(Filter);    % Reduce memory size
 
